@@ -1,8 +1,10 @@
 package com.koach.studio.core.di
 
+import com.koach.studio.core.data.DemoData
 import com.koach.studio.projects.data.InMemoryProjectRepository
 import com.koach.studio.projects.data.ProjectRepository
 import java.time.Clock
+import java.time.LocalDate
 
 /**
  * Single place where the app's dependencies are created. ViewModels receive
@@ -19,5 +21,7 @@ interface AppContainer {
 class DemoAppContainer(
     override val clock: Clock = Clock.systemDefaultZone()
 ) : AppContainer {
+    private val demoData by lazy { DemoData(LocalDate.now(clock)) }
+
     override val projectRepository: ProjectRepository by lazy { InMemoryProjectRepository() }
 }
