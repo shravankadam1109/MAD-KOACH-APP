@@ -268,7 +268,8 @@ fun ProjectDetailScreen(
                     items(project.deliverables, key = { it.id }) { deliverable ->
                         DeliverableRow(
                             deliverable = deliverable,
-                            onEditClick = { onDeliverableClick(deliverable.id) }
+                            onEditClick = { onDeliverableClick(deliverable.id) },
+                            onDownloadClick = { viewModel.downloadDeliverable(deliverable.id) }
                         )
                     }
                 }

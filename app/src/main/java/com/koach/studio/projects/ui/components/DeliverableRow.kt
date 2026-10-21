@@ -43,7 +43,7 @@ fun DeliverableRow(
     deliverable: Deliverable,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
-    actionSlot: @Composable (() -> Unit)? = null
+    onDownloadClick: (() -> Unit)? = null
 ) {
     val cardBg = Color(0xFF16181F)
     val cardBorder = Color(0xFF272A36)
@@ -113,23 +113,28 @@ fun DeliverableRow(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Action slot (e.g. Download button) or Edit button
-                if (actionSlot != null) {
-                    actionSlot()
-                } else {
-                    IconButton(
-                        onClick = onEditClick,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .testTag("edit_deliverable_button_${deliverable.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit deliverable",
-                            tint = Color(0xFF9EA3B0),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                // Download Button
+                if (onDownloadClick != null) {
+                    DeliverableDownloadButton(
+                        deliverable = deliverable,
+                        onDownloadClick = onDownloadClick
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+
+                // Edit Button
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("edit_deliverable_button_${deliverable.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit deliverable",
+                        tint = Color(0xFF9EA3B0),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 
