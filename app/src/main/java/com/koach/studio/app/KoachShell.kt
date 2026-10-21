@@ -35,6 +35,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.koach.studio.app.menu.MenuScreen
 import com.koach.studio.bookings.ui.BookingsScreen
+import com.koach.studio.clients.ui.ClientDetailScreen
+import com.koach.studio.clients.ui.ClientDetailViewModel
+import com.koach.studio.clients.ui.ClientFormScreen
+import com.koach.studio.clients.ui.ClientFormViewModel
+import com.koach.studio.clients.ui.ClientListScreen
+import com.koach.studio.clients.ui.ClientListViewModel
 import com.koach.studio.bookings.ui.BookingsViewModel
 import com.koach.studio.bookings.ui.NewBookingScreen
 import com.koach.studio.bookings.ui.NewBookingViewModel
@@ -229,6 +235,42 @@ private fun KoachNavHost(
             )
         }
 
+        composable(Routes.CLIENTS) {
+            ClientListScreen(
+                viewModel = koachViewModel { ClientListViewModel(user, it.clientRepository, it.projectRepository) },
+                onOpenClient = { id -> navController.navigate(Routes.clientDetail(id)) },
+                onAddClient = { navController.navigate(Routes.clientForm()) }
+            )
+        }
+        composable(
+            Routes.CLIENT_DETAIL,
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { entry ->
+            val clientId = entry.arguments?.getString("clientId").orEmpty()
+            ClientDetailScreen(
+                viewModel = koachViewModel(key = "client-$clientId") {
+                    ClientDetailViewModel(clientId, user, it.clientRepository, it.projectRepository)
+                },
+                onBack = back,
+                onEdit = { id -> navController.navigate(Routes.clientForm(id)) },
+                onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) }
+            )
+        }
+        composable(
+            Routes.CLIENT_FORM,
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType; defaultValue = "" })
+        ) { entry ->
+            val clientId = entry.arguments?.getString("clientId").orEmpty().ifBlank { null }
+            ClientFormScreen(
+                viewModel = koachViewModel(key = "client-form-$clientId") { ClientFormViewModel(clientId, it.clientRepository) },
+                onBack = back,
+                onSaved = { savedId ->
+                    navController.popBackStack()
+                    if (clientId == null) navController.navigate(Routes.clientDetail(savedId))
+                }
+            )
+        }
+
         composable(Routes.ACCOUNT) {
             MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
         }
@@ -239,7 +281,6 @@ private fun KoachNavHost(
         // Destinations below are filled in by their feature modules.
         listOf(
             Routes.AGENCY_HOME to "Studio",
-            Routes.CLIENTS to "Clients",
             Routes.TASKS to "Tasks",
             Routes.MESSAGES to "Messages",
             Routes.NOTIFICATIONS to "Notifications",

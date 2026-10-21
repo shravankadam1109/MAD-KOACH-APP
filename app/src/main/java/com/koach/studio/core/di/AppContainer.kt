@@ -3,6 +3,8 @@ package com.koach.studio.core.di
 import com.koach.studio.bookings.data.BookingRepository
 import com.koach.studio.bookings.data.InMemoryBookingRepository
 import com.koach.studio.catalog.data.CatalogRepository
+import com.koach.studio.clients.data.ClientRepository
+import com.koach.studio.clients.data.InMemoryClientRepository
 import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
@@ -13,6 +15,7 @@ import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.data.SecuredProjectRepository
+import kotlinx.coroutines.flow.first
 import java.time.Clock
 import java.time.LocalDate
 
@@ -30,6 +33,7 @@ interface AppContainer {
     val notificationRepository: NotificationRepository
     val catalogRepository: CatalogRepository
     val bookingRepository: BookingRepository
+    val clientRepository: ClientRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -43,8 +47,11 @@ class DemoAppContainer(
 
     override val accessControl: AccessControl by lazy { AccessControl { authRepository.currentUser.value } }
 
+    /** Unfiltered project store; everything outside this container goes through [projectRepository]. */
+    private val projectStore by lazy { InMemoryProjectRepository() }
+
     override val projectRepository: ProjectRepository by lazy {
-        SecuredProjectRepository(InMemoryProjectRepository(), authRepository.currentUser, accessControl)
+        SecuredProjectRepository(projectStore, authRepository.currentUser, accessControl)
     }
 
     override val notificationRepository: NotificationRepository by lazy {
@@ -59,5 +66,11 @@ class DemoAppContainer(
         InMemoryBookingRepository(
             demoData.bookings, demoData.users, authRepository.currentUser, accessControl, notificationRepository, clock
         )
+    }
+
+    override val clientRepository: ClientRepository by lazy {
+        InMemoryClientRepository(demoData.clients, authRepository.currentUser, accessControl, clock) { clientId ->
+            projectStore.getProjects().first().count { it.clientId == clientId }
+        }
     }
 }

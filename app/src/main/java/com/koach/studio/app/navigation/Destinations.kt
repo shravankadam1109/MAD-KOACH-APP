@@ -44,6 +44,11 @@ object Routes {
 
     const val PORTFOLIO_DETAIL = "portfolio/{itemId}"
 
+    const val CLIENT_DETAIL = "clients/{clientId}"
+    const val CLIENT_FORM = "client-form?clientId={clientId}"
+
+    fun clientDetail(clientId: String) = "clients/$clientId"
+    fun clientForm(clientId: String? = null) = "client-form?clientId=${clientId.orEmpty()}"
     fun serviceDetail(serviceId: String) = "services/$serviceId"
     fun portfolioDetail(itemId: String) = "portfolio/$itemId"
     fun newBooking(serviceId: String? = null, packageId: String? = null) =
