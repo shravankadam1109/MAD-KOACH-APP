@@ -152,22 +152,3 @@ private fun MenuRow(entry: MenuEntry, onClick: () -> Unit) {
         }
     }
 }
-
-/** Temporary stand-in for destinations that are wired up in later commits. */
-@Composable
-fun PendingFeatureScreen(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val c = KoachTheme.colors
-    KoachBackground(modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .statusBarsPadding()
-                .padding(KoachTheme.spacing.gutter)
-        ) {
-            KoachSecondaryButton(text = "Back", onClick = onBack)
-            Spacer(Modifier.height(24.dp))
-            Text(title, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
-            Spacer(Modifier.height(6.dp))
-            Text("This section is being built.", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
-        }
-    }
-}

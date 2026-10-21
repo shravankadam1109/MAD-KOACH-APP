@@ -47,6 +47,8 @@ object Routes {
     const val CLIENT_DETAIL = "clients/{clientId}"
     const val CLIENT_FORM = "client-form?clientId={clientId}"
 
+    const val NEW_FEEDBACK = "feedback/new"
+
     const val CONVERSATION = "messages/{threadId}"
 
     fun conversation(threadId: String) = "messages/$threadId"

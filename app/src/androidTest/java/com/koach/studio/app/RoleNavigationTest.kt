@@ -3,7 +3,9 @@ package com.koach.studio.app
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
@@ -40,5 +42,16 @@ class RoleNavigationTest {
         rule.onNodeWithTag("tab_clients").assertIsDisplayed()
         rule.onNodeWithTag("tab_tasks").assertIsDisplayed()
         rule.onNodeWithTag("tab_explore").assertDoesNotExist()
+    }
+
+    @Test
+    fun client_paysInvoiceWithSimulatedPayment() {
+        rule.onNodeWithTag("demo_account_u-maya").performClick()
+        rule.onNodeWithTag("tab_account").performClick()
+        rule.onNodeWithTag("menu_payments").performScrollTo().performClick()
+        rule.onNodeWithTag("payments_list").performScrollToNode(hasTestTag("pay_pay-2"))
+        rule.onNodeWithTag("pay_pay-2").performClick()
+        rule.onNodeWithTag("confirm_simulated_payment").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasTestTag("pay_pay-2")).fetchSemanticsNodes().isEmpty() }
     }
 }

@@ -45,8 +45,6 @@ import com.koach.studio.clients.ui.ClientListViewModel
 import com.koach.studio.bookings.ui.BookingsViewModel
 import com.koach.studio.bookings.ui.NewBookingScreen
 import com.koach.studio.bookings.ui.NewBookingViewModel
-import com.koach.studio.app.menu.PendingFeatureScreen
-import com.koach.studio.app.menu.menuEntriesFor
 import com.koach.studio.app.navigation.Routes
 import com.koach.studio.app.navigation.TopLevelDestination
 import com.koach.studio.core.designsystem.components.KoachDivider
@@ -58,7 +56,14 @@ import com.koach.studio.documents.ui.AddDocumentScreen
 import com.koach.studio.documents.ui.AddDocumentViewModel
 import com.koach.studio.documents.ui.DocumentsScreen
 import com.koach.studio.documents.ui.DocumentsViewModel
+import com.koach.studio.feedback.FeedbackListScreen
+import com.koach.studio.feedback.FeedbackListViewModel
+import com.koach.studio.feedback.NewFeedbackScreen
+import com.koach.studio.feedback.NewFeedbackViewModel
 import com.koach.studio.home.AgencyHomeActions
+import com.koach.studio.payments.PaymentsScreen
+import com.koach.studio.payments.PaymentsViewModel
+import com.koach.studio.profile.ProfileScreen
 import com.koach.studio.messaging.ui.ConversationScreen
 import com.koach.studio.messaging.ui.ConversationViewModel
 import com.koach.studio.messaging.ui.ThreadListScreen
@@ -181,7 +186,6 @@ private fun KoachNavHost(
     val auth = appContainer().authRepository
     val scope = rememberCoroutineScope()
     val back: () -> Unit = { navController.popBackStack() }
-    val pendingTitles = menuEntriesFor(user).associate { it.route to it.title }
 
     NavHost(
         navController = navController,
@@ -395,13 +399,34 @@ private fun KoachNavHost(
             MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
         }
 
-        // Destinations below are filled in by their feature modules.
-        listOf(
-            Routes.PAYMENTS to "Payments",
-            Routes.FEEDBACK to "Feedback",
-            Routes.PROFILE to "Profile"
-        ).forEach { (route, title) ->
-            composable(route) { PendingFeatureScreen(pendingTitles[route] ?: title, onBack = back) }
+        composable(Routes.PAYMENTS) {
+            PaymentsScreen(
+                viewModel = koachViewModel { PaymentsViewModel(user, it.paymentRepository, it.clientRepository, it.clock) },
+                onBack = back
+            )
+        }
+        composable(Routes.FEEDBACK) {
+            FeedbackListScreen(
+                viewModel = koachViewModel { FeedbackListViewModel(user, it.feedbackRepository, it.people) },
+                onBack = back,
+                onNewFeedback = { navController.navigate(Routes.NEW_FEEDBACK) }
+            )
+        }
+        composable(Routes.NEW_FEEDBACK) {
+            NewFeedbackScreen(
+                viewModel = koachViewModel { NewFeedbackViewModel(it.feedbackRepository, it.projectRepository) },
+                onBack = back
+            )
+        }
+        composable(Routes.PROFILE) {
+            val container = appContainer()
+            ProfileScreen(
+                user = user,
+                clients = container.clientRepository,
+                isDemo = auth.isDemo,
+                onBack = back,
+                onSignOut = { scope.launch { auth.signOut() } }
+            )
         }
     }
 }
@@ -425,6 +450,7 @@ private fun NavHostController.openNotificationTarget(notification: AppNotificati
         target.startsWith("th-") -> navigate(Routes.conversation(target))
         target.startsWith("t-") -> navigate(Routes.taskForm(target))
         target.startsWith("bk-") -> navigate(Routes.BOOKINGS)
+        target.startsWith("fb-") -> navigate(Routes.FEEDBACK)
     }
 }
 

@@ -15,10 +15,14 @@ import com.koach.studio.documents.data.DemoDocumentStorage
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.DocumentStorage
 import com.koach.studio.documents.data.InMemoryDocumentRepository
+import com.koach.studio.feedback.FeedbackRepository
+import com.koach.studio.feedback.InMemoryFeedbackRepository
 import com.koach.studio.messaging.data.InMemoryMessageRepository
 import com.koach.studio.messaging.data.MessageRepository
 import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
+import com.koach.studio.payments.InMemoryPaymentRepository
+import com.koach.studio.payments.PaymentRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskRepository
@@ -49,6 +53,8 @@ interface AppContainer {
     val documentRepository: DocumentRepository
     val documentStorage: DocumentStorage
     val messageRepository: MessageRepository
+    val paymentRepository: PaymentRepository
+    val feedbackRepository: FeedbackRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -105,5 +111,13 @@ class DemoAppContainer(
         InMemoryMessageRepository(
             demoData.threads, demoData.messages, authRepository.currentUser, accessControl, notificationRepository, clock
         )
+    }
+
+    override val paymentRepository: PaymentRepository by lazy {
+        InMemoryPaymentRepository(demoData.payments, demoData.users, authRepository.currentUser, accessControl, notificationRepository, clock)
+    }
+
+    override val feedbackRepository: FeedbackRepository by lazy {
+        InMemoryFeedbackRepository(demoData.feedback, demoData.users, authRepository.currentUser, accessControl, notificationRepository, clock)
     }
 }
