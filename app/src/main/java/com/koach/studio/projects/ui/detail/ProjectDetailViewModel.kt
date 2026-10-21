@@ -1,0 +1,52 @@
+package com.koach.studio.projects.ui.detail
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.koach.studio.projects.data.ProjectRepository
+import com.koach.studio.projects.data.ProjectRepositoryProvider
+import com.koach.studio.projects.model.Project
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+
+data class ProjectDetailUiState(
+    val project: Project? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
+class ProjectDetailViewModel(
+    private val projectId: String,
+    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+) : ViewModel() {
+
+    val uiState: StateFlow<ProjectDetailUiState> = repository.getProjectById(projectId)
+        .map { project ->
+            if (project != null) {
+                ProjectDetailUiState(project = project, isLoading = false)
+            } else {
+                ProjectDetailUiState(isLoading = false, errorMessage = "Project not found")
+            }
+        }
+        .catch { error ->
+            emit(ProjectDetailUiState(isLoading = false, errorMessage = error.message ?: "Failed to load project"))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ProjectDetailUiState(isLoading = true)
+        )
+
+    class Factory(
+        private val projectId: String,
+        private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return ProjectDetailViewModel(projectId, repository) as T
+        }
+    }
+}
