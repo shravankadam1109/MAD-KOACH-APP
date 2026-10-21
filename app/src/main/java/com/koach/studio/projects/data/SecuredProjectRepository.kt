@@ -2,8 +2,10 @@ package com.koach.studio.projects.data
 
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.Permission
+import com.koach.studio.core.auth.PermissionDeniedException
 import com.koach.studio.core.model.User
 import com.koach.studio.projects.model.Deliverable
+import com.koach.studio.projects.model.DeliverableStatus
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
 import kotlinx.coroutines.flow.Flow
@@ -25,24 +27,51 @@ class SecuredProjectRepository(
 
     override fun getProjects(): Flow<List<Project>> =
         combine(delegate.getProjects(), currentUser) { projects, user ->
-            if (user == null) emptyList() else projects.filter { access.canAccessClient(it.clientId) }
+            if (user == null) emptyList()
+            else projects.filter { access.canAccessClient(it.clientId) }.map { it.visibleTo(user) }
         }
 
     override fun getProjectById(projectId: String): Flow<Project?> =
         combine(delegate.getProjectById(projectId), currentUser) { project, user ->
-            project?.takeIf { user != null && access.canAccessClient(it.clientId) }
+            project?.takeIf { user != null && access.canAccessClient(it.clientId) }?.visibleTo(user!!)
         }
+
+    /** Clients don't see work-in-progress drafts; those stay with the agency until shared for review. */
+    private fun Project.visibleTo(user: User): Project =
+        if (user.role.isAgency) this else copy(deliverables = deliverables.filter { it.status != DeliverableStatus.DRAFT })
 
     override suspend fun updateDeliverable(projectId: String, deliverable: Deliverable): Result<Unit> = guarded {
         access.require(Permission.EDIT_DELIVERABLES)
-        requireProject(projectId)
+        val existing = requireProject(projectId).deliverables.find { it.id == deliverable.id }
+            ?: throw IllegalArgumentException("Deliverable not found: ${deliverable.id}")
+        // Approval and change requests are the client's decisions, never set by the agency.
+        if (deliverable.status != existing.status && deliverable.status in CLIENT_DECISIONS) {
+            throw PermissionDeniedException("Only the client can approve a deliverable or request changes")
+        }
         delegate.updateDeliverable(projectId, deliverable)
     }
 
-    override suspend fun requestRevision(projectId: String, reason: String): Result<Unit> = guarded {
-        access.require(Permission.REQUEST_REVISIONS)
+    override suspend fun requestRevision(
+        projectId: String,
+        reason: String,
+        deliverableId: String?,
+        requestedBy: String?
+    ): Result<Unit> = guarded {
+        val user = access.require(Permission.REQUEST_REVISIONS)
         requireProject(projectId)
-        delegate.requestRevision(projectId, reason)
+        delegate.requestRevision(projectId, reason, deliverableId, requestedBy = user.id)
+    }
+
+    override suspend fun approveDeliverable(projectId: String, deliverableId: String): Result<Unit> = guarded {
+        access.require(Permission.REVIEW_DELIVERABLES)
+        requireProject(projectId)
+        delegate.approveDeliverable(projectId, deliverableId)
+    }
+
+    override suspend fun publishNewVersion(projectId: String, deliverableId: String, notes: String): Result<Unit> = guarded {
+        access.require(Permission.EDIT_DELIVERABLES)
+        requireProject(projectId)
+        delegate.publishNewVersion(projectId, deliverableId, notes)
     }
 
     override suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean) {
@@ -77,4 +106,8 @@ class SecuredProjectRepository(
         } catch (e: IllegalArgumentException) {
             Result.failure(e)
         }
+
+    private companion object {
+        val CLIENT_DECISIONS = setOf(DeliverableStatus.APPROVED, DeliverableStatus.REVISION_REQUESTED)
+    }
 }

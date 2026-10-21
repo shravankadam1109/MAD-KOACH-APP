@@ -68,7 +68,7 @@ fun ProjectDetailScreen(
     projectId: String,
     onNavigateBack: () -> Unit,
     onDeliverableClick: (deliverableId: String) -> Unit,
-    onRequestRevisionClick: () -> Unit,
+    onRequestRevisionClick: (deliverableId: String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProjectDetailViewModel = koachViewModel(key = "project-$projectId") {
         ProjectDetailViewModel(projectId, it.projectRepository, it.authRepository.currentUser.value, it.people)
@@ -222,7 +222,7 @@ fun ProjectDetailScreen(
                     item {
                         KoachSecondaryButton(
                             text = "Request a revision",
-                            onClick = onRequestRevisionClick,
+                            onClick = { onRequestRevisionClick(null) },
                             leadingIcon = Icons.Outlined.RateReview,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -240,9 +240,25 @@ fun ProjectDetailScreen(
                 items(project.deliverables, key = { it.id }) { deliverable ->
                     DeliverableRow(
                         deliverable = deliverable,
-                        onEditClick = { if (uiState.canEditDeliverables) onDeliverableClick(deliverable.id) },
-                        onDownloadClick = { viewModel.downloadDeliverable(deliverable.id) }
+                        onEditClick = if (uiState.canEditDeliverables) ({ onDeliverableClick(deliverable.id) }) else null,
+                        onDownloadClick = { viewModel.downloadDeliverable(deliverable.id) },
+                        onApprove = if (uiState.canReviewDeliverables) ({ viewModel.approveDeliverable(deliverable.id) }) else null,
+                        onRequestChanges = if (uiState.canRequestRevision) ({ onRequestRevisionClick(deliverable.id) }) else null
                     )
+                }
+
+                if (uiState.revisionHistory.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Revision history",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = c.textPrimary,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    items(uiState.revisionHistory, key = { it.revision.id }) { entry ->
+                        RevisionHistoryItem(entry, today)
+                    }
                 }
             }
         }
@@ -288,5 +304,27 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
             style = MaterialTheme.typography.labelMedium,
             color = if (overdue) Tone.Warning.color() else c.textTertiary
         )
+    }
+}
+
+@Composable
+private fun RevisionHistoryItem(entry: RevisionEntry, today: LocalDate) {
+    val c = KoachTheme.colors
+    KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth().testTag("revision_${entry.revision.id}")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            KoachAvatar(entry.requesterName.split(" ").take(2).joinToString("") { it.take(1) }, size = 32.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(entry.requesterName, style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
+                Text(
+                    listOfNotNull(entry.deliverableName, formatDate(entry.revision.requestedOn, today)).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary
+                )
+            }
+            StatusPill(if (entry.revision.resolved) "Resolved" else "Open", if (entry.revision.resolved) Tone.Success else Tone.Warning)
+        }
+        Spacer(Modifier.height(10.dp))
+        Text("\u201C${entry.revision.reason}\u201D", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
     }
 }

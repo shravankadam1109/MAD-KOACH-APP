@@ -42,7 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,18 +56,19 @@ fun RevisionRequestScreen(
     projectId: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RevisionRequestViewModel = koachViewModel(key = "revision-$projectId") {
-        RevisionRequestViewModel(projectId, it.projectRepository)
+    deliverableId: String? = null,
+    viewModel: RevisionRequestViewModel = koachViewModel(key = "revision-$projectId-$deliverableId") {
+        RevisionRequestViewModel(projectId, it.projectRepository, deliverableId)
     }
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val darkBackground = Color(0xFF0D0E11)
-    val cardBackground = Color(0xFF16181F)
-    val cardBorder = Color(0xFF272A36)
-    val brandGreen = Color(0xFF41BA00)
-    val mutedText = Color(0xFF9EA3B0)
-    val errorColor = Color(0xFFF87171)
+    val darkBackground = KoachTheme.colors.background
+    val cardBackground = KoachTheme.colors.surface
+    val cardBorder = KoachTheme.colors.outlineSubtle
+    val brandGreen = KoachTheme.colors.brand
+    val mutedText = KoachTheme.colors.textSecondary
+    val errorColor = KoachTheme.colors.danger
 
     val quickTags = listOf(
         "Color Grading Correction",
@@ -85,7 +86,7 @@ fun RevisionRequestScreen(
                 title = {
                     Text(
                         text = "Request Revision",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -98,7 +99,7 @@ fun RevisionRequestScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = KoachTheme.colors.textPrimary
                         )
                     }
                 },
@@ -156,7 +157,7 @@ fun RevisionRequestScreen(
                             ) {
                                 Text(
                                     text = project.title,
-                                    color = Color.White,
+                                    color = KoachTheme.colors.textPrimary,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -174,7 +175,7 @@ fun RevisionRequestScreen(
                     // Prompt Header
                     Text(
                         text = "Describe Requested Changes",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -194,14 +195,14 @@ fun RevisionRequestScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF20232E))
-                                    .border(1.dp, Color(0xFF2C3242), RoundedCornerShape(8.dp))
+                                    .background(KoachTheme.colors.surfaceHigh)
+                                    .border(1.dp, KoachTheme.colors.outline, RoundedCornerShape(8.dp))
                                     .clickable { viewModel.applyQuickTag(tag) }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Text(
                                     text = tag,
-                                    color = Color(0xFFD1D5DB),
+                                    color = KoachTheme.colors.textPrimary,
                                     fontSize = 12.sp
                                 )
                             }
@@ -235,10 +236,10 @@ fun RevisionRequestScreen(
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = KoachTheme.colors.textPrimary,
+                            unfocusedTextColor = KoachTheme.colors.textPrimary,
                             focusedBorderColor = brandGreen,
-                            unfocusedBorderColor = Color(0xFF272A36),
+                            unfocusedBorderColor = KoachTheme.colors.outline,
                             errorBorderColor = errorColor,
                             focusedContainerColor = cardBackground,
                             unfocusedContainerColor = cardBackground,
@@ -258,16 +259,16 @@ fun RevisionRequestScreen(
                             .testTag("submit_revision_button"),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFE53E3E),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFF222630),
-                            disabledContentColor = Color(0xFF555B6D)
+                            containerColor = KoachTheme.colors.brand,
+                            contentColor = KoachTheme.colors.onBrand,
+                            disabledContainerColor = KoachTheme.colors.surfaceHigh,
+                            disabledContentColor = KoachTheme.colors.textTertiary
                         )
                     ) {
                         if (uiState.isSubmitting) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                color = Color.White,
+                                color = KoachTheme.colors.onBrand,
                                 strokeWidth = 2.dp
                             )
                         } else {

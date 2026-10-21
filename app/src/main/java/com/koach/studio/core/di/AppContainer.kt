@@ -53,7 +53,7 @@ class DemoAppContainer(
     override val accessControl: AccessControl by lazy { AccessControl { authRepository.currentUser.value } }
 
     /** Unfiltered project store; everything outside this container goes through [projectRepository]. */
-    private val projectStore by lazy { InMemoryProjectRepository() }
+    private val projectStore by lazy { InMemoryProjectRepository(clock = clock) }
 
     override val projectRepository: ProjectRepository by lazy {
         SecuredProjectRepository(projectStore, authRepository.currentUser, accessControl)

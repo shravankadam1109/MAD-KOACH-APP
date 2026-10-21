@@ -18,12 +18,13 @@ object ProjectsDestinations {
     const val PROJECT_LIST = "projects"
     const val PROJECT_DETAIL = "projects/{projectId}"
     const val EDIT_DELIVERABLE = "projects/{projectId}/deliverables/{deliverableId}/edit"
-    const val REVISION_REQUEST = "projects/{projectId}/revision-request"
+    const val REVISION_REQUEST = "projects/{projectId}/revision-request?deliverableId={deliverableId}"
 
     fun projectDetail(projectId: String): String = "projects/$projectId"
     fun editDeliverable(projectId: String, deliverableId: String): String =
         "projects/$projectId/deliverables/$deliverableId/edit"
-    fun revisionRequest(projectId: String): String = "projects/$projectId/revision-request"
+    fun revisionRequest(projectId: String, deliverableId: String? = null): String =
+        "projects/$projectId/revision-request?deliverableId=${deliverableId.orEmpty()}"
 }
 
 @Composable
@@ -62,8 +63,8 @@ fun NavGraphBuilder.projectsGraph(navController: NavHostController) {
             onDeliverableClick = { deliverableId ->
                 navController.navigate(ProjectsDestinations.editDeliverable(projectId, deliverableId))
             },
-            onRequestRevisionClick = {
-                navController.navigate(ProjectsDestinations.revisionRequest(projectId))
+            onRequestRevisionClick = { deliverableId ->
+                navController.navigate(ProjectsDestinations.revisionRequest(projectId, deliverableId))
             }
         )
     }
@@ -86,11 +87,15 @@ fun NavGraphBuilder.projectsGraph(navController: NavHostController) {
 
     composable(
         route = ProjectsDestinations.REVISION_REQUEST,
-        arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        arguments = listOf(
+            navArgument("projectId") { type = NavType.StringType },
+            navArgument("deliverableId") { type = NavType.StringType; defaultValue = "" }
+        )
     ) { backStackEntry ->
         val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
         RevisionRequestScreen(
             projectId = projectId,
+            deliverableId = backStackEntry.arguments?.getString("deliverableId")?.ifBlank { null },
             onNavigateBack = { navController.popBackStack() }
         )
     }

@@ -23,7 +23,9 @@ data class RevisionRequestUiState(
 
 class RevisionRequestViewModel(
     private val projectId: String,
-    private val repository: ProjectRepository
+    private val repository: ProjectRepository,
+    /** When set, the request is about this deliverable rather than the whole project. */
+    private val deliverableId: String? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RevisionRequestUiState())
@@ -74,7 +76,7 @@ class RevisionRequestViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true) }
-            val result = repository.requestRevision(projectId, currentReason.trim())
+            val result = repository.requestRevision(projectId, currentReason.trim(), deliverableId)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                 onSuccess()

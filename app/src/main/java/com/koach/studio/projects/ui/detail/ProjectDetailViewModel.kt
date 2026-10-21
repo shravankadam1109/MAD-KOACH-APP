@@ -8,6 +8,7 @@ import com.koach.studio.core.auth.can
 import com.koach.studio.core.model.User
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
+import com.koach.studio.projects.model.Revision
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+data class RevisionEntry(val revision: Revision, val requesterName: String, val deliverableName: String?)
 
 data class ProjectDetailUiState(
     val project: Project? = null,
@@ -26,6 +29,10 @@ data class ProjectDetailUiState(
     val canEditDeliverables: Boolean = false,
     /** Client: ask for changes. */
     val canRequestRevision: Boolean = false,
+    /** Client: approve deliverables that are in review. */
+    val canReviewDeliverables: Boolean = false,
+    /** Revision history, newest first, with the requester's name resolved. */
+    val revisionHistory: List<RevisionEntry> = emptyList(),
     val team: List<User> = emptyList(),
     val actionMessage: String? = null
 )
@@ -49,7 +56,15 @@ class ProjectDetailViewModel(
                 canManage = user?.can(Permission.MANAGE_PROJECTS) == true,
                 canEditDeliverables = user?.can(Permission.EDIT_DELIVERABLES) == true,
                 canRequestRevision = user?.can(Permission.REQUEST_REVISIONS) == true && project.status != ProjectStatus.COMPLETED,
+                canReviewDeliverables = user?.can(Permission.REVIEW_DELIVERABLES) == true,
                 team = project.teamIds.mapNotNull { id -> people.find { it.id == id } },
+                revisionHistory = project.revisions.sortedByDescending { it.requestedOn }.map { revision ->
+                    RevisionEntry(
+                        revision = revision,
+                        requesterName = people.find { it.id == revision.requestedBy }?.name ?: "Client",
+                        deliverableName = project.deliverables.find { it.id == revision.deliverableId }?.name
+                    )
+                },
                 actionMessage = message
             )
         } else {
@@ -76,6 +91,13 @@ class ProjectDetailViewModel(
         viewModelScope.launch {
             repository.setMilestoneCompleted(projectId, milestoneId, completed)
                 .onFailure { actionMessage.value = it.message ?: "Couldn't update milestone" }
+        }
+    }
+
+    fun approveDeliverable(deliverableId: String) {
+        viewModelScope.launch {
+            actionMessage.value = repository.approveDeliverable(projectId, deliverableId)
+                .fold({ "Approved. Thanks for signing off!" }, { it.message ?: "Couldn't approve" })
         }
     }
 
