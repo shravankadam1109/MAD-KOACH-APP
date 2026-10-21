@@ -9,4 +9,5 @@ interface ProjectRepository {
     fun getProjectById(projectId: String): Flow<Project?>
     suspend fun updateDeliverable(projectId: String, deliverable: Deliverable): Result<Unit>
     suspend fun requestRevision(projectId: String, reason: String): Result<Unit>
+    suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean = false)
 }

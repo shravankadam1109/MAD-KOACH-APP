@@ -8,5 +8,7 @@ data class Deliverable(
     val size: String,
     val version: String,
     val notes: String = "",
-    val status: DeliverableStatus = DeliverableStatus.DRAFT
+    val status: DeliverableStatus = DeliverableStatus.DRAFT,
+    val downloadState: DownloadState = DownloadState.IDLE,
+    val downloadProgress: Float = 0f
 )
