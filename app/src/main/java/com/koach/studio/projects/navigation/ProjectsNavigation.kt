@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.koach.studio.projects.ui.detail.ProjectDetailScreen
+import com.koach.studio.projects.ui.edit.EditDeliverableScreen
 import com.koach.studio.projects.ui.list.ProjectListScreen
 
 object ProjectsDestinations {
@@ -56,6 +57,22 @@ fun ProjectsNavHost(
                 onRequestRevisionClick = {
                     navController.navigate(ProjectsDestinations.revisionRequest(projectId))
                 }
+            )
+        }
+
+        composable(
+            route = ProjectsDestinations.EDIT_DELIVERABLE,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType },
+                navArgument("deliverableId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
+            val deliverableId = backStackEntry.arguments?.getString("deliverableId").orEmpty()
+            EditDeliverableScreen(
+                projectId = projectId,
+                deliverableId = deliverableId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
