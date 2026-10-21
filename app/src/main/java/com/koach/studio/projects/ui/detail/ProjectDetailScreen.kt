@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +71,7 @@ fun ProjectDetailScreen(
     onDeliverableClick: (deliverableId: String) -> Unit,
     onRequestRevisionClick: (deliverableId: String?) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenDocuments: (() -> Unit)? = null,
     viewModel: ProjectDetailViewModel = koachViewModel(key = "project-$projectId") {
         ProjectDetailViewModel(projectId, it.projectRepository, it.authRepository.currentUser.value, it.people)
     }
@@ -214,6 +216,19 @@ fun ProjectDetailScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = c.textSecondary,
                             modifier = Modifier.testTag("project_detail_description")
+                        )
+                    }
+                }
+
+                if (onOpenDocuments != null) {
+                    item {
+                        KoachSecondaryButton(
+                            text = "Project documents",
+                            onClick = onOpenDocuments,
+                            leadingIcon = Icons.Outlined.FolderOpen,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("project_documents_button")
                         )
                     }
                 }

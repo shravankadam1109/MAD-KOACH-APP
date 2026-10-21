@@ -53,6 +53,10 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.appContainer
 import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.core.model.User
+import com.koach.studio.documents.ui.AddDocumentScreen
+import com.koach.studio.documents.ui.AddDocumentViewModel
+import com.koach.studio.documents.ui.DocumentsScreen
+import com.koach.studio.documents.ui.DocumentsViewModel
 import com.koach.studio.home.AgencyHomeActions
 import com.koach.studio.home.AgencyHomeScreen
 import com.koach.studio.home.AgencyHomeViewModel
@@ -167,7 +171,7 @@ private fun KoachNavHost(
         popEnterTransition = { fadeIn(tween(220)) },
         popExitTransition = { fadeOut(tween(160)) + slideOutHorizontally(tween(220)) { it / 10 } }
     ) {
-        projectsGraph(navController)
+        projectsGraph(navController, onOpenDocuments = { id -> navController.navigate(Routes.documents(id)) })
 
         composable(Routes.HOME) {
             ClientHomeScreen(
@@ -281,6 +285,25 @@ private fun KoachNavHost(
                 onBack = back
             )
         }
+        composable(Routes.DOCUMENTS) { DocumentsRoute(user, null, navController) }
+        composable(
+            Routes.PROJECT_DOCUMENTS,
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType; defaultValue = "" })
+        ) { entry ->
+            DocumentsRoute(user, entry.arguments?.getString("projectId").orEmpty().ifBlank { null }, navController)
+        }
+        composable(
+            Routes.ADD_DOCUMENT,
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType; defaultValue = "" })
+        ) { entry ->
+            val projectId = entry.arguments?.getString("projectId").orEmpty().ifBlank { null }
+            AddDocumentScreen(
+                viewModel = koachViewModel(key = "add-doc-$projectId") {
+                    AddDocumentViewModel(user, it.documentRepository, it.projectRepository, projectId)
+                },
+                onBack = back
+            )
+        }
         composable(Routes.CLIENTS) {
             ClientListScreen(
                 viewModel = koachViewModel { ClientListViewModel(user, it.clientRepository, it.projectRepository) },
@@ -328,7 +351,6 @@ private fun KoachNavHost(
         listOf(
             Routes.MESSAGES to "Messages",
             Routes.NOTIFICATIONS to "Notifications",
-            Routes.DOCUMENTS to "Documents",
             Routes.PAYMENTS to "Payments",
             Routes.FEEDBACK to "Feedback",
             Routes.PROFILE to "Profile"
@@ -336,6 +358,17 @@ private fun KoachNavHost(
             composable(route) { PendingFeatureScreen(pendingTitles[route] ?: title, onBack = back) }
         }
     }
+}
+
+@Composable
+private fun DocumentsRoute(user: User, projectId: String?, navController: NavHostController) {
+    DocumentsScreen(
+        viewModel = koachViewModel(key = "documents-$projectId") {
+            DocumentsViewModel(user, it.documentRepository, it.projectRepository, it.people, it.documentStorage, projectId)
+        },
+        onBack = { navController.popBackStack() },
+        onAddDocument = { navController.navigate(Routes.addDocument(projectId)) }
+    )
 }
 
 /** Switch tabs without growing the back stack, restoring each tab's state. */

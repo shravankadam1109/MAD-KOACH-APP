@@ -47,6 +47,12 @@ object Routes {
     const val CLIENT_DETAIL = "clients/{clientId}"
     const val CLIENT_FORM = "client-form?clientId={clientId}"
 
+    const val PROJECT_DOCUMENTS = "documents?projectId={projectId}"
+    const val ADD_DOCUMENT = "documents/new?projectId={projectId}"
+
+    fun documents(projectId: String? = null) = "documents?projectId=${projectId.orEmpty()}"
+    fun addDocument(projectId: String? = null) = "documents/new?projectId=${projectId.orEmpty()}"
+
     const val TASK_FORM = "task-form?taskId={taskId}&projectId={projectId}"
 
     fun taskForm(taskId: String? = null, projectId: String? = null) =

@@ -43,7 +43,11 @@ fun ProjectsNavHost(
 }
 
 /** Project destinations, added to whichever NavHost hosts them (the app shell or [ProjectsNavHost]). */
-fun NavGraphBuilder.projectsGraph(navController: NavHostController) {
+fun NavGraphBuilder.projectsGraph(
+    navController: NavHostController,
+    /** Opens a project's documents; supplied by the app shell, which owns that route. */
+    onOpenDocuments: ((projectId: String) -> Unit)? = null
+) {
     composable(ProjectsDestinations.PROJECT_LIST) {
         ProjectListScreen(
             onProjectClick = { projectId ->
@@ -63,6 +67,7 @@ fun NavGraphBuilder.projectsGraph(navController: NavHostController) {
             onDeliverableClick = { deliverableId ->
                 navController.navigate(ProjectsDestinations.editDeliverable(projectId, deliverableId))
             },
+            onOpenDocuments = onOpenDocuments?.let { open -> { open(projectId) } },
             onRequestRevisionClick = { deliverableId ->
                 navController.navigate(ProjectsDestinations.revisionRequest(projectId, deliverableId))
             }

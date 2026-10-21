@@ -11,6 +11,10 @@ import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
 import com.koach.studio.core.data.DemoData
 import com.koach.studio.core.model.User
+import com.koach.studio.documents.data.DemoDocumentStorage
+import com.koach.studio.documents.data.DocumentRepository
+import com.koach.studio.documents.data.DocumentStorage
+import com.koach.studio.documents.data.InMemoryDocumentRepository
 import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
@@ -40,6 +44,8 @@ interface AppContainer {
     val bookingRepository: BookingRepository
     val clientRepository: ClientRepository
     val taskRepository: TaskRepository
+    val documentRepository: DocumentRepository
+    val documentStorage: DocumentStorage
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -85,4 +91,10 @@ class DemoAppContainer(
     override val taskRepository: TaskRepository by lazy {
         InMemoryTaskRepository(demoData.tasks, authRepository.currentUser, accessControl, clock)
     }
+
+    override val documentRepository: DocumentRepository by lazy {
+        InMemoryDocumentRepository(demoData.documents, authRepository.currentUser, accessControl, clock)
+    }
+
+    override val documentStorage: DocumentStorage = DemoDocumentStorage
 }
