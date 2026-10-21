@@ -1,10 +1,8 @@
 package com.koach.studio.projects.ui.edit
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.ProjectRepositoryProvider
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,12 +26,21 @@ data class EditDeliverableUiState(
 ) {
     val isFormValid: Boolean
         get() = nameError == null && notesError == null && name.isNotBlank()
+
+    /**
+     * Statuses the agency may pick. Approved and Revision Requested are client
+     * decisions; they're only listed when already current so the chip still shows.
+     */
+    val availableStatuses: List<DeliverableStatus>
+        get() = DeliverableStatus.entries.filter {
+            it == DeliverableStatus.DRAFT || it == DeliverableStatus.IN_REVIEW || it == initialDeliverable?.status
+        }
 }
 
 class EditDeliverableViewModel(
     private val projectId: String,
     private val deliverableId: String,
-    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditDeliverableUiState())
@@ -84,6 +91,27 @@ class EditDeliverableViewModel(
         _uiState.update { it.copy(status = newStatus) }
     }
 
+    /** Shares the next version with the client for review, keeping any edits to the notes. */
+    fun publishNewVersion(onSuccess: () -> Unit) {
+        val notesErr = validateNotes(_uiState.value.notes)
+        if (notesErr != null) {
+            _uiState.update { it.copy(notesError = notesErr) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            val result = repository.publishNewVersion(projectId, deliverableId, _uiState.value.notes)
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                onSuccess()
+            } else {
+                _uiState.update {
+                    it.copy(isSaving = false, errorMessage = result.exceptionOrNull()?.message ?: "Couldn't share the new version")
+                }
+            }
+        }
+    }
+
     fun validateName(name: String): String? {
         val trimmed = name.trim()
         return when {
@@ -132,17 +160,6 @@ class EditDeliverableViewModel(
                     )
                 }
             }
-        }
-    }
-
-    class Factory(
-        private val projectId: String,
-        private val deliverableId: String,
-        private val repository: ProjectRepository = ProjectRepositoryProvider.repository
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return EditDeliverableViewModel(projectId, deliverableId, repository) as T
         }
     }
 }

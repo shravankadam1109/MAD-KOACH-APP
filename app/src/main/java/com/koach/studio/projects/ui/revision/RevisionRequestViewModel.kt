@@ -1,10 +1,8 @@
 package com.koach.studio.projects.ui.revision
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.ProjectRepositoryProvider
 import com.koach.studio.projects.model.Project
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +23,9 @@ data class RevisionRequestUiState(
 
 class RevisionRequestViewModel(
     private val projectId: String,
-    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    private val repository: ProjectRepository,
+    /** When set, the request is about this deliverable rather than the whole project. */
+    private val deliverableId: String? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RevisionRequestUiState())
@@ -76,7 +76,7 @@ class RevisionRequestViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true) }
-            val result = repository.requestRevision(projectId, currentReason.trim())
+            val result = repository.requestRevision(projectId, currentReason.trim(), deliverableId)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                 onSuccess()
@@ -88,16 +88,6 @@ class RevisionRequestViewModel(
                     )
                 }
             }
-        }
-    }
-
-    class Factory(
-        private val projectId: String,
-        private val repository: ProjectRepository = ProjectRepositoryProvider.repository
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return RevisionRequestViewModel(projectId, repository) as T
         }
     }
 }

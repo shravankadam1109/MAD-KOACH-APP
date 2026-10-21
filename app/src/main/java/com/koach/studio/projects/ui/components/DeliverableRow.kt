@@ -1,161 +1,137 @@
 package com.koach.studio.projects.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.koach.studio.core.designsystem.components.IconTile
+import com.koach.studio.core.designsystem.components.KoachCard
+import com.koach.studio.core.designsystem.components.KoachPrimaryButton
+import com.koach.studio.core.designsystem.components.KoachSecondaryButton
+import com.koach.studio.core.designsystem.components.StatusPill
+import com.koach.studio.core.designsystem.components.Tone
+import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
+import com.koach.studio.projects.ui.tone
 
-@Composable
-fun DeliverableRow(
-    deliverable: Deliverable,
-    onEditClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    onDownloadClick: (() -> Unit)? = null
-) {
-    val cardBg = Color(0xFF16181F)
-    val cardBorder = Color(0xFF272A36)
-    val textPrimary = Color.White
-    val textSecondary = Color(0xFF9EA3B0)
-
-    val icon: ImageVector = when {
-        deliverable.type.contains("Video", ignoreCase = true) -> Icons.Default.Videocam
-        deliverable.type.contains("Audio", ignoreCase = true) || deliverable.type.contains("Stem", ignoreCase = true) -> Icons.Default.Audiotrack
-        deliverable.type.contains("Archive", ignoreCase = true) || deliverable.type.contains("Zip", ignoreCase = true) -> Icons.Default.FolderZip
+private val Deliverable.icon: ImageVector
+    get() = when {
+        type.contains("Video", ignoreCase = true) -> Icons.Default.Videocam
+        type.contains("Audio", ignoreCase = true) || type.contains("Stem", ignoreCase = true) -> Icons.Default.Audiotrack
+        type.contains("Archive", ignoreCase = true) || type.contains("Zip", ignoreCase = true) -> Icons.Default.FolderZip
         else -> Icons.Default.Description
     }
 
-    Card(
+/**
+ * One deliverable with its version, size, status and download control.
+ * Actions are role-driven: pass [onEditClick] for agency users, and
+ * [onApprove] / [onRequestChanges] for the client while it is in review.
+ */
+@Composable
+fun DeliverableRow(
+    deliverable: Deliverable,
+    onEditClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    onDownloadClick: (() -> Unit)? = null,
+    onApprove: (() -> Unit)? = null,
+    onRequestChanges: (() -> Unit)? = null
+) {
+    val c = KoachTheme.colors
+    val inClientReview = deliverable.status == DeliverableStatus.IN_REVIEW && (onApprove != null || onRequestChanges != null)
+
+    KoachCard(
+        highlighted = inClientReview,
+        onClick = onEditClick,
+        contentPadding = PaddingValues(16.dp),
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onEditClick)
-            .testTag("deliverable_row_${deliverable.id}"),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(cardBorder))
+            .testTag("deliverable_row_${deliverable.id}")
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Icon Box
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF212530)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = deliverable.type,
-                        tint = Color(0xFF41BA00),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Name and metadata
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = deliverable.name,
-                        color = textPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "${deliverable.type} • ${deliverable.size} • ${deliverable.version}",
-                        color = textSecondary,
-                        fontSize = 12.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Download Button
-                if (onDownloadClick != null) {
-                    DeliverableDownloadButton(
-                        deliverable = deliverable,
-                        onDownloadClick = onDownloadClick
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-
-                // Edit Button
-                IconButton(
-                    onClick = onEditClick,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .testTag("edit_deliverable_button_${deliverable.id}")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit deliverable",
-                        tint = Color(0xFF9EA3B0),
-                        modifier = Modifier.size(18.dp)
-                    )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(deliverable.icon, tone = deliverable.status.tone.takeIf { it != Tone.Neutral } ?: Tone.Brand, size = 42.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(deliverable.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${deliverable.version} · ${deliverable.type} · ${deliverable.size}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (onDownloadClick != null) {
+                Spacer(Modifier.width(8.dp))
+                DeliverableDownloadButton(deliverable = deliverable, onDownloadClick = onDownloadClick)
+            }
+            if (onEditClick != null) {
+                IconButton(onClick = onEditClick, modifier = Modifier.testTag("edit_deliverable_button_${deliverable.id}")) {
+                    Icon(Icons.Outlined.Edit, contentDescription = "Edit ${deliverable.name}", tint = c.textSecondary, modifier = Modifier.size(20.dp))
                 }
             }
+        }
 
-            // Notes and Status Row
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DeliverableStatusBadge(status = deliverable.status)
+        if (deliverable.notes.isNotBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Text(deliverable.notes, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
 
-                if (deliverable.notes.isNotBlank()) {
-                    Text(
-                        text = deliverable.notes,
-                        color = textSecondary,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(start = 8.dp)
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            DeliverableStatusBadge(deliverable.status)
+            if (deliverable.previousVersions.isNotEmpty()) {
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "Earlier: ${deliverable.previousVersions.joinToString(", ")}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = c.textTertiary
+                )
+            }
+        }
+
+        if (inClientReview) {
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (onRequestChanges != null) {
+                    KoachSecondaryButton(
+                        text = "Request changes",
+                        onClick = onRequestChanges,
+                        leadingIcon = Icons.Outlined.RateReview,
+                        modifier = Modifier.weight(1f).testTag("request_changes_${deliverable.id}")
+                    )
+                }
+                if (onApprove != null) {
+                    KoachPrimaryButton(
+                        text = "Approve",
+                        onClick = onApprove,
+                        leadingIcon = Icons.Outlined.CheckCircle,
+                        modifier = Modifier.weight(1f).testTag("approve_${deliverable.id}")
                     )
                 }
             }
@@ -164,29 +140,6 @@ fun DeliverableRow(
 }
 
 @Composable
-fun DeliverableStatusBadge(
-    status: DeliverableStatus,
-    modifier: Modifier = Modifier
-) {
-    val (bgColor, textColor, borderColor) = when (status) {
-        DeliverableStatus.DRAFT -> Triple(Color(0xFF1E222B), Color(0xFF9EA3B0), Color(0xFF333847))
-        DeliverableStatus.IN_REVIEW -> Triple(Color(0xFF2E2614), Color(0xFFFBBF24), Color(0xFF534320))
-        DeliverableStatus.APPROVED -> Triple(Color(0xFF122E1A), Color(0xFF41BA00), Color(0xFF1E5229))
-        DeliverableStatus.REVISION_REQUESTED -> Triple(Color(0xFF301618), Color(0xFFF87171), Color(0xFF5C262A))
-    }
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-    ) {
-        Text(
-            text = status.displayName,
-            color = textColor,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
+fun DeliverableStatusBadge(status: DeliverableStatus, modifier: Modifier = Modifier) {
+    StatusPill(status.displayName, status.tone, modifier = modifier)
 }

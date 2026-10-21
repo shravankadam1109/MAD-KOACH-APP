@@ -42,12 +42,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.DeliverableStatus
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -57,18 +57,18 @@ fun EditDeliverableScreen(
     deliverableId: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: EditDeliverableViewModel = viewModel(
-        factory = EditDeliverableViewModel.Factory(projectId, deliverableId)
-    )
+    viewModel: EditDeliverableViewModel = koachViewModel(key = "deliverable-$projectId-$deliverableId") {
+        EditDeliverableViewModel(projectId, deliverableId, it.projectRepository)
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val darkBackground = Color(0xFF0D0E11)
-    val cardBackground = Color(0xFF16181F)
-    val brandGreen = Color(0xFF41BA00)
-    val mutedText = Color(0xFF9EA3B0)
-    val errorColor = Color(0xFFF87171)
+    val darkBackground = KoachTheme.colors.background
+    val cardBackground = KoachTheme.colors.surface
+    val brandGreen = KoachTheme.colors.brand
+    val mutedText = KoachTheme.colors.textSecondary
+    val errorColor = KoachTheme.colors.danger
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -79,7 +79,7 @@ fun EditDeliverableScreen(
                 title = {
                     Text(
                         text = "Edit Deliverable",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -92,7 +92,7 @@ fun EditDeliverableScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = KoachTheme.colors.textPrimary
                         )
                     }
                 },
@@ -137,7 +137,7 @@ fun EditDeliverableScreen(
                     // Deliverable Name Input with Validation
                     Text(
                         text = "File Name",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -162,10 +162,10 @@ fun EditDeliverableScreen(
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = KoachTheme.colors.textPrimary,
+                            unfocusedTextColor = KoachTheme.colors.textPrimary,
                             focusedBorderColor = brandGreen,
-                            unfocusedBorderColor = Color(0xFF272A36),
+                            unfocusedBorderColor = KoachTheme.colors.outline,
                             errorBorderColor = errorColor,
                             focusedContainerColor = cardBackground,
                             unfocusedContainerColor = cardBackground,
@@ -176,7 +176,7 @@ fun EditDeliverableScreen(
                     // Deliverable Status Selection
                     Text(
                         text = "Delivery Status",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -185,7 +185,7 @@ fun EditDeliverableScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        DeliverableStatus.entries.forEach { status ->
+                        uiState.availableStatuses.forEach { status ->
                             FilterChip(
                                 selected = uiState.status == status,
                                 onClick = { viewModel.onStatusChanged(status) },
@@ -193,9 +193,9 @@ fun EditDeliverableScreen(
                                 modifier = Modifier.testTag("status_chip_${status.name}"),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = brandGreen,
-                                    selectedLabelColor = Color.Black,
+                                    selectedLabelColor = KoachTheme.colors.onBrand,
                                     containerColor = cardBackground,
-                                    labelColor = Color.White
+                                    labelColor = KoachTheme.colors.textPrimary
                                 )
                             )
                         }
@@ -204,7 +204,7 @@ fun EditDeliverableScreen(
                     // Notes Input with Validation
                     Text(
                         text = "Review Notes & Specifications",
-                        color = Color.White,
+                        color = KoachTheme.colors.textPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -229,10 +229,10 @@ fun EditDeliverableScreen(
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = KoachTheme.colors.textPrimary,
+                            unfocusedTextColor = KoachTheme.colors.textPrimary,
                             focusedBorderColor = brandGreen,
-                            unfocusedBorderColor = Color(0xFF272A36),
+                            unfocusedBorderColor = KoachTheme.colors.outline,
                             errorBorderColor = errorColor,
                             focusedContainerColor = cardBackground,
                             unfocusedContainerColor = cardBackground,
@@ -253,15 +253,15 @@ fun EditDeliverableScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = brandGreen,
-                            contentColor = Color.Black,
-                            disabledContainerColor = Color(0xFF222630),
-                            disabledContentColor = Color(0xFF555B6D)
+                            contentColor = KoachTheme.colors.onBrand,
+                            disabledContainerColor = KoachTheme.colors.surfaceHigh,
+                            disabledContentColor = KoachTheme.colors.textTertiary
                         )
                     ) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                color = Color.Black,
+                                color = KoachTheme.colors.onBrand,
                                 strokeWidth = 2.dp
                             )
                         } else {
@@ -277,6 +277,22 @@ fun EditDeliverableScreen(
                                 fontSize = 15.sp
                             )
                         }
+                    }
+
+                    uiState.initialDeliverable?.let { current ->
+                        com.koach.studio.core.designsystem.components.KoachSecondaryButton(
+                            text = "Share as ${current.nextVersion()} for client review",
+                            onClick = { viewModel.publishNewVersion(onSuccess = onNavigateBack) },
+                            enabled = !uiState.isSaving,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("publish_version_button")
+                        )
+                        Text(
+                            text = "Approval and change requests come from the client, so those statuses can't be set here.",
+                            color = mutedText,
+                            fontSize = 12.sp
+                        )
                     }
                 }
             }

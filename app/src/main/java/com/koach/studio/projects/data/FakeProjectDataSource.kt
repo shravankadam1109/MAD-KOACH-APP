@@ -2,9 +2,12 @@ package com.koach.studio.projects.data
 
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
+import com.koach.studio.projects.model.Milestone
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
+import com.koach.studio.projects.model.Revision
 import com.koach.studio.projects.model.ServiceType
+import java.time.LocalDate
 
 object FakeProjectDataSource {
 
@@ -17,6 +20,14 @@ object FakeProjectDataSource {
             status = ProjectStatus.IN_PROGRESS,
             dueDate = "2026-11-20",
             description = "Full music video production including neon-lit night shoots, gimbal sequences, and multi-cam stage performances.",
+            clientId = "cl-aetheria",
+            teamIds = listOf("u-rohan", "u-zoya", "u-isha"),
+            milestones = listOf(
+                Milestone("ms-11", "Creative treatment approved", LocalDate.of(2026, 9, 28), completed = true),
+                Milestone("ms-12", "Night shoot wrapped", LocalDate.of(2026, 10, 12), completed = true),
+                Milestone("ms-13", "Rough cut review", LocalDate.of(2026, 10, 30)),
+                Milestone("ms-14", "Colour grade and final delivery", LocalDate.of(2026, 11, 20))
+            ),
             deliverables = listOf(
                 Deliverable(
                     id = "del-101",
@@ -58,6 +69,14 @@ object FakeProjectDataSource {
             status = ProjectStatus.IN_REVIEW,
             dueDate = "2026-11-08",
             description = "Studio recording sessions for 4-track acoustic EP. Multi-mic acoustic guitar setups, vocal captures, and cello overdubs.",
+            clientId = "cl-riverbed",
+            teamIds = listOf("u-zoya", "u-isha"),
+            milestones = listOf(
+                Milestone("ms-21", "Tracking sessions", LocalDate.of(2026, 10, 3), completed = true),
+                Milestone("ms-22", "Mixdown", LocalDate.of(2026, 10, 18), completed = true),
+                Milestone("ms-23", "Client listening review", LocalDate.of(2026, 10, 29)),
+                Milestone("ms-24", "Mastered EP delivery", LocalDate.of(2026, 11, 8))
+            ),
             deliverables = listOf(
                 Deliverable(
                     id = "del-201",
@@ -99,6 +118,24 @@ object FakeProjectDataSource {
             status = ProjectStatus.REVISION_REQUESTED,
             dueDate = "2026-10-31",
             description = "High-energy commercial cut featuring rhythmic motion graphics, kinetic typography, dynamic sound design, and color grading.",
+            clientId = "cl-apex",
+            teamIds = listOf("u-zoya", "u-rohan"),
+            milestones = listOf(
+                Milestone("ms-31", "Footage ingest and selects", LocalDate.of(2026, 10, 6), completed = true),
+                Milestone("ms-32", "30s cut v1", LocalDate.of(2026, 10, 14), completed = true),
+                Milestone("ms-33", "Revisions round", LocalDate.of(2026, 10, 26)),
+                Milestone("ms-34", "Final masters and social cutdowns", LocalDate.of(2026, 10, 31))
+            ),
+            revisions = listOf(
+                Revision(
+                    id = "rev-301",
+                    projectId = "proj-3",
+                    deliverableId = "del-301",
+                    reason = "Open on the sprinter close-up and tighten the logo end card to 2 seconds.",
+                    requestedBy = "u-dev",
+                    requestedOn = LocalDate.of(2026, 10, 19)
+                )
+            ),
             deliverables = listOf(
                 Deliverable(
                     id = "del-301",
@@ -140,6 +177,13 @@ object FakeProjectDataSource {
             status = ProjectStatus.COMPLETED,
             dueDate = "2026-10-15",
             description = "3-camera live conference capture with teleprompter feed and direct digital board audio recording.",
+            clientId = "cl-nexus",
+            teamIds = listOf("u-rohan", "u-isha"),
+            milestones = listOf(
+                Milestone("ms-41", "Run of show locked", LocalDate.of(2026, 9, 20), completed = true),
+                Milestone("ms-42", "Live multi-cam production", LocalDate.of(2026, 10, 2), completed = true),
+                Milestone("ms-43", "Highlights edit delivered", LocalDate.of(2026, 10, 15), completed = true)
+            ),
             deliverables = listOf(
                 Deliverable(
                     id = "del-401",

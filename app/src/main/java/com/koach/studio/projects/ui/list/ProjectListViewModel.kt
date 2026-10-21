@@ -3,7 +3,6 @@ package com.koach.studio.projects.ui.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.ProjectRepositoryProvider
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ServiceType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +19,7 @@ data class ProjectListUiState(
 )
 
 class ProjectListViewModel(
-    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     private val _selectedFilter = MutableStateFlow<ServiceType?>(null)

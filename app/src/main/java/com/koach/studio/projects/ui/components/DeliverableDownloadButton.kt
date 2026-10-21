@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,8 +37,8 @@ fun DeliverableDownloadButton(
     onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val brandGreen = Color(0xFF41BA00)
-    val errorColor = Color(0xFFF87171)
+    val brandGreen = KoachTheme.colors.brand
+    val errorColor = KoachTheme.colors.danger
 
     when (deliverable.downloadState) {
         DownloadState.IDLE -> {
@@ -47,7 +47,7 @@ fun DeliverableDownloadButton(
                 modifier = modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF20242E))
+                    .background(KoachTheme.colors.surfaceHigh)
                     .testTag("download_button_${deliverable.id}")
             ) {
                 Icon(
@@ -64,7 +64,7 @@ fun DeliverableDownloadButton(
                 horizontalArrangement = Arrangement.Center,
                 modifier = modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1E261E))
+                    .background(KoachTheme.colors.brandContainer)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .testTag("downloading_progress_${deliverable.id}")
             ) {
@@ -73,7 +73,7 @@ fun DeliverableDownloadButton(
                     modifier = Modifier.size(14.dp),
                     color = brandGreen,
                     strokeWidth = 2.dp,
-                    trackColor = Color(0xFF2A3D2A)
+                    trackColor = KoachTheme.colors.brandOutline
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 val percentage = (deliverable.downloadProgress * 100).toInt()
@@ -91,8 +91,8 @@ fun DeliverableDownloadButton(
                 horizontalArrangement = Arrangement.Center,
                 modifier = modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF132B18))
-                    .border(1.dp, Color(0xFF1E5229), RoundedCornerShape(8.dp))
+                    .background(KoachTheme.colors.brandContainer)
+                    .border(1.dp, KoachTheme.colors.brandOutline, RoundedCornerShape(8.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .testTag("download_done_${deliverable.id}")
             ) {
@@ -117,8 +117,8 @@ fun DeliverableDownloadButton(
                 horizontalArrangement = Arrangement.Center,
                 modifier = modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF331A1C))
-                    .border(1.dp, Color(0xFF5C262A), RoundedCornerShape(8.dp))
+                    .background(KoachTheme.colors.danger.copy(alpha = 0.12f))
+                    .border(1.dp, KoachTheme.colors.danger.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                     .clickable(onClick = onDownloadClick)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .testTag("download_retry_button_${deliverable.id}")
