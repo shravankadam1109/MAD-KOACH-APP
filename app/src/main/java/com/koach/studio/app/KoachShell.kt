@@ -47,6 +47,12 @@ import com.koach.studio.home.ClientHomeActions
 import com.koach.studio.home.ClientHomeScreen
 import com.koach.studio.home.ClientHomeViewModel
 import com.koach.studio.projects.navigation.ProjectsDestinations
+import com.koach.studio.services.ExploreScreen
+import com.koach.studio.services.ServiceDetailScreen
+import com.koach.studio.services.ServiceDetailViewModel
+import com.koach.studio.services.ServicesViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.koach.studio.projects.navigation.projectsGraph
 import kotlinx.coroutines.launch
 
@@ -159,6 +165,31 @@ private fun KoachNavHost(
             )
         }
 
+        composable(Routes.EXPLORE) {
+            ExploreScreen(
+                servicesViewModel = koachViewModel { ServicesViewModel(it.catalogRepository) },
+                onOpenService = { id -> navController.navigate(Routes.serviceDetail(id)) }
+            )
+        }
+        composable(
+            Routes.SERVICE_DETAIL,
+            arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
+        ) { entry ->
+            val serviceId = entry.arguments?.getString("serviceId").orEmpty()
+            ServiceDetailScreen(
+                viewModel = koachViewModel(key = "service-$serviceId") { ServiceDetailViewModel(serviceId, it.catalogRepository) },
+                onBack = back,
+                onEnquire = { sid, pid -> navController.navigate(Routes.newBooking(sid, pid)) }
+            )
+        }
+        composable(
+            Routes.NEW_BOOKING,
+            arguments = listOf(
+                navArgument("serviceId") { type = NavType.StringType; defaultValue = "" },
+                navArgument("packageId") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { PendingFeatureScreen("Book a service", onBack = back) }
+
         composable(Routes.ACCOUNT) {
             MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
         }
@@ -169,7 +200,6 @@ private fun KoachNavHost(
         // Destinations below are filled in by their feature modules.
         listOf(
             Routes.AGENCY_HOME to "Studio",
-            Routes.EXPLORE to "Explore",
             Routes.CLIENTS to "Clients",
             Routes.TASKS to "Tasks",
             Routes.MESSAGES to "Messages",

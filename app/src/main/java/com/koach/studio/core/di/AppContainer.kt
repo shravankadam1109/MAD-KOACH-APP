@@ -1,5 +1,7 @@
 package com.koach.studio.core.di
 
+import com.koach.studio.catalog.data.CatalogRepository
+import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
@@ -24,6 +26,7 @@ interface AppContainer {
     val accessControl: AccessControl
     val projectRepository: ProjectRepository
     val notificationRepository: NotificationRepository
+    val catalogRepository: CatalogRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -43,5 +46,9 @@ class DemoAppContainer(
 
     override val notificationRepository: NotificationRepository by lazy {
         InMemoryNotificationRepository(demoData.notifications, authRepository.currentUser, accessControl)
+    }
+
+    override val catalogRepository: CatalogRepository by lazy {
+        InMemoryCatalogRepository(demoData.services, demoData.portfolio)
     }
 }

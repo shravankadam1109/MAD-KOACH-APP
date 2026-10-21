@@ -39,6 +39,12 @@ object Routes {
     const val FEEDBACK = "feedback"
     const val NOTIFICATIONS = "notifications"
     const val PROFILE = "profile"
+    const val SERVICE_DETAIL = "services/{serviceId}"
+    const val NEW_BOOKING = "bookings/new?serviceId={serviceId}&packageId={packageId}"
+
+    fun serviceDetail(serviceId: String) = "services/$serviceId"
+    fun newBooking(serviceId: String? = null, packageId: String? = null) =
+        "bookings/new?serviceId=${serviceId.orEmpty()}&packageId=${packageId.orEmpty()}"
 }
 
 enum class TopLevelDestination(
