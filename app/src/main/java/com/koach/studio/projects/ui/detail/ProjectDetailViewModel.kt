@@ -1,10 +1,8 @@
 package com.koach.studio.projects.ui.detail
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.ProjectRepositoryProvider
 import com.koach.studio.projects.model.Project
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +19,7 @@ data class ProjectDetailUiState(
 
 class ProjectDetailViewModel(
     private val projectId: String,
-    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<ProjectDetailUiState> = repository.getProjectById(projectId)
@@ -44,16 +42,6 @@ class ProjectDetailViewModel(
     fun downloadDeliverable(deliverableId: String, simulateFailure: Boolean = false) {
         viewModelScope.launch {
             repository.startDeliverableDownload(projectId, deliverableId, simulateFailure)
-        }
-    }
-
-    class Factory(
-        private val projectId: String,
-        private val repository: ProjectRepository = ProjectRepositoryProvider.repository
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ProjectDetailViewModel(projectId, repository) as T
         }
     }
 }

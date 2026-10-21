@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ServiceType
 import com.koach.studio.projects.ui.components.ProjectListItem
@@ -53,7 +53,7 @@ import com.koach.studio.projects.ui.components.ProjectListItem
 @Composable
 fun ProjectListScreen(
     modifier: Modifier = Modifier,
-    viewModel: ProjectListViewModel = viewModel(),
+    viewModel: ProjectListViewModel = koachViewModel { ProjectListViewModel(it.projectRepository) },
     onProjectClick: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()

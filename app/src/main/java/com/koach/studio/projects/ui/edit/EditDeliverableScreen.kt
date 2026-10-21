@@ -47,7 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.DeliverableStatus
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -57,9 +57,9 @@ fun EditDeliverableScreen(
     deliverableId: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: EditDeliverableViewModel = viewModel(
-        factory = EditDeliverableViewModel.Factory(projectId, deliverableId)
-    )
+    viewModel: EditDeliverableViewModel = koachViewModel(key = "deliverable-$projectId-$deliverableId") {
+        EditDeliverableViewModel(projectId, deliverableId, it.projectRepository)
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

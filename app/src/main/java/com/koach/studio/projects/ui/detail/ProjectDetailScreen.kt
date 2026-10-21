@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.ui.components.DeliverableRow
 import com.koach.studio.projects.ui.components.ProjectStatusBadge
@@ -58,7 +58,9 @@ fun ProjectDetailScreen(
     onDeliverableClick: (deliverableId: String) -> Unit,
     onRequestRevisionClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProjectDetailViewModel = viewModel(factory = ProjectDetailViewModel.Factory(projectId))
+    viewModel: ProjectDetailViewModel = koachViewModel(key = "project-$projectId") {
+        ProjectDetailViewModel(projectId, it.projectRepository)
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

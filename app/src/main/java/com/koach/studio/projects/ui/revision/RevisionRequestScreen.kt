@@ -47,7 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.ui.components.ProjectStatusBadge
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -56,9 +56,9 @@ fun RevisionRequestScreen(
     projectId: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RevisionRequestViewModel = viewModel(
-        factory = RevisionRequestViewModel.Factory(projectId)
-    )
+    viewModel: RevisionRequestViewModel = koachViewModel(key = "revision-$projectId") {
+        RevisionRequestViewModel(projectId, it.projectRepository)
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

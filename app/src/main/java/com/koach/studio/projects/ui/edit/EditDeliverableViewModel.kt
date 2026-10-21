@@ -1,10 +1,8 @@
 package com.koach.studio.projects.ui.edit
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.ProjectRepositoryProvider
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +31,7 @@ data class EditDeliverableUiState(
 class EditDeliverableViewModel(
     private val projectId: String,
     private val deliverableId: String,
-    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditDeliverableUiState())
@@ -132,17 +130,6 @@ class EditDeliverableViewModel(
                     )
                 }
             }
-        }
-    }
-
-    class Factory(
-        private val projectId: String,
-        private val deliverableId: String,
-        private val repository: ProjectRepository = ProjectRepositoryProvider.repository
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return EditDeliverableViewModel(projectId, deliverableId, repository) as T
         }
     }
 }
