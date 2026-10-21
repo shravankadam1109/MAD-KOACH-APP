@@ -2,6 +2,7 @@ package com.koach.studio.projects.data
 
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.Project
+import com.koach.studio.projects.model.ProjectStatus
 import kotlinx.coroutines.flow.Flow
 
 interface ProjectRepository {
@@ -10,4 +11,6 @@ interface ProjectRepository {
     suspend fun updateDeliverable(projectId: String, deliverable: Deliverable): Result<Unit>
     suspend fun requestRevision(projectId: String, reason: String): Result<Unit>
     suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean = false)
+    suspend fun updateProjectStatus(projectId: String, status: ProjectStatus): Result<Unit>
+    suspend fun setMilestoneCompleted(projectId: String, milestoneId: String, completed: Boolean): Result<Unit>
 }

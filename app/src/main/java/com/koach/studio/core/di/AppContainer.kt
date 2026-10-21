@@ -10,6 +10,7 @@ import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
 import com.koach.studio.core.data.DemoData
+import com.koach.studio.core.model.User
 import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
@@ -29,6 +30,8 @@ interface AppContainer {
     val clock: Clock
     val authRepository: AuthRepository
     val accessControl: AccessControl
+    /** People directory (staff and client contacts) used to show names and avatars. */
+    val people: List<User>
     val projectRepository: ProjectRepository
     val notificationRepository: NotificationRepository
     val catalogRepository: CatalogRepository
@@ -44,6 +47,8 @@ class DemoAppContainer(
     private val demoData by lazy { DemoData(LocalDate.now(clock)) }
 
     override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users) }
+
+    override val people: List<User> by lazy { demoData.users }
 
     override val accessControl: AccessControl by lazy { AccessControl { authRepository.currentUser.value } }
 

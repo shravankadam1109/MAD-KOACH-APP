@@ -5,6 +5,7 @@ import com.koach.studio.core.auth.Permission
 import com.koach.studio.core.model.User
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.Project
+import com.koach.studio.projects.model.ProjectStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -47,6 +48,18 @@ class SecuredProjectRepository(
     override suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean) {
         if (getProjectById(projectId).first() == null) return
         delegate.startDeliverableDownload(projectId, deliverableId, simulateFailure)
+    }
+
+    override suspend fun updateProjectStatus(projectId: String, status: ProjectStatus): Result<Unit> = guarded {
+        access.require(Permission.MANAGE_PROJECTS)
+        requireProject(projectId)
+        delegate.updateProjectStatus(projectId, status)
+    }
+
+    override suspend fun setMilestoneCompleted(projectId: String, milestoneId: String, completed: Boolean): Result<Unit> = guarded {
+        access.require(Permission.MANAGE_PROJECTS)
+        requireProject(projectId)
+        delegate.setMilestoneCompleted(projectId, milestoneId, completed)
     }
 
     private suspend fun requireProject(projectId: String): Project {

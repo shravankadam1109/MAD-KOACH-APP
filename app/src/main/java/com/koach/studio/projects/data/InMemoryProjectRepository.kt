@@ -99,6 +99,29 @@ class InMemoryProjectRepository(
         }
     }
 
+    override suspend fun updateProjectStatus(projectId: String, status: ProjectStatus): Result<Unit> =
+        updateProject(projectId) { it.copy(status = status) }
+
+    override suspend fun setMilestoneCompleted(projectId: String, milestoneId: String, completed: Boolean): Result<Unit> {
+        val project = _projects.value.find { it.id == projectId }
+            ?: return Result.failure(IllegalArgumentException("Project not found: $projectId"))
+        if (project.milestones.none { it.id == milestoneId }) {
+            return Result.failure(IllegalArgumentException("Milestone not found: $milestoneId"))
+        }
+        return updateProject(projectId) { p ->
+            p.copy(milestones = p.milestones.map { if (it.id == milestoneId) it.copy(completed = completed) else it })
+        }
+    }
+
+    private fun updateProject(projectId: String, change: (Project) -> Project): Result<Unit> {
+        val currentList = _projects.value
+        if (currentList.none { it.id == projectId }) {
+            return Result.failure(IllegalArgumentException("Project not found: $projectId"))
+        }
+        _projects.value = currentList.map { if (it.id == projectId) change(it) else it }
+        return Result.success(Unit)
+    }
+
     private fun updateDeliverableState(projectId: String, deliverable: Deliverable) {
         val currentList = _projects.value
         val project = currentList.find { it.id == projectId } ?: return
