@@ -20,10 +20,15 @@ data class EditDeliverableUiState(
     val name: String = "",
     val notes: String = "",
     val status: DeliverableStatus = DeliverableStatus.DRAFT,
+    val nameError: String? = null,
+    val notesError: String? = null,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    val isFormValid: Boolean
+        get() = nameError == null && notesError == null && name.isNotBlank()
+}
 
 class EditDeliverableViewModel(
     private val projectId: String,
@@ -49,7 +54,9 @@ class EditDeliverableViewModel(
                         initialDeliverable = deliverable,
                         name = deliverable.name,
                         notes = deliverable.notes,
-                        status = deliverable.status
+                        status = deliverable.status,
+                        nameError = null,
+                        notesError = null
                     )
                 }
             } else {
@@ -64,19 +71,46 @@ class EditDeliverableViewModel(
     }
 
     fun onNameChanged(newName: String) {
-        _uiState.update { it.copy(name = newName) }
+        val error = validateName(newName)
+        _uiState.update { it.copy(name = newName, nameError = error) }
     }
 
     fun onNotesChanged(newNotes: String) {
-        _uiState.update { it.copy(notes = newNotes) }
+        val error = validateNotes(newNotes)
+        _uiState.update { it.copy(notes = newNotes, notesError = error) }
     }
 
     fun onStatusChanged(newStatus: DeliverableStatus) {
         _uiState.update { it.copy(status = newStatus) }
     }
 
+    fun validateName(name: String): String? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isEmpty() -> "Deliverable name cannot be blank"
+            trimmed.length < 3 -> "Deliverable name must be at least 3 characters"
+            trimmed.length > 120 -> "Deliverable name cannot exceed 120 characters"
+            else -> null
+        }
+    }
+
+    fun validateNotes(notes: String): String? {
+        return when {
+            notes.length > 500 -> "Notes cannot exceed 500 characters"
+            else -> null
+        }
+    }
+
     fun save(onSuccess: () -> Unit) {
         val current = _uiState.value
+        val nameErr = validateName(current.name)
+        val notesErr = validateNotes(current.notes)
+
+        if (nameErr != null || notesErr != null) {
+            _uiState.update { it.copy(nameError = nameErr, notesError = notesErr) }
+            return
+        }
+
         val original = current.initialDeliverable ?: return
 
         viewModelScope.launch {

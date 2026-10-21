@@ -68,6 +68,7 @@ fun EditDeliverableScreen(
     val cardBackground = Color(0xFF16181F)
     val brandGreen = Color(0xFF41BA00)
     val mutedText = Color(0xFF9EA3B0)
+    val errorColor = Color(0xFFF87171)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -119,7 +120,7 @@ fun EditDeliverableScreen(
                 ) {
                     Text(
                         text = uiState.errorMessage ?: "Deliverable not found",
-                        color = Color(0xFFF87171),
+                        color = errorColor,
                         fontSize = 16.sp
                     )
                 }
@@ -133,7 +134,7 @@ fun EditDeliverableScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Deliverable Name Input
+                    // Deliverable Name Input with Validation
                     Text(
                         text = "File Name",
                         color = Color.White,
@@ -147,6 +148,17 @@ fun EditDeliverableScreen(
                             .fillMaxWidth()
                             .testTag("deliverable_name_field"),
                         placeholder = { Text("e.g. Rough_Cut_v2.mp4", color = mutedText) },
+                        isError = uiState.nameError != null,
+                        supportingText = {
+                            if (uiState.nameError != null) {
+                                Text(
+                                    text = uiState.nameError!!,
+                                    color = errorColor,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.testTag("deliverable_name_error")
+                                )
+                            }
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -154,8 +166,10 @@ fun EditDeliverableScreen(
                             unfocusedTextColor = Color.White,
                             focusedBorderColor = brandGreen,
                             unfocusedBorderColor = Color(0xFF272A36),
+                            errorBorderColor = errorColor,
                             focusedContainerColor = cardBackground,
-                            unfocusedContainerColor = cardBackground
+                            unfocusedContainerColor = cardBackground,
+                            errorContainerColor = cardBackground
                         )
                     )
 
@@ -187,7 +201,7 @@ fun EditDeliverableScreen(
                         }
                     }
 
-                    // Notes Input
+                    // Notes Input with Validation
                     Text(
                         text = "Review Notes & Specifications",
                         color = Color.White,
@@ -202,23 +216,36 @@ fun EditDeliverableScreen(
                             .height(140.dp)
                             .testTag("deliverable_notes_field"),
                         placeholder = { Text("Add mix notes, color feedback, or revision guidance...", color = mutedText) },
+                        isError = uiState.notesError != null,
+                        supportingText = {
+                            if (uiState.notesError != null) {
+                                Text(
+                                    text = uiState.notesError!!,
+                                    color = errorColor,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.testTag("deliverable_notes_error")
+                                )
+                            }
+                        },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             focusedBorderColor = brandGreen,
                             unfocusedBorderColor = Color(0xFF272A36),
+                            errorBorderColor = errorColor,
                             focusedContainerColor = cardBackground,
-                            unfocusedContainerColor = cardBackground
+                            unfocusedContainerColor = cardBackground,
+                            errorContainerColor = cardBackground
                         )
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Save Button
+                    // Save Button (disabled if invalid)
                     Button(
                         onClick = { viewModel.save(onSuccess = onNavigateBack) },
-                        enabled = !uiState.isSaving,
+                        enabled = !uiState.isSaving && uiState.name.isNotBlank() && uiState.nameError == null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
@@ -226,7 +253,9 @@ fun EditDeliverableScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = brandGreen,
-                            contentColor = Color.Black
+                            contentColor = Color.Black,
+                            disabledContainerColor = Color(0xFF222630),
+                            disabledContentColor = Color(0xFF555B6D)
                         )
                     ) {
                         if (uiState.isSaving) {
