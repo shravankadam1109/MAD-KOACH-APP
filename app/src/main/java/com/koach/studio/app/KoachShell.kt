@@ -53,6 +53,9 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.appContainer
 import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.core.model.User
+import com.koach.studio.home.AgencyHomeActions
+import com.koach.studio.home.AgencyHomeScreen
+import com.koach.studio.home.AgencyHomeViewModel
 import com.koach.studio.home.ClientHomeActions
 import com.koach.studio.home.ClientHomeScreen
 import com.koach.studio.home.ClientHomeViewModel
@@ -61,6 +64,10 @@ import com.koach.studio.portfolio.PortfolioDetailScreen
 import com.koach.studio.portfolio.PortfolioDetailViewModel
 import com.koach.studio.portfolio.PortfolioViewModel
 import com.koach.studio.services.ExploreScreen
+import com.koach.studio.tasks.ui.TaskFormScreen
+import com.koach.studio.tasks.ui.TaskFormViewModel
+import com.koach.studio.tasks.ui.TaskListScreen
+import com.koach.studio.tasks.ui.TaskListViewModel
 import com.koach.studio.services.ServiceDetailScreen
 import com.koach.studio.services.ServiceDetailViewModel
 import com.koach.studio.services.ServicesViewModel
@@ -235,6 +242,45 @@ private fun KoachNavHost(
             )
         }
 
+        composable(Routes.AGENCY_HOME) {
+            AgencyHomeScreen(
+                viewModel = koachViewModel {
+                    AgencyHomeViewModel(user, it.projectRepository, it.taskRepository, it.bookingRepository, it.notificationRepository, it.clock)
+                },
+                actions = AgencyHomeActions(
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
+                    onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                    onAllTasks = { navController.navigateToTopLevel(Routes.TASKS) },
+                    onNewTask = { navController.navigate(Routes.taskForm()) },
+                    onBookings = { navController.navigate(Routes.BOOKINGS) },
+                    onMessages = { navController.navigate(Routes.MESSAGES) }
+                )
+            )
+        }
+        composable(Routes.TASKS) {
+            TaskListScreen(
+                viewModel = koachViewModel { TaskListViewModel(user, it.taskRepository, it.projectRepository, it.people, it.clock) },
+                onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                onNewTask = { navController.navigate(Routes.taskForm()) }
+            )
+        }
+        composable(
+            Routes.TASK_FORM,
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.StringType; defaultValue = "" },
+                navArgument("projectId") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { entry ->
+            val taskId = entry.arguments?.getString("taskId").orEmpty().ifBlank { null }
+            val projectId = entry.arguments?.getString("projectId").orEmpty().ifBlank { null }
+            TaskFormScreen(
+                viewModel = koachViewModel(key = "task-form-$taskId-$projectId") {
+                    TaskFormViewModel(taskId, user, it.taskRepository, it.projectRepository, it.people, it.clock, projectId)
+                },
+                onBack = back
+            )
+        }
         composable(Routes.CLIENTS) {
             ClientListScreen(
                 viewModel = koachViewModel { ClientListViewModel(user, it.clientRepository, it.projectRepository) },
@@ -280,8 +326,6 @@ private fun KoachNavHost(
 
         // Destinations below are filled in by their feature modules.
         listOf(
-            Routes.AGENCY_HOME to "Studio",
-            Routes.TASKS to "Tasks",
             Routes.MESSAGES to "Messages",
             Routes.NOTIFICATIONS to "Notifications",
             Routes.DOCUMENTS to "Documents",

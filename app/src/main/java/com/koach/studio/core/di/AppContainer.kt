@@ -14,6 +14,8 @@ import com.koach.studio.core.model.User
 import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
+import com.koach.studio.tasks.data.InMemoryTaskRepository
+import com.koach.studio.tasks.data.TaskRepository
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.data.SecuredProjectRepository
 import kotlinx.coroutines.flow.first
@@ -37,6 +39,7 @@ interface AppContainer {
     val catalogRepository: CatalogRepository
     val bookingRepository: BookingRepository
     val clientRepository: ClientRepository
+    val taskRepository: TaskRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -77,5 +80,9 @@ class DemoAppContainer(
         InMemoryClientRepository(demoData.clients, authRepository.currentUser, accessControl, clock) { clientId ->
             projectStore.getProjects().first().count { it.clientId == clientId }
         }
+    }
+
+    override val taskRepository: TaskRepository by lazy {
+        InMemoryTaskRepository(demoData.tasks, authRepository.currentUser, accessControl, clock)
     }
 }

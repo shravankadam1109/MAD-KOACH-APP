@@ -1,7 +1,5 @@
 package com.koach.studio.bookings.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,27 +25,18 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -57,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.koach.studio.bookings.data.BookingValidator
 import com.koach.studio.bookings.data.BookingValidator.Field
 import com.koach.studio.core.designsystem.components.EmptyState
+import com.koach.studio.core.designsystem.components.KoachDateField
 import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.FormSection
 import com.koach.studio.core.designsystem.components.IconTile
@@ -77,9 +67,6 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.model.BookingStatus
 import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatInr
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 val BookingStatus.tone: Tone
     get() = when (this) {
@@ -89,7 +76,6 @@ val BookingStatus.tone: Tone
         BookingStatus.COMPLETED -> Tone.Neutral
     }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewBookingScreen(
     viewModel: NewBookingViewModel,
@@ -100,7 +86,6 @@ fun NewBookingScreen(
     val state by viewModel.uiState.collectAsState()
     val c = KoachTheme.colors
     val gutter = KoachTheme.spacing.gutter
-    var showDatePicker by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         containerColor = c.background,
@@ -154,28 +139,16 @@ fun NewBookingScreen(
                         placeholder = "Not sure yet"
                     )
                 }
-                // Read-only field that opens the date picker when tapped.
-                Box {
-                    KoachTextField(
-                        value = state.preferredDate?.let { formatDate(it, state.today.minusYears(1)) }.orEmpty(),
-                        onValueChange = {},
-                        label = "Preferred date",
-                        placeholder = "Choose a date",
-                        leadingIcon = Icons.Outlined.CalendarMonth,
-                        error = state.errors[Field.DATE],
-                        helper = "At least ${BookingValidator.MIN_LEAD_DAYS} days from today"
-                    )
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClickLabel = "Choose preferred date"
-                            ) { showDatePicker = true }
-                            .testTag("booking_date")
-                    )
-                }
+                KoachDateField(
+                    label = "Preferred date",
+                    value = state.preferredDate,
+                    onValueChange = viewModel::onDateSelected,
+                    error = state.errors[Field.DATE],
+                    helper = "At least ${BookingValidator.MIN_LEAD_DAYS} days from today",
+                    earliest = state.today.plusDays(BookingValidator.MIN_LEAD_DAYS),
+                    latest = state.today.plusDays(BookingValidator.MAX_AHEAD_DAYS),
+                    fieldModifier = Modifier.testTag("booking_date")
+                )
                 KoachTextField(
                     value = state.budget,
                     onValueChange = viewModel::onBudgetChanged,
@@ -238,48 +211,7 @@ fun NewBookingScreen(
             Spacer(Modifier.height(16.dp))
         }
     }
-
-    if (showDatePicker) {
-        val earliest = state.today.plusDays(BookingValidator.MIN_LEAD_DAYS)
-        val latest = state.today.plusDays(BookingValidator.MAX_AHEAD_DAYS)
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = (state.preferredDate ?: earliest).toUtcMillis(),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    val date = utcTimeMillis.toLocalDate()
-                    return !date.isBefore(earliest) && !date.isAfter(latest)
-                }
-            }
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { viewModel.onDateSelected(it.toLocalDate()) }
-                    showDatePicker = false
-                }) { Text("Select", color = c.brand) }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = c.textSecondary) }
-            },
-            colors = DatePickerDefaults.colors(containerColor = c.surfaceRaised)
-        ) {
-            DatePicker(
-                state = pickerState,
-                colors = DatePickerDefaults.colors(
-                    containerColor = c.surfaceRaised,
-                    selectedDayContainerColor = c.brand,
-                    selectedDayContentColor = c.onBrand,
-                    todayDateBorderColor = c.brand,
-                    todayContentColor = c.brand
-                )
-            )
-        }
-    }
 }
-
-private fun LocalDate.toUtcMillis(): Long = atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-private fun Long.toLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 @Composable
 private fun BookingConfirmation(
