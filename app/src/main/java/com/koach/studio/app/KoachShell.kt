@@ -41,7 +41,12 @@ import com.koach.studio.app.navigation.TopLevelDestination
 import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.appContainer
+import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.core.model.User
+import com.koach.studio.home.ClientHomeActions
+import com.koach.studio.home.ClientHomeScreen
+import com.koach.studio.home.ClientHomeViewModel
+import com.koach.studio.projects.navigation.ProjectsDestinations
 import com.koach.studio.projects.navigation.projectsGraph
 import kotlinx.coroutines.launch
 
@@ -138,6 +143,22 @@ private fun KoachNavHost(
     ) {
         projectsGraph(navController)
 
+        composable(Routes.HOME) {
+            ClientHomeScreen(
+                viewModel = koachViewModel {
+                    ClientHomeViewModel(user, it.projectRepository, it.notificationRepository, it.clock)
+                },
+                actions = ClientHomeActions(
+                    onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
+                    onAllProjects = { navController.navigateToTopLevel(ProjectsDestinations.PROJECT_LIST) },
+                    onBook = { navController.navigateToTopLevel(Routes.EXPLORE) },
+                    onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
+                    onPayments = { navController.navigate(Routes.PAYMENTS) },
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
+                )
+            )
+        }
+
         composable(Routes.ACCOUNT) {
             MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
         }
@@ -147,7 +168,6 @@ private fun KoachNavHost(
 
         // Destinations below are filled in by their feature modules.
         listOf(
-            Routes.HOME to "Home",
             Routes.AGENCY_HOME to "Studio",
             Routes.EXPLORE to "Explore",
             Routes.CLIENTS to "Clients",

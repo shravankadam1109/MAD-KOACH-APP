@@ -4,6 +4,8 @@ import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
 import com.koach.studio.core.data.DemoData
+import com.koach.studio.notifications.data.InMemoryNotificationRepository
+import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.data.SecuredProjectRepository
@@ -21,6 +23,7 @@ interface AppContainer {
     val authRepository: AuthRepository
     val accessControl: AccessControl
     val projectRepository: ProjectRepository
+    val notificationRepository: NotificationRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -36,5 +39,9 @@ class DemoAppContainer(
 
     override val projectRepository: ProjectRepository by lazy {
         SecuredProjectRepository(InMemoryProjectRepository(), authRepository.currentUser, accessControl)
+    }
+
+    override val notificationRepository: NotificationRepository by lazy {
+        InMemoryNotificationRepository(demoData.notifications, authRepository.currentUser, accessControl)
     }
 }
