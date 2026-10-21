@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.koach.studio.projects.model.Deliverable
+import com.koach.studio.projects.ui.components.DeliverableRow
 import com.koach.studio.projects.ui.components.ProjectStatusBadge
 import com.koach.studio.projects.ui.components.ServiceTypeBadge
 
@@ -265,43 +266,13 @@ fun ProjectDetailScreen(
 
                     // Deliverables list items
                     items(project.deliverables, key = { it.id }) { deliverable ->
-                        DeliverableRowPreview(
+                        DeliverableRow(
                             deliverable = deliverable,
                             onEditClick = { onDeliverableClick(deliverable.id) }
                         )
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun DeliverableRowPreview(
-    deliverable: Deliverable,
-    onEditClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onEditClick)
-            .testTag("deliverable_row_${deliverable.id}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16181F))
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = deliverable.name,
-                color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${deliverable.type} • ${deliverable.size} • ${deliverable.version}",
-                color = Color(0xFF9EA3B0),
-                fontSize = 12.sp
-            )
         }
     }
 }
