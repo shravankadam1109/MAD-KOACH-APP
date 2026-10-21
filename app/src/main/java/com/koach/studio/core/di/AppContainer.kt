@@ -1,5 +1,7 @@
 package com.koach.studio.core.di
 
+import com.koach.studio.bookings.data.BookingRepository
+import com.koach.studio.bookings.data.InMemoryBookingRepository
 import com.koach.studio.catalog.data.CatalogRepository
 import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
@@ -27,6 +29,7 @@ interface AppContainer {
     val projectRepository: ProjectRepository
     val notificationRepository: NotificationRepository
     val catalogRepository: CatalogRepository
+    val bookingRepository: BookingRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -50,5 +53,11 @@ class DemoAppContainer(
 
     override val catalogRepository: CatalogRepository by lazy {
         InMemoryCatalogRepository(demoData.services, demoData.portfolio)
+    }
+
+    override val bookingRepository: BookingRepository by lazy {
+        InMemoryBookingRepository(
+            demoData.bookings, demoData.users, authRepository.currentUser, accessControl, notificationRepository, clock
+        )
     }
 }

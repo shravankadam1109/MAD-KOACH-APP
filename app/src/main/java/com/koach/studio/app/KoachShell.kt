@@ -34,6 +34,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.koach.studio.app.menu.MenuScreen
+import com.koach.studio.bookings.ui.BookingsScreen
+import com.koach.studio.bookings.ui.BookingsViewModel
+import com.koach.studio.bookings.ui.NewBookingScreen
+import com.koach.studio.bookings.ui.NewBookingViewModel
 import com.koach.studio.app.menu.PendingFeatureScreen
 import com.koach.studio.app.menu.menuEntriesFor
 import com.koach.studio.app.navigation.Routes
@@ -160,7 +164,7 @@ private fun KoachNavHost(
                 actions = ClientHomeActions(
                     onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
                     onAllProjects = { navController.navigateToTopLevel(ProjectsDestinations.PROJECT_LIST) },
-                    onBook = { navController.navigateToTopLevel(Routes.EXPLORE) },
+                    onBook = { navController.navigate(Routes.newBooking()) },
                     onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
                     onPayments = { navController.navigate(Routes.PAYMENTS) },
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
@@ -204,7 +208,26 @@ private fun KoachNavHost(
                 navArgument("serviceId") { type = NavType.StringType; defaultValue = "" },
                 navArgument("packageId") { type = NavType.StringType; defaultValue = "" }
             )
-        ) { PendingFeatureScreen("Book a service", onBack = back) }
+        ) { entry ->
+            val serviceId = entry.arguments?.getString("serviceId").orEmpty()
+            val packageId = entry.arguments?.getString("packageId").orEmpty()
+            NewBookingScreen(
+                viewModel = koachViewModel(key = "booking-$serviceId-$packageId") {
+                    NewBookingViewModel(user, serviceId, packageId, it.catalogRepository, it.bookingRepository, it.clock)
+                },
+                onBack = back,
+                onViewBookings = {
+                    navController.navigate(Routes.BOOKINGS) { popUpTo(Routes.NEW_BOOKING) { inclusive = true } }
+                }
+            )
+        }
+        composable(Routes.BOOKINGS) {
+            BookingsScreen(
+                viewModel = koachViewModel { BookingsViewModel(user, it.bookingRepository, it.catalogRepository) },
+                onBack = back,
+                onNewBooking = { navController.navigate(Routes.newBooking()) }
+            )
+        }
 
         composable(Routes.ACCOUNT) {
             MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
@@ -220,7 +243,6 @@ private fun KoachNavHost(
             Routes.TASKS to "Tasks",
             Routes.MESSAGES to "Messages",
             Routes.NOTIFICATIONS to "Notifications",
-            Routes.BOOKINGS to "Bookings",
             Routes.DOCUMENTS to "Documents",
             Routes.PAYMENTS to "Payments",
             Routes.FEEDBACK to "Feedback",
