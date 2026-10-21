@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ServiceType
+import com.koach.studio.projects.ui.components.ProjectListItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -205,7 +206,7 @@ fun ProjectListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(uiState.projects, key = { it.id }) { project ->
-                            ProjectListItemPreview(
+                            ProjectListItem(
                                 project = project,
                                 onClick = { onProjectClick(project.id) }
                             )
@@ -213,35 +214,6 @@ fun ProjectListScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ProjectListItemPreview(
-    project: Project,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("project_item_${project.id}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF16181F))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = project.title,
-                color = Color.White,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "${project.clientName} • ${project.serviceType.displayName}",
-                color = Color(0xFF9EA3B0),
-                fontSize = 13.sp
-            )
         }
     }
 }
