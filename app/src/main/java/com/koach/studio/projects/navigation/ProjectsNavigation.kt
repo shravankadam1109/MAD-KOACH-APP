@@ -3,9 +3,12 @@ package com.koach.studio.projects.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.koach.studio.projects.ui.detail.ProjectDetailScreen
 import com.koach.studio.projects.ui.list.ProjectListScreen
 
 object ProjectsDestinations {
@@ -35,6 +38,23 @@ fun ProjectsNavHost(
             ProjectListScreen(
                 onProjectClick = { projectId ->
                     navController.navigate(ProjectsDestinations.projectDetail(projectId))
+                }
+            )
+        }
+
+        composable(
+            route = ProjectsDestinations.PROJECT_DETAIL,
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
+            ProjectDetailScreen(
+                projectId = projectId,
+                onNavigateBack = { navController.popBackStack() },
+                onDeliverableClick = { deliverableId ->
+                    navController.navigate(ProjectsDestinations.editDeliverable(projectId, deliverableId))
+                },
+                onRequestRevisionClick = {
+                    navController.navigate(ProjectsDestinations.revisionRequest(projectId))
                 }
             )
         }
