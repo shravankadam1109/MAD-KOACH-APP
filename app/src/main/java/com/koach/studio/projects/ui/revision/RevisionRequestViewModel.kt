@@ -23,9 +23,9 @@ data class RevisionRequestUiState(
     val errorMessage: String? = null
 )
 
-open class RevisionRequestViewModel(
-    protected val projectId: String,
-    protected val repository: ProjectRepository = ProjectRepositoryProvider.repository
+class RevisionRequestViewModel(
+    private val projectId: String,
+    private val repository: ProjectRepository = ProjectRepositoryProvider.repository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RevisionRequestUiState())
@@ -66,8 +66,29 @@ open class RevisionRequestViewModel(
         onReasonChanged(newReason)
     }
 
-    open fun submit(onSuccess: () -> Unit) {
-        // Wired in commit 18
+    fun submit(onSuccess: () -> Unit) {
+        val currentReason = _uiState.value.reason
+        val error = validateReason(currentReason)
+        if (error != null) {
+            _uiState.update { it.copy(reasonError = error) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true) }
+            val result = repository.requestRevision(projectId, currentReason.trim())
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
+                onSuccess()
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Failed to submit revision request"
+                    )
+                }
+            }
+        }
     }
 
     class Factory(
