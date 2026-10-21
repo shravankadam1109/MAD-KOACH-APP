@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
@@ -25,7 +26,7 @@ class RoleNavigationTest {
 
     @Test
     fun client_seesClientTabs_andCanSignOut() {
-        rule.onNodeWithTag("demo_account_u-maya").performClick()
+        rule.signInAs("u-maya", shellTag = "tab_home")
         rule.onNodeWithTag("tab_home").assertIsDisplayed()
         rule.onNodeWithTag("tab_explore").assertIsDisplayed()
         rule.onNodeWithTag("tab_clients").assertDoesNotExist()
@@ -37,7 +38,7 @@ class RoleNavigationTest {
 
     @Test
     fun agency_seesStudioTabs() {
-        rule.onNodeWithTag("demo_account_u-zoya").performScrollTo().performClick()
+        rule.signInAs("u-zoya", shellTag = "tab_agency_home")
         rule.onNodeWithTag("tab_agency_home").assertIsDisplayed()
         rule.onNodeWithTag("tab_clients").assertIsDisplayed()
         rule.onNodeWithTag("tab_tasks").assertIsDisplayed()
@@ -46,7 +47,7 @@ class RoleNavigationTest {
 
     @Test
     fun client_paysInvoiceWithSimulatedPayment() {
-        rule.onNodeWithTag("demo_account_u-maya").performClick()
+        rule.signInAs("u-maya", shellTag = "tab_home")
         rule.onNodeWithTag("tab_account").performClick()
         rule.onNodeWithTag("menu_payments").performScrollTo().performClick()
         rule.onNodeWithTag("payments_list").performScrollToNode(hasTestTag("pay_pay-2"))

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="koach_neon_green">#41BA00</color>
+    <!-- Window background for the launch frame; Compose colours live in KoachTheme. -->
     <color name="koach_dark_bg">#0D0E11</color>
-    <color name="koach_surface">#16181D</color>
 </resources>

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
@@ -30,7 +31,7 @@ class ClientProjectJourneyTest {
     @Test
     fun clientProjectJourney_openList_openProject_downloadDeliverable_requestRevision() {
         // Step 0: Sign in with the demo client account that owns proj-1
-        composeTestRule.onNodeWithTag("demo_account_u-maya").performClick()
+        composeTestRule.signInAs("u-maya", shellTag = "tab_home")
         composeTestRule.onNodeWithTag("tab_projects").performClick()
 
         // Step 1: Open project list - verify project list is displayed

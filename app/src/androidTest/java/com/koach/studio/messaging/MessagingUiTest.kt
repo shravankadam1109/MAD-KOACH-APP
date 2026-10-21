@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
@@ -23,7 +24,7 @@ class MessagingUiTest {
 
     @Test
     fun client_opensProjectThread_andSendsMessage() {
-        rule.onNodeWithTag("demo_account_u-maya").performClick()
+        rule.signInAs("u-maya", shellTag = "tab_home")
         rule.onNodeWithTag("tab_messages").performClick()
         rule.onNodeWithTag("thread_th-1").performClick()
 

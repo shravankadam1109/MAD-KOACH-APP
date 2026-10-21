@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
@@ -27,7 +28,7 @@ class ClientManagementUiTest {
 
     @Test
     fun agency_addsClient_withValidation_thenSeesDetail() {
-        rule.onNodeWithTag("demo_account_u-zoya").performScrollTo().performClick()
+        rule.signInAs("u-zoya", shellTag = "tab_agency_home")
         rule.onNodeWithTag("tab_clients").performClick()
         rule.onNodeWithTag("add_client").performClick()
 
