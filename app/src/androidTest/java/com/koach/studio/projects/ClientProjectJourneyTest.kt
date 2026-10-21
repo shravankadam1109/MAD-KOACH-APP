@@ -44,9 +44,9 @@ class ClientProjectJourneyTest {
 
         // Wait until download state progresses to DONE
         composeTestRule.waitUntil(timeoutMillis = 5000) {
-            composeTestRule.onAllNodesWithTag("download_done_del-101").fetchSemanticsNodes().isNotEmpty()
+            composeTestRule.onAllNodesWithTag("download_done_del-101", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onNodeWithTag("download_done_del-101").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("download_done_del-101", useUnmergedTree = true).assertIsDisplayed()
 
         // Step 4: Request a revision
         composeTestRule.onNodeWithTag("request_revision_button").assertIsDisplayed().performClick()
