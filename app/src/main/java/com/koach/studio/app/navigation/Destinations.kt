@@ -42,7 +42,10 @@ object Routes {
     const val SERVICE_DETAIL = "services/{serviceId}"
     const val NEW_BOOKING = "bookings/new?serviceId={serviceId}&packageId={packageId}"
 
+    const val PORTFOLIO_DETAIL = "portfolio/{itemId}"
+
     fun serviceDetail(serviceId: String) = "services/$serviceId"
+    fun portfolioDetail(itemId: String) = "portfolio/$itemId"
     fun newBooking(serviceId: String? = null, packageId: String? = null) =
         "bookings/new?serviceId=${serviceId.orEmpty()}&packageId=${packageId.orEmpty()}"
 }

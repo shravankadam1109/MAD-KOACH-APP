@@ -47,6 +47,9 @@ import com.koach.studio.home.ClientHomeActions
 import com.koach.studio.home.ClientHomeScreen
 import com.koach.studio.home.ClientHomeViewModel
 import com.koach.studio.projects.navigation.ProjectsDestinations
+import com.koach.studio.portfolio.PortfolioDetailScreen
+import com.koach.studio.portfolio.PortfolioDetailViewModel
+import com.koach.studio.portfolio.PortfolioViewModel
 import com.koach.studio.services.ExploreScreen
 import com.koach.studio.services.ServiceDetailScreen
 import com.koach.studio.services.ServiceDetailViewModel
@@ -168,7 +171,20 @@ private fun KoachNavHost(
         composable(Routes.EXPLORE) {
             ExploreScreen(
                 servicesViewModel = koachViewModel { ServicesViewModel(it.catalogRepository) },
-                onOpenService = { id -> navController.navigate(Routes.serviceDetail(id)) }
+                portfolioViewModel = koachViewModel { PortfolioViewModel(it.catalogRepository) },
+                onOpenService = { id -> navController.navigate(Routes.serviceDetail(id)) },
+                onOpenPortfolioItem = { id -> navController.navigate(Routes.portfolioDetail(id)) }
+            )
+        }
+        composable(
+            Routes.PORTFOLIO_DETAIL,
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+        ) { entry ->
+            val itemId = entry.arguments?.getString("itemId").orEmpty()
+            PortfolioDetailScreen(
+                viewModel = koachViewModel(key = "portfolio-$itemId") { PortfolioDetailViewModel(itemId, it.catalogRepository) },
+                onBack = back,
+                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) }
             )
         }
         composable(

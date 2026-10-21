@@ -1,6 +1,14 @@
 package com.koach.studio.core.designsystem.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -262,4 +270,38 @@ fun FormSection(
     content: @Composable () -> Unit
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) { content() }
+}
+
+/** Pill-shaped segmented switch for 2–3 peer views, e.g. Services | Work. */
+@Composable
+fun KoachSegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val c = KoachTheme.colors
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(c.surface)
+            .border(1.dp, c.outlineSubtle, RoundedCornerShape(50))
+            .padding(4.dp)
+    ) {
+        options.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (selected) c.brand else androidx.compose.ui.graphics.Color.Transparent)
+                    .selectable(selected = selected, onClick = { onSelect(index) }, role = Role.Tab)
+                    .padding(vertical = 10.dp)
+                    .testTag("segment_$index")
+            ) {
+                Text(label, style = MaterialTheme.typography.labelLarge, color = if (selected) c.onBrand else c.textSecondary)
+            }
+        }
+    }
 }

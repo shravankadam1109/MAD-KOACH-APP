@@ -35,6 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +54,7 @@ import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
+import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -62,6 +66,8 @@ import com.koach.studio.core.model.CreativeService
 import com.koach.studio.core.model.ServiceCategory
 import com.koach.studio.core.model.ServicePackage
 import com.koach.studio.core.ui.formatInr
+import com.koach.studio.portfolio.PortfolioViewModel
+import com.koach.studio.portfolio.portfolioGrid
 
 /** Services list content, embedded in the Explore tab's LazyColumn. */
 fun LazyListScope.servicesCatalog(
@@ -257,17 +263,23 @@ private fun RadioDot(selected: Boolean) {
     }
 }
 
-/** Explore tab for clients. Services today; the portfolio joins it as a second section. */
+/** Explore tab for clients: the services catalogue and the sample portfolio. */
 @Composable
 fun ExploreScreen(
     servicesViewModel: ServicesViewModel,
+    portfolioViewModel: PortfolioViewModel,
     onOpenService: (String) -> Unit,
+    onOpenPortfolioItem: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val state by servicesViewModel.uiState.collectAsState()
+    val services by servicesViewModel.uiState.collectAsState()
+    val portfolio by portfolioViewModel.uiState.collectAsState()
+    var section by rememberSaveable { mutableIntStateOf(0) }
     val c = KoachTheme.colors
+    val gutter = KoachTheme.spacing.gutter
+
     KoachBackground(modifier.fillMaxSize()) {
-        if (state.isLoading) {
+        if (services.isLoading || portfolio.isLoading) {
             LoadingState()
             return@KoachBackground
         }
@@ -279,13 +291,28 @@ fun ExploreScreen(
                 .testTag("explore_screen")
         ) {
             item {
-                Column(Modifier.padding(start = KoachTheme.spacing.gutter, end = KoachTheme.spacing.gutter, top = 16.dp, bottom = 8.dp)) {
+                Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp, bottom = 4.dp)) {
                     Eyebrow("Explore")
                     Spacer(Modifier.height(6.dp))
-                    Text("What can we make for you?", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
+                    Text(
+                        if (section == 0) "What can we make for you?" else "Work that moves.",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = c.textPrimary
+                    )
+                    Spacer(Modifier.height(18.dp))
+                    KoachSegmentedControl(
+                        options = listOf("Services", "Work"),
+                        selectedIndex = section,
+                        onSelect = { section = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
-            servicesCatalog(state, servicesViewModel::selectCategory, onOpenService)
+            if (section == 0) {
+                servicesCatalog(services, servicesViewModel::selectCategory, onOpenService)
+            } else {
+                portfolioGrid(portfolio, portfolioViewModel::selectCategory, onOpenPortfolioItem)
+            }
         }
     }
 }
