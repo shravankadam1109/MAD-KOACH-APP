@@ -1,0 +1,174 @@
+package com.koach.studio.core.designsystem.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.koach.studio.core.designsystem.theme.KoachTheme
+
+/** Semantic tone shared by pills, badges and icons so status colour stays consistent. */
+enum class Tone { Neutral, Brand, Success, Warning, Danger, Info, Review }
+
+@Composable
+fun Tone.color(): Color {
+    val c = KoachTheme.colors
+    return when (this) {
+        Tone.Neutral -> c.textSecondary
+        Tone.Brand, Tone.Success -> c.brand
+        Tone.Warning -> c.warning
+        Tone.Danger -> c.danger
+        Tone.Info -> c.info
+        Tone.Review -> c.review
+    }
+}
+
+/** Compact status label: tinted fill, coloured dot, uppercase text. */
+@Composable
+fun StatusPill(
+    text: String,
+    tone: Tone,
+    modifier: Modifier = Modifier,
+    showDot: Boolean = true
+) {
+    val accent = tone.color()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(accent.copy(alpha = 0.12f))
+            .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        if (showDot) {
+            Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(text.uppercase(), style = MaterialTheme.typography.labelSmall.copy(letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing * 0.6f), color = accent)
+    }
+}
+
+/** Small counter badge, e.g. unread messages. */
+@Composable
+fun CountBadge(count: Int, modifier: Modifier = Modifier) {
+    if (count <= 0) return
+    val colors = KoachTheme.colors
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(colors.brand)
+            .padding(horizontal = 6.dp, vertical = 1.dp)
+            .semantics { contentDescription = "$count unread" }
+    ) {
+        Text(
+            text = if (count > 99) "99+" else count.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.onBrand
+        )
+    }
+}
+
+/** Initials avatar with an optional green ring for the signed-in user or online state. */
+@Composable
+fun KoachAvatar(
+    initials: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    highlighted: Boolean = false
+) {
+    val colors = KoachTheme.colors
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(colors.surfaceHigh, colors.surfaceRaised)))
+            .border(1.5.dp, if (highlighted) colors.brand else colors.outline, CircleShape)
+    ) {
+        Text(
+            text = initials.take(2).uppercase(),
+            style = if (size >= 56.dp) MaterialTheme.typography.titleLarge else MaterialTheme.typography.labelLarge,
+            color = if (highlighted) colors.brand else colors.textPrimary,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/** Animated green progress track. [progress] is clamped to 0..1. */
+@Composable
+fun KoachProgressBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    height: Dp = 6.dp
+) {
+    val colors = KoachTheme.colors
+    val animated by animateFloatAsState(progress.coerceIn(0f, 1f), label = "progress")
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(50))
+            .background(colors.surfaceHigh)
+            .semantics { contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent complete" }
+    ) {
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(animated)
+                .clip(RoundedCornerShape(50))
+                .background(Brush.horizontalGradient(listOf(colors.brandDeep, colors.brand, colors.brandBright)))
+        )
+    }
+}
+
+/** Rounded square holding an icon, tinted by [tone]. Used in list rows and tiles. */
+@Composable
+fun IconTile(
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    tone: Tone = Tone.Brand,
+    size: Dp = 40.dp
+) {
+    val accent = tone.color()
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(12.dp))
+            .background(accent.copy(alpha = 0.12f))
+    ) {
+        Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(size * 0.5f))
+    }
+}
+
+/** Labels content that is sample/demo data so it is never mistaken for real records. */
+@Composable
+fun DemoTag(modifier: Modifier = Modifier, text: String = "Demo") {
+    StatusPill(text = text, tone = Tone.Info, modifier = modifier, showDot = false)
+}
