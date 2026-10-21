@@ -35,6 +35,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // System animations make Compose UI tests flaky on emulators.
+        animationsDisabled = true
+    }
 }
 
 dependencies {

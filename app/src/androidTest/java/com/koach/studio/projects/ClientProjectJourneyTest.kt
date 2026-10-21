@@ -3,7 +3,6 @@ package com.koach.studio.projects
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -11,37 +10,22 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
-import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.koach.studio.KoachApplication
+import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
-import com.koach.studio.core.di.DemoAppContainer
-import org.junit.After
-import org.junit.Before
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
+import org.junit.rules.RuleChain
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ClientProjectJourneyTest {
 
+    private val composeTestRule = createAndroidComposeRule<MainActivity>()
+
     @get:Rule
-    val composeTestRule = createEmptyComposeRule()
-
-    private lateinit var scenario: ActivityScenario<MainActivity>
-
-    @Before
-    fun setup() {
-        // Fresh in-memory data for every test, installed before the UI exists.
-        ApplicationProvider.getApplicationContext<KoachApplication>().container = DemoAppContainer()
-        scenario = ActivityScenario.launch(MainActivity::class.java)
-    }
-
-    @After
-    fun tearDown() {
-        scenario.close()
-    }
+    val rules: RuleChain = RuleChain.outerRule(FreshDemoData()).around(composeTestRule)
 
     @Test
     fun clientProjectJourney_openList_openProject_downloadDeliverable_requestRevision() {
