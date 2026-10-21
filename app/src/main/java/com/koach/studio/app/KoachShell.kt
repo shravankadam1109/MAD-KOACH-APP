@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -58,6 +59,16 @@ import com.koach.studio.documents.ui.AddDocumentViewModel
 import com.koach.studio.documents.ui.DocumentsScreen
 import com.koach.studio.documents.ui.DocumentsViewModel
 import com.koach.studio.home.AgencyHomeActions
+import com.koach.studio.messaging.ui.ConversationScreen
+import com.koach.studio.messaging.ui.ConversationViewModel
+import com.koach.studio.messaging.ui.ThreadListScreen
+import com.koach.studio.messaging.ui.ThreadListViewModel
+import com.koach.studio.notifications.ui.NotificationsScreen
+import com.koach.studio.notifications.ui.NotificationsViewModel
+import com.koach.studio.core.model.AppNotification
+import com.koach.studio.core.designsystem.components.CountBadge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.runtime.collectAsState
 import com.koach.studio.home.AgencyHomeScreen
 import com.koach.studio.home.AgencyHomeViewModel
 import com.koach.studio.home.ClientHomeActions
@@ -90,6 +101,9 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val showBottomBar = tabs.any { tab -> currentDestination?.route == tab.route }
+    val messageRepository = appContainer().messageRepository
+    val unreadFlow = remember(messageRepository) { messageRepository.observeUnreadCount() }
+    val unreadMessages by unreadFlow.collectAsState(initial = 0)
 
     Scaffold(
         containerColor = KoachTheme.colors.background,
@@ -102,6 +116,7 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
             ) {
                 KoachBottomBar(
                     tabs = tabs,
+                    badges = mapOf(TopLevelDestination.MESSAGES to unreadMessages),
                     isSelected = { tab -> currentDestination?.hierarchy?.any { it.route == tab.route } == true },
                     onSelect = { tab -> navController.navigateToTopLevel(tab.route) }
                 )
@@ -122,6 +137,7 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
 @Composable
 private fun KoachBottomBar(
     tabs: List<TopLevelDestination>,
+    badges: Map<TopLevelDestination, Int>,
     isSelected: (TopLevelDestination) -> Boolean,
     onSelect: (TopLevelDestination) -> Unit
 ) {
@@ -134,7 +150,12 @@ private fun KoachBottomBar(
                 NavigationBarItem(
                     selected = selected,
                     onClick = { onSelect(tab) },
-                    icon = { Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null) },
+                    icon = {
+                        val count = badges[tab] ?: 0
+                        BadgedBox(badge = { if (count > 0) CountBadge(count) }) {
+                            Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null)
+                        }
+                    },
                     label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = c.brand,
@@ -304,6 +325,33 @@ private fun KoachNavHost(
                 onBack = back
             )
         }
+        composable(Routes.MESSAGES) {
+            ThreadListScreen(
+                viewModel = koachViewModel { ThreadListViewModel(it.messageRepository, it.people, it.clock) },
+                onOpenThread = { id -> navController.navigate(Routes.conversation(id)) },
+                // Agency users reach Messages from More, so they get a back arrow.
+                onBack = if (user.role.isAgency) back else null
+            )
+        }
+        composable(
+            Routes.CONVERSATION,
+            arguments = listOf(navArgument("threadId") { type = NavType.StringType })
+        ) { entry ->
+            val threadId = entry.arguments?.getString("threadId").orEmpty()
+            ConversationScreen(
+                viewModel = koachViewModel(key = "thread-$threadId") {
+                    ConversationViewModel(threadId, user, it.messageRepository, it.people)
+                },
+                onBack = back
+            )
+        }
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(
+                viewModel = koachViewModel { NotificationsViewModel(it.notificationRepository, it.clock) },
+                onBack = back,
+                onOpenTarget = { notification -> navController.openNotificationTarget(notification) }
+            )
+        }
         composable(Routes.CLIENTS) {
             ClientListScreen(
                 viewModel = koachViewModel { ClientListViewModel(user, it.clientRepository, it.projectRepository) },
@@ -349,8 +397,6 @@ private fun KoachNavHost(
 
         // Destinations below are filled in by their feature modules.
         listOf(
-            Routes.MESSAGES to "Messages",
-            Routes.NOTIFICATIONS to "Notifications",
             Routes.PAYMENTS to "Payments",
             Routes.FEEDBACK to "Feedback",
             Routes.PROFILE to "Profile"
@@ -369,6 +415,17 @@ private fun DocumentsRoute(user: User, projectId: String?, navController: NavHos
         onBack = { navController.popBackStack() },
         onAddDocument = { navController.navigate(Routes.addDocument(projectId)) }
     )
+}
+
+/** Opens whatever a notification is about, based on its target id prefix. */
+private fun NavHostController.openNotificationTarget(notification: AppNotification) {
+    val target = notification.targetId ?: return
+    when {
+        target.startsWith("proj-") -> navigate(ProjectsDestinations.projectDetail(target))
+        target.startsWith("th-") -> navigate(Routes.conversation(target))
+        target.startsWith("t-") -> navigate(Routes.taskForm(target))
+        target.startsWith("bk-") -> navigate(Routes.BOOKINGS)
+    }
 }
 
 /** Switch tabs without growing the back stack, restoring each tab's state. */

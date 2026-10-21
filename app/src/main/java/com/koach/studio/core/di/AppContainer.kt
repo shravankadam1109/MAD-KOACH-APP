@@ -15,6 +15,8 @@ import com.koach.studio.documents.data.DemoDocumentStorage
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.DocumentStorage
 import com.koach.studio.documents.data.InMemoryDocumentRepository
+import com.koach.studio.messaging.data.InMemoryMessageRepository
+import com.koach.studio.messaging.data.MessageRepository
 import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.projects.data.InMemoryProjectRepository
@@ -46,6 +48,7 @@ interface AppContainer {
     val taskRepository: TaskRepository
     val documentRepository: DocumentRepository
     val documentStorage: DocumentStorage
+    val messageRepository: MessageRepository
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
@@ -97,4 +100,10 @@ class DemoAppContainer(
     }
 
     override val documentStorage: DocumentStorage = DemoDocumentStorage
+
+    override val messageRepository: MessageRepository by lazy {
+        InMemoryMessageRepository(
+            demoData.threads, demoData.messages, authRepository.currentUser, accessControl, notificationRepository, clock
+        )
+    }
 }

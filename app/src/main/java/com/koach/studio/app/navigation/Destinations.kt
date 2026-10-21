@@ -47,6 +47,10 @@ object Routes {
     const val CLIENT_DETAIL = "clients/{clientId}"
     const val CLIENT_FORM = "client-form?clientId={clientId}"
 
+    const val CONVERSATION = "messages/{threadId}"
+
+    fun conversation(threadId: String) = "messages/$threadId"
+
     const val PROJECT_DOCUMENTS = "documents?projectId={projectId}"
     const val ADD_DOCUMENT = "documents/new?projectId={projectId}"
 
