@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.koach.studio.app.KoachApp
 import com.koach.studio.core.designsystem.theme.KoachTheme
-import com.koach.studio.projects.navigation.ProjectsNavHost
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KoachTheme {
-                ProjectsNavHost()
+                KoachApp()
             }
         }
     }

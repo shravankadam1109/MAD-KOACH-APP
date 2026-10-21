@@ -1,8 +1,12 @@
 package com.koach.studio.core.di
 
+import com.koach.studio.core.auth.AccessControl
+import com.koach.studio.core.auth.AuthRepository
+import com.koach.studio.core.auth.DemoAuthRepository
 import com.koach.studio.core.data.DemoData
 import com.koach.studio.projects.data.InMemoryProjectRepository
 import com.koach.studio.projects.data.ProjectRepository
+import com.koach.studio.projects.data.SecuredProjectRepository
 import java.time.Clock
 import java.time.LocalDate
 
@@ -14,6 +18,8 @@ import java.time.LocalDate
  */
 interface AppContainer {
     val clock: Clock
+    val authRepository: AuthRepository
+    val accessControl: AccessControl
     val projectRepository: ProjectRepository
 }
 
@@ -21,7 +27,14 @@ interface AppContainer {
 class DemoAppContainer(
     override val clock: Clock = Clock.systemDefaultZone()
 ) : AppContainer {
+
     private val demoData by lazy { DemoData(LocalDate.now(clock)) }
 
-    override val projectRepository: ProjectRepository by lazy { InMemoryProjectRepository() }
+    override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users) }
+
+    override val accessControl: AccessControl by lazy { AccessControl { authRepository.currentUser.value } }
+
+    override val projectRepository: ProjectRepository by lazy {
+        SecuredProjectRepository(InMemoryProjectRepository(), authRepository.currentUser, accessControl)
+    }
 }

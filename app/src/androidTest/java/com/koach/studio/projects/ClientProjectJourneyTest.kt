@@ -41,6 +41,9 @@ class ClientProjectJourneyTest {
 
     @Test
     fun clientProjectJourney_openList_openProject_downloadDeliverable_requestRevision() {
+        // Step 0: Sign in with the demo client account that owns proj-1
+        composeTestRule.onNodeWithTag("demo_account_u-maya").performClick()
+
         // Step 1: Open project list - verify project list is displayed
         composeTestRule.onNodeWithTag("project_list").assertIsDisplayed()
         composeTestRule.onNodeWithText("Client Projects").assertIsDisplayed()
