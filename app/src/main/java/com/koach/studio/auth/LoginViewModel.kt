@@ -23,7 +23,10 @@ data class LoginUiState(
     val signedIn: Boolean = false,
     /** Sample accounts for this portal only. Empty when running against a real backend. */
     val demoAccounts: List<User> = emptyList(),
-    val isDemo: Boolean = false
+    val isDemo: Boolean = false,
+    val demoPassword: String? = null,
+    /** Neutral information, e.g. the result of a password reset request. */
+    val infoMessage: String? = null
 )
 
 class LoginViewModel(
@@ -35,7 +38,8 @@ class LoginViewModel(
         LoginUiState(
             portal = portal,
             demoAccounts = auth.demoAccounts().filter { portal.accepts(it.role) },
-            isDemo = auth.isDemo
+            isDemo = auth.isDemo,
+            demoPassword = auth.demoPassword
         )
     )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -44,6 +48,22 @@ class LoginViewModel(
     fun onPasswordChange(value: String) = _uiState.update { it.copy(password = value, errors = it.errors - Field.PASSWORD, errorMessage = null) }
     fun togglePasswordVisibility() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
     fun errorShown() = _uiState.update { it.copy(errorMessage = null) }
+    fun infoShown() = _uiState.update { it.copy(infoMessage = null) }
+
+    /** Asks the backend to email a reset link for the email in the form. */
+    fun requestPasswordReset() {
+        val email = _uiState.value.email
+        LoginValidator.validate(email, "x".repeat(LoginValidator.PASSWORD_MIN))[Field.EMAIL]?.let { error ->
+            _uiState.update { it.copy(errors = it.errors + (Field.EMAIL to error), infoMessage = null) }
+            return
+        }
+        viewModelScope.launch {
+            val result = auth.sendPasswordReset(email)
+            _uiState.update {
+                it.copy(infoMessage = result.fold({ "If $email has an account, a reset link is on its way." }, { e -> e.message }))
+            }
+        }
+    }
 
     fun signIn() {
         val state = _uiState.value
