@@ -4,6 +4,7 @@ import com.koach.studio.bookings.data.BookingRequest
 import com.koach.studio.bookings.data.BookingValidator
 import com.koach.studio.bookings.data.BookingValidator.Field
 import com.koach.studio.bookings.data.InMemoryBookingRepository
+import com.koach.studio.bookings.ui.BookingDetailViewModel
 import com.koach.studio.bookings.ui.NewBookingViewModel
 import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
@@ -15,6 +16,8 @@ import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.projects.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -99,5 +102,58 @@ class BookingWorkflowTest {
         vm.submit()
         assertNotNull(vm.uiState.value.submitted)
         assertEquals("Maya Rao", vm.uiState.value.contactName)
+    }
+
+    @Test
+    fun agency_transitionsFollowRules_andDeclineNeedsANote() = runTest {
+        auth.signInAsDemo("u-arjun")
+        // bk-2 is completed: nothing can change it.
+        assertTrue(bookings.updateStatus("bk-2", BookingStatus.CONFIRMED).isFailure)
+        // Pending can't jump straight to completed.
+        assertTrue(bookings.updateStatus("bk-1", BookingStatus.COMPLETED).isFailure)
+        assertTrue(bookings.updateStatus("bk-1", BookingStatus.DECLINED, "  ").isFailure)
+        assertTrue(bookings.updateStatus("bk-1", BookingStatus.DECLINED, "Fully booked that week").isSuccess)
+
+        auth.signInAsDemo("u-maya")
+        val declined = bookings.observeBooking("bk-1").first()!!
+        assertEquals(BookingStatus.DECLINED, declined.status)
+        assertEquals("Fully booked that week", declined.statusNote)
+        assertTrue(notifications.observeNotifications().first().any { it.targetId == "bk-1" && it.body == "Fully booked that week" })
+    }
+
+    @Test
+    fun confirmedBooking_canBeCompletedByAgency() = runTest {
+        auth.signInAsDemo("u-zoya")
+        assertTrue(bookings.updateStatus("bk-3", BookingStatus.COMPLETED).isSuccess)
+    }
+
+    @Test
+    fun client_cancelsOwnPendingRequest_only() = runTest {
+        auth.signInAsDemo("u-dev")
+        assertTrue(bookings.cancelBooking("bk-3").isFailure) // confirmed
+        auth.signInAsDemo("u-maya")
+        assertTrue(bookings.cancelBooking("bk-1").isSuccess)
+        assertEquals(BookingStatus.CANCELLED, bookings.observeBooking("bk-1").first()?.status)
+        auth.signInAsDemo("u-zoya")
+        assertTrue(bookings.cancelBooking("bk-4").isFailure) // agency can't use the client action
+    }
+
+    @Test
+    fun detailViewModel_offersActionsForRoleAndStatus() = runTest {
+        auth.signInAsDemo("u-maya")
+        val clientVm = BookingDetailViewModel("bk-1", auth.currentUser.value!!, bookings, catalog)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { clientVm.uiState.collect {} }
+        val clientState = clientVm.uiState.first { !it.isLoading }
+        assertTrue(clientState.canCancel)
+        assertTrue(clientState.agencyActions.isEmpty())
+
+        auth.signInAsDemo("u-arjun")
+        val agencyVm = BookingDetailViewModel("bk-1", auth.currentUser.value!!, bookings, catalog)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { agencyVm.uiState.collect {} }
+        val agencyState = agencyVm.uiState.first { !it.isLoading }
+        assertEquals(setOf(BookingStatus.CONFIRMED, BookingStatus.DECLINED), agencyState.agencyActions)
+        assertEquals(false, agencyState.canCancel)
+        agencyVm.setStatus(BookingStatus.CONFIRMED)
+        assertEquals(setOf(BookingStatus.COMPLETED), agencyVm.uiState.first { it.booking?.status == BookingStatus.CONFIRMED }.agencyActions)
     }
 }

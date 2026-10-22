@@ -49,6 +49,9 @@ object Routes {
     const val CLIENT_FORM = "client-form?clientId={clientId}"
 
     const val NEW_FEEDBACK = "feedback/new"
+    const val BOOKING_DETAIL = "booking/{bookingId}"
+
+    fun bookingDetail(bookingId: String) = "booking/$bookingId"
 
     const val CONVERSATION = "messages/{threadId}"
 

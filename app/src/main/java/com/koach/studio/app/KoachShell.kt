@@ -35,6 +35,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.koach.studio.app.menu.MenuScreen
+import com.koach.studio.bookings.ui.BookingDetailScreen
+import com.koach.studio.bookings.ui.BookingDetailViewModel
 import com.koach.studio.bookings.ui.BookingsScreen
 import com.koach.studio.clients.ui.ClientDetailScreen
 import com.koach.studio.clients.ui.ClientDetailViewModel
@@ -271,7 +273,20 @@ private fun KoachNavHost(
             BookingsScreen(
                 viewModel = koachViewModel { BookingsViewModel(user, it.bookingRepository, it.catalogRepository) },
                 onBack = back,
-                onNewBooking = { navController.navigate(Routes.newBooking()) }
+                onNewBooking = { navController.navigate(Routes.newBooking()) },
+                onOpenBooking = { id -> navController.navigate(Routes.bookingDetail(id)) }
+            )
+        }
+        composable(
+            Routes.BOOKING_DETAIL,
+            arguments = listOf(navArgument("bookingId") { type = NavType.StringType })
+        ) { entry ->
+            val bookingId = entry.arguments?.getString("bookingId").orEmpty()
+            BookingDetailScreen(
+                viewModel = koachViewModel(key = "booking-detail-$bookingId") {
+                    BookingDetailViewModel(bookingId, user, it.bookingRepository, it.catalogRepository)
+                },
+                onBack = back
             )
         }
 
@@ -462,7 +477,7 @@ private fun NavHostController.openNotificationTarget(notification: AppNotificati
         target.startsWith("proj-") -> navigate(ProjectsDestinations.projectDetail(target))
         target.startsWith("th-") -> navigate(Routes.conversation(target))
         target.startsWith("t-") -> navigate(Routes.taskForm(target))
-        target.startsWith("bk-") -> navigate(Routes.BOOKINGS)
+        target.startsWith("bk-") -> navigate(Routes.bookingDetail(target))
         target.startsWith("fb-") -> navigate(Routes.FEEDBACK)
     }
 }
