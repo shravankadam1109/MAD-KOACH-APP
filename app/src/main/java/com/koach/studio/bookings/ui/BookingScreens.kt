@@ -74,6 +74,7 @@ val BookingStatus.tone: Tone
         BookingStatus.CONFIRMED -> Tone.Brand
         BookingStatus.DECLINED -> Tone.Danger
         BookingStatus.COMPLETED -> Tone.Neutral
+        BookingStatus.CANCELLED -> Tone.Neutral
     }
 
 @Composable
@@ -265,6 +266,7 @@ fun BookingsScreen(
     viewModel: BookingsViewModel,
     onBack: () -> Unit,
     onNewBooking: () -> Unit,
+    onOpenBooking: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -334,7 +336,7 @@ fun BookingsScreen(
                     item,
                     canManage = state.canManage,
                     onConfirm = { viewModel.updateStatus(item.booking.id, BookingStatus.CONFIRMED) },
-                    onDecline = { viewModel.updateStatus(item.booking.id, BookingStatus.DECLINED) },
+                    onOpen = { onOpenBooking(item.booking.id) },
                     modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter)
                 )
             }
@@ -347,12 +349,12 @@ private fun BookingCard(
     item: BookingListItem,
     canManage: Boolean,
     onConfirm: () -> Unit,
-    onDecline: () -> Unit,
+    onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val c = KoachTheme.colors
     val booking = item.booking
-    KoachCard(modifier = modifier.fillMaxWidth().testTag("booking_${booking.id}")) {
+    KoachCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("booking_${booking.id}")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(item.serviceName, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
@@ -370,7 +372,7 @@ private fun BookingCard(
         if (canManage && booking.status == BookingStatus.PENDING) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KoachSecondaryButton("Decline", onClick = onDecline, destructive = true, modifier = Modifier.weight(1f).testTag("decline_${booking.id}"))
+                KoachSecondaryButton("Review", onClick = onOpen, modifier = Modifier.weight(1f).testTag("review_${booking.id}"))
                 KoachPrimaryButton("Confirm", onClick = onConfirm, modifier = Modifier.weight(1f).testTag("confirm_${booking.id}"))
             }
         }
