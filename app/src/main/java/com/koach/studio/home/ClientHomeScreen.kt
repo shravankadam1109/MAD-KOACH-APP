@@ -57,7 +57,6 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
-import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.tone
 
 data class ClientHomeActions(
@@ -220,7 +219,7 @@ private fun FeaturedProjectCard(project: Project, state: ClientHomeUiState, onOp
         Spacer(Modifier.height(16.dp))
         Text(project.title, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
         Spacer(Modifier.height(4.dp))
-        project.dueLocalDate?.let {
+        project.dueDate.let {
             Text(formatDue(it, state.today), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         }
         Spacer(Modifier.height(20.dp))

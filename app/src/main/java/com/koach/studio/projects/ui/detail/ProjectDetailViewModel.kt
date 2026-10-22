@@ -2,7 +2,10 @@ package com.koach.studio.projects.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.koach.studio.projects.data.DeliverableDownloader
+import com.koach.studio.projects.data.DownloadProgress
 import com.koach.studio.projects.data.ProjectRepository
+import com.koach.studio.projects.data.SimulatedDeliverableDownloader
 import com.koach.studio.core.auth.Permission
 import com.koach.studio.core.auth.can
 import com.koach.studio.core.model.User
@@ -34,7 +37,9 @@ data class ProjectDetailUiState(
     /** Revision history, newest first, with the requester's name resolved. */
     val revisionHistory: List<RevisionEntry> = emptyList(),
     val team: List<User> = emptyList(),
-    val actionMessage: String? = null
+    val actionMessage: String? = null,
+    /** Download progress for visible deliverables, by deliverable id. Device-local. */
+    val downloads: Map<String, DownloadProgress> = emptyMap()
 )
 
 class ProjectDetailViewModel(
@@ -43,12 +48,13 @@ class ProjectDetailViewModel(
     /** Signed-in user; decides which actions are offered. Null shows a read-only view. */
     private val user: User? = null,
     /** Directory used to show the project's crew. */
-    private val people: List<User> = emptyList()
+    private val people: List<User> = emptyList(),
+    private val downloader: DeliverableDownloader = SimulatedDeliverableDownloader()
 ) : ViewModel() {
 
     private val actionMessage = MutableStateFlow<String?>(null)
 
-    val uiState: StateFlow<ProjectDetailUiState> = combine(repository.getProjectById(projectId), actionMessage) { project, message ->
+    val uiState: StateFlow<ProjectDetailUiState> = combine(repository.getProjectById(projectId), actionMessage, downloader.downloads) { project, message, downloads ->
         if (project != null) {
             ProjectDetailUiState(
                 project = project,
@@ -65,7 +71,10 @@ class ProjectDetailViewModel(
                         deliverableName = project.deliverables.find { it.id == revision.deliverableId }?.name
                     )
                 },
-                actionMessage = message
+                actionMessage = message,
+                downloads = project.deliverables.mapNotNull { d ->
+                    downloads[DeliverableDownloader.key(d)]?.let { d.id to it }
+                }.toMap()
             )
         } else {
             ProjectDetailUiState(isLoading = false, errorMessage = "Project not found")
@@ -106,8 +115,8 @@ class ProjectDetailViewModel(
     }
 
     fun downloadDeliverable(deliverableId: String, simulateFailure: Boolean = false) {
-        viewModelScope.launch {
-            repository.startDeliverableDownload(projectId, deliverableId, simulateFailure)
-        }
+        // Only deliverables the user can currently see can be downloaded.
+        val deliverable = uiState.value.project?.deliverables?.find { it.id == deliverableId } ?: return
+        viewModelScope.launch { downloader.download(deliverable, simulateFailure) }
     }
 }

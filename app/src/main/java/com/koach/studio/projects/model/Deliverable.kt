@@ -9,8 +9,6 @@ data class Deliverable(
     val version: String,
     val notes: String = "",
     val status: DeliverableStatus = DeliverableStatus.DRAFT,
-    val downloadState: DownloadState = DownloadState.IDLE,
-    val downloadProgress: Float = 0f,
     /** Earlier versions, oldest first, e.g. ["v1.0"]. The current one is [version]. */
     val previousVersions: List<String> = emptyList()
 ) {

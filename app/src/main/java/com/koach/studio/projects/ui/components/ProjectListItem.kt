@@ -27,7 +27,6 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
-import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.tone
 import java.time.LocalDate
 
@@ -39,8 +38,8 @@ fun ProjectListItem(
     today: LocalDate = LocalDate.now()
 ) {
     val c = KoachTheme.colors
-    val due = project.dueLocalDate
-    val overdue = due != null && due.isBefore(today) && project.status != ProjectStatus.COMPLETED
+    val due = project.dueDate
+    val overdue = due.isBefore(today) && project.status != ProjectStatus.COMPLETED
 
     KoachCard(
         onClick = onClick,
@@ -63,15 +62,13 @@ fun ProjectListItem(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
             Spacer(Modifier.width(14.dp))
-            if (due != null) {
-                Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (overdue) Tone.Danger.color() else c.textSecondary
-                )
-            }
+            Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (overdue) Tone.Danger.color() else c.textSecondary
+            )
             Spacer(Modifier.weight(1f))
             Icon(Icons.Outlined.FolderOpen, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))

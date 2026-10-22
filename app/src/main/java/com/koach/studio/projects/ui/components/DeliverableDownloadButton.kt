@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.koach.studio.projects.data.DownloadProgress
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DownloadState
 
@@ -35,12 +36,15 @@ import com.koach.studio.projects.model.DownloadState
 fun DeliverableDownloadButton(
     deliverable: Deliverable,
     onDownloadClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    download: DownloadProgress? = null
 ) {
+    val state = download?.state ?: DownloadState.IDLE
+    val progress = download?.progress ?: 0f
     val brandGreen = KoachTheme.colors.brand
     val errorColor = KoachTheme.colors.danger
 
-    when (deliverable.downloadState) {
+    when (state) {
         DownloadState.IDLE -> {
             IconButton(
                 onClick = onDownloadClick,
@@ -69,14 +73,14 @@ fun DeliverableDownloadButton(
                     .testTag("downloading_progress_${deliverable.id}")
             ) {
                 CircularProgressIndicator(
-                    progress = { deliverable.downloadProgress },
+                    progress = { progress },
                     modifier = Modifier.size(14.dp),
                     color = brandGreen,
                     strokeWidth = 2.dp,
                     trackColor = KoachTheme.colors.brandOutline
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                val percentage = (deliverable.downloadProgress * 100).toInt()
+                val percentage = (progress * 100).toInt()
                 Text(
                     text = "$percentage%",
                     color = brandGreen,
