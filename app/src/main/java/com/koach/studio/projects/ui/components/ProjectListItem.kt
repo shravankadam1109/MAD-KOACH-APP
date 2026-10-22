@@ -49,7 +49,8 @@ fun ProjectListItem(
             .testTag("project_item_${project.id}")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusPill(project.status.displayName, project.status.tone)
+            // Animated status pill: color + label cross-fade on status change
+            AnimatedStatusPill(project.status.displayName, project.status.tone)
             Spacer(Modifier.weight(1f))
             Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
         }
