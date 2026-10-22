@@ -1,12 +1,14 @@
 package com.koach.studio.projects.model
 
+import java.time.LocalDate
+
 data class Project(
     val id: String,
     val title: String,
     val clientName: String,
     val serviceType: ServiceType,
     val status: ProjectStatus,
-    val dueDate: String,
+    val dueDate: LocalDate,
     val description: String,
     val deliverables: List<Deliverable> = emptyList(),
     /** Owning client record; empty for projects created before clients existed. */

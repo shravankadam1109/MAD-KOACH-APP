@@ -74,11 +74,6 @@ class SecuredProjectRepository(
         delegate.publishNewVersion(projectId, deliverableId, notes)
     }
 
-    override suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean) {
-        if (getProjectById(projectId).first() == null) return
-        delegate.startDeliverableDownload(projectId, deliverableId, simulateFailure)
-    }
-
     override suspend fun updateProjectStatus(projectId: String, status: ProjectStatus): Result<Unit> = guarded {
         access.require(Permission.MANAGE_PROJECTS)
         requireProject(projectId)
