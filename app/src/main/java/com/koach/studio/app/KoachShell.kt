@@ -233,7 +233,8 @@ private fun KoachNavHost(
             PortfolioDetailScreen(
                 viewModel = koachViewModel(key = "portfolio-$itemId") { PortfolioDetailViewModel(itemId, it.catalogRepository) },
                 onBack = back,
-                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) }
+                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) },
+                onBookSimilar = { serviceId -> navController.navigate(Routes.newBooking(serviceId)) }
             )
         }
         composable(

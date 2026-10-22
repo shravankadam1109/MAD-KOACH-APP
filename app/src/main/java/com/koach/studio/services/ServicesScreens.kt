@@ -43,6 +43,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.koach.studio.catalog.ui.icon
 import com.koach.studio.catalog.ui.tone
@@ -96,7 +98,15 @@ fun LazyListScope.servicesCatalog(
 @Composable
 private fun ServiceCard(service: CreativeService, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
-    KoachCard(onClick = onClick, modifier = modifier.fillMaxWidth().testTag("service_${service.id}")) {
+    KoachCard(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("service_${service.id}")
+            .semantics {
+                contentDescription = "${service.name}, starting from ${formatInr(service.startingPriceInr)}, ${service.packages.size} packages available"
+            }
+    ) {
         Row(verticalAlignment = Alignment.Top) {
             IconTile(service.category.icon, tone = service.category.tone, size = 48.dp)
             Spacer(Modifier.width(14.dp))
@@ -115,7 +125,7 @@ private fun ServiceCard(service: CreativeService, onClick: () -> Unit, modifier:
             Spacer(Modifier.width(8.dp))
             Text("· ${service.packages.size} packages", style = MaterialTheme.typography.bodySmall, color = c.textTertiary)
             Spacer(Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = c.textSecondary, modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Open ${service.name} packages", tint = c.textSecondary, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -255,9 +265,10 @@ private fun RadioDot(selected: Boolean) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(22.dp)
+            .size(24.dp)
             .clip(CircleShape)
             .border(2.dp, if (selected) c.brand else c.outline, CircleShape)
+            .semantics { contentDescription = if (selected) "Selected package" else "Unselected package" }
     ) {
         if (selected) Box(Modifier.size(10.dp).clip(CircleShape).background(c.brand))
     }
