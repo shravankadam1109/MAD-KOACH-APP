@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.SearchOff
@@ -32,6 +32,7 @@ import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.ServiceType
 import com.koach.studio.projects.ui.components.ProjectListItem
+import com.koach.studio.projects.ui.components.staggeredEntrance
 
 @Composable
 fun ProjectListScreen(
@@ -90,11 +91,13 @@ fun ProjectListScreen(
                     )
                 }
             }
-            items(uiState.projects, key = { it.id }) { project ->
+            itemsIndexed(uiState.projects, key = { _, project -> project.id }) { index, project ->
                 ProjectListItem(
                     project = project,
                     onClick = { onProjectClick(project.id) },
-                    modifier = Modifier.padding(horizontal = gutter)
+                    modifier = Modifier
+                        .padding(horizontal = gutter)
+                        .staggeredEntrance(index = index)
                 )
             }
         }
