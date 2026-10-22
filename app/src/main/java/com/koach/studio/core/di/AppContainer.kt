@@ -25,7 +25,9 @@ import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.payments.InMemoryPaymentRepository
 import com.koach.studio.payments.PaymentRepository
+import com.koach.studio.projects.data.DeliverableDownloader
 import com.koach.studio.projects.data.InMemoryProjectRepository
+import com.koach.studio.projects.data.SimulatedDeliverableDownloader
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskRepository
 import com.koach.studio.projects.data.ProjectRepository
@@ -47,6 +49,8 @@ interface AppContainer {
     /** People directory (staff and client contacts) used to show names and avatars. */
     val people: List<User>
     val projectRepository: ProjectRepository
+    /** Device-local download progress, shared across screens for the session. */
+    val deliverableDownloader: DeliverableDownloader
     val notificationRepository: NotificationRepository
     val catalogRepository: CatalogRepository
     val bookingRepository: BookingRepository
@@ -76,6 +80,8 @@ class DemoAppContainer(
 
     /** Unfiltered project store; everything outside this container goes through [projectRepository]. */
     private val projectStore by lazy { InMemoryProjectRepository(clock = clock) }
+
+    override val deliverableDownloader: DeliverableDownloader by lazy { SimulatedDeliverableDownloader() }
 
     override val projectRepository: ProjectRepository by lazy {
         SecuredProjectRepository(projectStore, authRepository.currentUser, accessControl)

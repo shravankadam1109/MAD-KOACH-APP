@@ -1,6 +1,8 @@
 package com.koach.studio.projects
 
+import com.koach.studio.projects.data.DeliverableDownloader
 import com.koach.studio.projects.data.InMemoryProjectRepository
+import com.koach.studio.projects.data.SimulatedDeliverableDownloader
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
 import com.koach.studio.projects.model.DownloadState
@@ -15,6 +17,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.LocalDate
 
 class InMemoryProjectRepositoryTest {
 
@@ -25,7 +28,7 @@ class InMemoryProjectRepositoryTest {
         clientName = "Indie Label",
         serviceType = ServiceType.SHOOTING,
         status = ProjectStatus.IN_PROGRESS,
-        dueDate = "2026-12-01",
+        dueDate = LocalDate.of(2026, 12, 1),
         description = "Shooting test footage",
         deliverables = listOf(
             Deliverable(
@@ -108,20 +111,34 @@ class InMemoryProjectRepositoryTest {
 
     @Test
     fun startDeliverableDownload_success_completesWithDoneState() = runTest {
-        repository.startDeliverableDownload("test-proj-1", "test-del-1", simulateFailure = false)
+        // Download progress moved out of the shared data into a device-local downloader.
+        val downloader = SimulatedDeliverableDownloader()
+        val deliverable = repository.getProjectById("test-proj-1").first()!!.deliverables.first { it.id == "test-del-1" }
+        downloader.download(deliverable, simulateFailure = false)
 
-        val project = repository.getProjectById("test-proj-1").first()
-        val deliverable = project?.deliverables?.find { it.id == "test-del-1" }
-        assertEquals(DownloadState.DONE, deliverable?.downloadState)
-        assertEquals(1.0f, deliverable?.downloadProgress ?: 0f, 0.01f)
+        val progress = downloader.downloads.value[DeliverableDownloader.key(deliverable)]
+        assertEquals(DownloadState.DONE, progress?.state)
+        assertEquals(1.0f, progress?.progress ?: 0f, 0.01f)
     }
 
     @Test
     fun startDeliverableDownload_failureSimulation_completesWithFailedState() = runTest {
-        repository.startDeliverableDownload("test-proj-1", "test-del-1", simulateFailure = true)
+        val downloader = SimulatedDeliverableDownloader()
+        val deliverable = repository.getProjectById("test-proj-1").first()!!.deliverables.first { it.id == "test-del-1" }
+        downloader.download(deliverable, simulateFailure = true)
 
-        val project = repository.getProjectById("test-proj-1").first()
-        val deliverable = project?.deliverables?.find { it.id == "test-del-1" }
-        assertEquals(DownloadState.FAILED, deliverable?.downloadState)
+        assertEquals(DownloadState.FAILED, downloader.downloads.value[DeliverableDownloader.key(deliverable)]?.state)
+    }
+
+    @Test
+    fun downloadProgress_isNotStoredInProjectData_andNewVersionStartsFresh() = runTest {
+        val downloader = SimulatedDeliverableDownloader()
+        val v1 = repository.getProjectById("test-proj-1").first()!!.deliverables.first { it.id == "test-del-1" }
+        downloader.download(v1)
+        repository.publishNewVersion("test-proj-1", "test-del-1", "")
+        val v2 = repository.getProjectById("test-proj-1").first()!!.deliverables.first { it.id == "test-del-1" }
+
+        assertEquals(DownloadState.DONE, downloader.downloads.value[DeliverableDownloader.key(v1)]?.state)
+        assertEquals(null, downloader.downloads.value[DeliverableDownloader.key(v2)])
     }
 }
