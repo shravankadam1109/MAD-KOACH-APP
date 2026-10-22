@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -97,7 +98,9 @@ fun KoachTextField(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailing: (@Composable () -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -105,6 +108,7 @@ fun KoachTextField(
         label = { Text(label) },
         placeholder = placeholder?.let { { Text(it) } },
         leadingIcon = leadingIcon?.let { { Icon(it, contentDescription = null) } },
+        trailingIcon = trailing,
         isError = error != null,
         supportingText = when {
             error != null -> { { Text(error) } }
@@ -122,6 +126,7 @@ fun KoachTextField(
         minLines = minLines,
         enabled = enabled,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
         shape = RoundedCornerShape(KoachRadius.md),
         colors = koachTextFieldColors(),

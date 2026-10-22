@@ -43,6 +43,8 @@ fun KoachTopBar(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
+    /** Lets a screen's own background (e.g. the brand glow) show through. */
+    transparent: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val c = KoachTheme.colors
@@ -71,8 +73,8 @@ fun KoachTopBar(
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = c.background,
-            scrolledContainerColor = c.background
+            containerColor = if (transparent) Color.Transparent else c.background,
+            scrolledContainerColor = if (transparent) Color.Transparent else c.background
         ),
         modifier = modifier
     )

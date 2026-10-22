@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.awaitTag
 import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
@@ -33,7 +34,7 @@ class RoleNavigationTest {
 
         rule.onNodeWithTag("tab_account").performClick()
         rule.onNodeWithTag("sign_out_button").performScrollTo().performClick()
-        rule.onNodeWithTag("sign_in_screen").assertIsDisplayed()
+        rule.awaitTag("welcome_screen")
     }
 
     @Test
