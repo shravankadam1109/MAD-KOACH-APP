@@ -32,6 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,19 +74,12 @@ import com.koach.studio.core.model.User
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Movie
 
-/** Extra links under the form; each is optional so a portal can omit it. */
-data class LoginLinks(
-    val onForgotPassword: (() -> Unit)? = null,
-    val onCreateAccount: (() -> Unit)? = null
-)
-
 /** Client portal sign-in. */
 @Composable
-fun ClientLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, links: LoginLinks = LoginLinks(), modifier: Modifier = Modifier) {
+fun ClientLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     LoginScreen(
         viewModel = viewModel,
         onBack = onBack,
-        links = links,
         copy = LoginCopy(
             eyebrow = "Client portal",
             headline = "Welcome back.",
@@ -97,11 +95,10 @@ fun ClientLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, links: Logi
 
 /** Agency team sign-in. */
 @Composable
-fun TeamLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, links: LoginLinks = LoginLinks(), modifier: Modifier = Modifier) {
+fun TeamLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     LoginScreen(
         viewModel = viewModel,
         onBack = onBack,
-        links = links.copy(onCreateAccount = null),
         copy = LoginCopy(
             eyebrow = "Agency team",
             headline = "Studio sign-in.",
@@ -129,13 +126,13 @@ private data class LoginCopy(
 private fun LoginScreen(
     viewModel: LoginViewModel,
     onBack: () -> Unit,
-    links: LoginLinks,
     copy: LoginCopy,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
     val c = KoachTheme.colors
     val focus = LocalFocusManager.current
+    var showRequestAccess by rememberSaveable { mutableStateOf(false) }
 
     KoachBackground(modifier.fillMaxSize()) {
     Scaffold(
@@ -194,12 +191,20 @@ private fun LoginScreen(
                 modifier = Modifier.testTag("login_password")
             )
 
-            if (links.onForgotPassword != null) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    KoachTextButton("Forgot password?", onClick = links.onForgotPassword, modifier = Modifier.testTag("forgot_password"))
-                }
-            } else {
-                Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                KoachTextButton("Forgot password?", onClick = viewModel::requestPasswordReset, modifier = Modifier.testTag("forgot_password"))
+            }
+
+            state.infoMessage?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite }
+                        .testTag("login_info")
+                )
             }
 
             state.errorMessage?.let {
@@ -222,10 +227,10 @@ private fun LoginScreen(
                 modifier = Modifier.fillMaxWidth().testTag("login_submit")
             )
 
-            if (copy.createAccountLabel != null && links.onCreateAccount != null) {
+            if (copy.createAccountLabel != null) {
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    KoachTextButton(copy.createAccountLabel, onClick = links.onCreateAccount, modifier = Modifier.testTag("create_account"))
+                    KoachTextButton(copy.createAccountLabel, onClick = { showRequestAccess = true }, modifier = Modifier.testTag("create_account"))
                 }
             }
 
@@ -236,6 +241,22 @@ private fun LoginScreen(
             Spacer(Modifier.height(24.dp))
         }
     }
+    }
+
+    if (showRequestAccess) {
+        AlertDialog(
+            onDismissRequest = { showRequestAccess = false },
+            containerColor = c.surfaceRaised,
+            title = { Text("Request access", color = c.textPrimary) },
+            text = {
+                Text(
+                    "Client accounts are created by the studio when your project starts, and you'll get an invite by email. " +
+                        if (state.isDemo) "In this demo, use one of the sample client accounts below." else "Already working with us? Ask your producer for an invite.",
+                    color = c.textSecondary
+                )
+            },
+            confirmButton = { TextButton(onClick = { showRequestAccess = false }) { Text("Got it", color = c.brand) } }
+        )
     }
 }
 
@@ -249,9 +270,11 @@ private fun DemoAccounts(state: LoginUiState, onSelect: (String) -> Unit) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            "Sample people for trying the app. Not real logins.",
+            "Sample people for trying the app. Not real logins." +
+                (state.demoPassword?.let { " Tap one, or use its email with the demo password \"$it\"." } ?: ""),
             style = MaterialTheme.typography.bodySmall,
-            color = c.textTertiary
+            color = c.textTertiary,
+            modifier = Modifier.testTag("demo_password_hint")
         )
         Spacer(Modifier.height(8.dp))
         state.demoAccounts.forEachIndexed { index, user ->
