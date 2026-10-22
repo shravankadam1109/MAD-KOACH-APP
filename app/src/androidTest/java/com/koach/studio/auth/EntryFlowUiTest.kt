@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import com.koach.studio.core.auth.DemoAuthRepository
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.espresso.Espresso.pressBack
 import com.koach.studio.FreshDemoData
@@ -46,5 +48,16 @@ class EntryFlowUiTest {
         rule.onNodeWithTag("login_submit").performClick()
         rule.onNodeWithText("Enter your email").assertIsDisplayed()
         rule.onNodeWithText("Enter your password").assertIsDisplayed()
+    }
+
+    @Test
+    fun teamLogin_withEmailAndDemoPassword_opensStudio() {
+        rule.awaitTag("welcome_screen")
+        rule.onNodeWithTag("enter_team").performClick()
+        rule.awaitTag("login_email")
+        rule.onNodeWithTag("login_email").performTextInput("isha@koach.example")
+        rule.onNodeWithTag("login_password").performTextInput(DemoAuthRepository.DEMO_PASSWORD)
+        rule.onNodeWithTag("login_submit").performClick()
+        rule.awaitTag("tab_agency_home")
     }
 }

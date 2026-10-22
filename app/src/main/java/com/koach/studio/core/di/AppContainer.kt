@@ -9,6 +9,8 @@ import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
+import com.koach.studio.core.auth.InMemorySessionStore
+import com.koach.studio.core.auth.SessionStore
 import com.koach.studio.core.data.DemoData
 import com.koach.studio.core.model.User
 import com.koach.studio.documents.data.DemoDocumentStorage
@@ -59,12 +61,14 @@ interface AppContainer {
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
 class DemoAppContainer(
-    override val clock: Clock = Clock.systemDefaultZone()
+    override val clock: Clock = Clock.systemDefaultZone(),
+    /** In-memory by default (tests); the app passes a persistent store. */
+    private val sessionStore: SessionStore = InMemorySessionStore()
 ) : AppContainer {
 
     private val demoData by lazy { DemoData(LocalDate.now(clock)) }
 
-    override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users) }
+    override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users, sessionStore) }
 
     override val people: List<User> by lazy { demoData.users }
 
