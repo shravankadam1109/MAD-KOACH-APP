@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -275,8 +277,8 @@ fun ProjectDetailScreen(
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
-                    items(uiState.revisionHistory, key = { it.revision.id }) { entry ->
-                        RevisionHistoryItem(entry, today)
+                    itemsIndexed(uiState.revisionHistory, key = { _, entry -> entry.revision.id }) { index, entry ->
+                        RevisionTimelineItem(entry, today, index == 0, index == uiState.revisionHistory.lastIndex)
                     }
                 }
             }
@@ -328,9 +330,19 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
 }
 
 @Composable
-private fun RevisionHistoryItem(entry: RevisionEntry, today: LocalDate) {
+private fun RevisionTimelineItem(entry: RevisionEntry, today: LocalDate, isFirst: Boolean, isLast: Boolean) {
     val c = KoachTheme.colors
-    KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth().testTag("revision_${entry.revision.id}")) {
+    val accent = if (entry.revision.resolved) c.success else c.warning
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(28.dp)) {
+            Box(modifier = Modifier.width(2.dp).height(14.dp).background(if (isFirst) Color.Transparent else c.outline))
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(14.dp).clip(CircleShape).background(accent.copy(alpha = 0.2f)).border(2.dp, accent, CircleShape)) {
+                Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(accent))
+            }
+            Box(modifier = Modifier.width(2.dp).heightIn(min = 40.dp).background(if (isLast) Color.Transparent else c.outline))
+        }
+        Spacer(Modifier.width(8.dp))
+        KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.weight(1f).padding(bottom = 12.dp).testTag("revision_${entry.revision.id}")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KoachAvatar(entry.requesterName.split(" ").take(2).joinToString("") { it.take(1) }, size = 32.dp)
             Spacer(Modifier.width(10.dp))
@@ -346,5 +358,6 @@ private fun RevisionHistoryItem(entry: RevisionEntry, today: LocalDate) {
         }
         Spacer(Modifier.height(10.dp))
         Text("\u201C${entry.revision.reason}\u201D", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+        }
     }
 }
