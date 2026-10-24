@@ -26,12 +26,12 @@ import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.KoachBackground
 import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachSearchField
-import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.koachViewModel
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.ServiceType
 import com.koach.studio.projects.ui.components.ProjectListItem
+import com.koach.studio.projects.ui.components.ProjectListShimmer
 import com.koach.studio.projects.ui.components.staggeredEntrance
 
 @Composable
@@ -47,7 +47,7 @@ fun ProjectListScreen(
 
     KoachBackground(modifier.fillMaxSize()) {
         if (uiState.isLoading) {
-            LoadingState()
+            ProjectListShimmer()
             return@KoachBackground
         }
         LazyColumn(

@@ -61,6 +61,7 @@ import com.koach.studio.projects.model.Milestone
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.components.DeliverableRow
+import com.koach.studio.projects.ui.components.ProjectDetailShimmer
 import com.koach.studio.projects.ui.tone
 import java.time.LocalDate
 
@@ -97,7 +98,7 @@ fun ProjectDetailScreen(
         modifier = modifier
     ) { innerPadding ->
         when {
-            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+            uiState.isLoading -> ProjectDetailShimmer(Modifier.padding(innerPadding))
             uiState.errorMessage != null || project == null ->
                 ErrorState(uiState.errorMessage ?: "Project not found", Modifier.padding(innerPadding))
             else -> LazyColumn(
