@@ -129,6 +129,16 @@ fun NewBookingScreen(
                     error = state.errors[Field.SERVICE],
                     modifier = Modifier.testTag("booking_service")
                 )
+                state.selectedService?.let { svc ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    ) {
+                        Text("Category: ${svc.category.displayName}", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                        Text("Starts at ${formatInr(svc.startingPriceInr)}", style = MaterialTheme.typography.labelMedium, color = c.brand)
+                    }
+                }
                 val packages = state.selectedService?.packages.orEmpty()
                 if (packages.isNotEmpty()) {
                     KoachDropdownField(
@@ -140,16 +150,36 @@ fun NewBookingScreen(
                         placeholder = "Not sure yet"
                     )
                 }
-                KoachDateField(
-                    label = "Preferred date",
-                    value = state.preferredDate,
-                    onValueChange = viewModel::onDateSelected,
-                    error = state.errors[Field.DATE],
-                    helper = "At least ${BookingValidator.MIN_LEAD_DAYS} days from today",
-                    earliest = state.today.plusDays(BookingValidator.MIN_LEAD_DAYS),
-                    latest = state.today.plusDays(BookingValidator.MAX_AHEAD_DAYS),
-                    fieldModifier = Modifier.testTag("booking_date")
-                )
+                Column {
+                    KoachDateField(
+                        label = "Preferred date",
+                        value = state.preferredDate,
+                        onValueChange = viewModel::onDateSelected,
+                        error = state.errors[Field.DATE],
+                        helper = "At least ${BookingValidator.MIN_LEAD_DAYS} days from today",
+                        earliest = state.today.plusDays(BookingValidator.MIN_LEAD_DAYS),
+                        latest = state.today.plusDays(BookingValidator.MAX_AHEAD_DAYS),
+                        fieldModifier = Modifier.testTag("booking_date")
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val quickDates = listOf(
+                            "In 3 days" to state.today.plusDays(3),
+                            "Next week" to state.today.plusDays(7),
+                            "In 2 weeks" to state.today.plusDays(14)
+                        )
+                        quickDates.forEach { (label, qDate) ->
+                            KoachSecondaryButton(
+                                text = label,
+                                onClick = { viewModel.onDateSelected(qDate) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
                 KoachTextField(
                     value = state.budget,
                     onValueChange = viewModel::onBudgetChanged,
