@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -180,14 +184,51 @@ fun NewBookingScreen(
                         }
                     }
                 }
-                KoachTextField(
-                    value = state.budget,
-                    onValueChange = viewModel::onBudgetChanged,
-                    label = "Budget in ₹ (optional)",
-                    leadingIcon = Icons.Outlined.CurrencyRupee,
-                    error = state.errors[Field.BUDGET],
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
+                Column {
+                    KoachTextField(
+                        value = state.budget,
+                        onValueChange = viewModel::onBudgetChanged,
+                        label = "Budget in ₹ (optional)",
+                        leadingIcon = Icons.Outlined.CurrencyRupee,
+                        error = state.errors[Field.BUDGET],
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.testTag("booking_budget")
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text("Budget recommendations:", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                    Spacer(Modifier.height(6.dp))
+                    val tiers = state.selectedService?.packages?.map { it.name to it.priceInr.toString() }
+                        ?: listOf("Starter" to "30000", "Growth" to "75000", "Flagship" to "150000", "Enterprise" to "300000")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        tiers.forEach { (name, amount) ->
+                            val isSelected = state.budget == amount
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.onBudgetChanged(if (isSelected) "" else amount) },
+                                label = { Text("$name (${formatInr(amount.toLong())})") },
+                                shape = RoundedCornerShape(50),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = if (isSelected) c.brand else c.surface,
+                                    labelColor = if (isSelected) c.onBrand else c.textSecondary,
+                                    selectedContainerColor = c.brand,
+                                    selectedLabelColor = c.onBrand
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    borderColor = if (isSelected) c.brand else c.outline,
+                                    selectedBorderColor = c.brand
+                                ),
+                                modifier = Modifier.testTag("budget_tier_$amount")
+                            )
+                        }
+                    }
+                }
                 KoachTextField(
                     value = state.details,
                     onValueChange = viewModel::onDetailsChanged,
