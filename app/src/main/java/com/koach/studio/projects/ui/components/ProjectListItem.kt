@@ -57,31 +57,50 @@ fun ProjectListItem(
             // Animated status pill: color + label cross-fade on status change with status icon
             AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon)
             Spacer(Modifier.weight(1f))
-            Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            Text(
+                project.serviceType.displayName.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = c.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
         Spacer(Modifier.height(14.dp))
         Text(project.title, style = MaterialTheme.typography.titleLarge, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(project.clientName, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+        Text(project.clientName, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(16.dp))
         KoachProgressBar(project.progress, height = 5.dp)
         Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(10.dp))
             if (due != null) {
                 Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(
                     if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (overdue) Tone.Danger.color() else c.textSecondary
+                    color = if (overdue) Tone.Danger.color() else c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+            } else {
+                Spacer(Modifier.weight(1f))
             }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(8.dp))
             Icon(Icons.Outlined.FolderOpen, contentDescription = "Deliverable files", tint = c.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
-            Text("${project.deliverables.size} files", style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+            Text(
+                "${project.deliverables.size} files",
+                style = MaterialTheme.typography.labelMedium,
+                color = c.textSecondary,
+                maxLines = 1
+            )
         }
     }
 }

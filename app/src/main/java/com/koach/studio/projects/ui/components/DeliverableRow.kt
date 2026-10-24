@@ -82,13 +82,13 @@ fun DeliverableRow(
             IconTile(deliverable.icon, tone = deliverable.status.tone.takeIf { it != Tone.Neutral } ?: Tone.Brand, size = 42.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(deliverable.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(deliverable.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${deliverable.version} · ${deliverable.type} · ${deliverable.size}",
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -115,7 +115,7 @@ fun DeliverableRow(
 
         if (deliverable.notes.isNotBlank()) {
             Spacer(Modifier.height(10.dp))
-            Text(deliverable.notes, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(deliverable.notes, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -126,7 +126,9 @@ fun DeliverableRow(
                 Text(
                     "Earlier: ${deliverable.previousVersions.joinToString(", ")}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = c.textTertiary
+                    color = c.textTertiary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
