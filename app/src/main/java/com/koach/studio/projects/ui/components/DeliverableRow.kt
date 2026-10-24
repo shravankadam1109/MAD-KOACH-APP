@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.IconTile
@@ -71,6 +73,9 @@ fun DeliverableRow(
         modifier = modifier
             .fillMaxWidth()
             .testTag("deliverable_row_${deliverable.id}")
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${deliverable.name}, version ${deliverable.version}, ${deliverable.type}, ${deliverable.size}, status ${deliverable.status.displayName}"
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(deliverable.icon, tone = deliverable.status.tone.takeIf { it != Tone.Neutral } ?: Tone.Brand, size = 42.dp)
@@ -91,8 +96,16 @@ fun DeliverableRow(
                 DeliverableDownloadButton(deliverable = deliverable, onDownloadClick = onDownloadClick)
             }
             if (onEditClick != null) {
-                IconButton(onClick = onEditClick, modifier = Modifier.testTag("edit_deliverable_button_${deliverable.id}")) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "Edit ${deliverable.name}", tint = c.textSecondary, modifier = Modifier.size(20.dp))
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.testTag("edit_deliverable_button_${deliverable.id}")
+                ) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = "Edit ${deliverable.name}",
+                        tint = c.textSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -123,7 +136,9 @@ fun DeliverableRow(
                         text = "Request changes",
                         onClick = onRequestChanges,
                         leadingIcon = Icons.Outlined.RateReview,
-                        modifier = Modifier.weight(1f).testTag("request_changes_${deliverable.id}")
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("request_changes_${deliverable.id}")
                     )
                 }
                 if (onApprove != null) {
@@ -131,7 +146,9 @@ fun DeliverableRow(
                         text = "Approve",
                         onClick = onApprove,
                         leadingIcon = Icons.Outlined.CheckCircle,
-                        modifier = Modifier.weight(1f).testTag("approve_${deliverable.id}")
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("approve_${deliverable.id}")
                     )
                 }
             }
@@ -141,5 +158,11 @@ fun DeliverableRow(
 
 @Composable
 fun DeliverableStatusBadge(status: DeliverableStatus, modifier: Modifier = Modifier) {
-    StatusPill(status.displayName, status.tone, modifier = modifier)
+    StatusPill(
+        status.displayName,
+        status.tone,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "Deliverable status: ${status.displayName}"
+        }
+    )
 }

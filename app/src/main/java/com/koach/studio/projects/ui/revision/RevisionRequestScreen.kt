@@ -274,7 +274,7 @@ fun RevisionRequestScreen(
                         } else {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = null,
+                                contentDescription = "Submit revision request icon",
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))

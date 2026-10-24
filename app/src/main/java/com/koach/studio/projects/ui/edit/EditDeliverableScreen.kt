@@ -267,7 +267,7 @@ fun EditDeliverableScreen(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Save,
-                                contentDescription = null,
+                                contentDescription = "Save icon",
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))

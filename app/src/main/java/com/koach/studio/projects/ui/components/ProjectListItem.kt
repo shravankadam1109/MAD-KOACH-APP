@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.KoachCard
@@ -47,6 +49,9 @@ fun ProjectListItem(
         modifier = modifier
             .fillMaxWidth()
             .testTag("project_item_${project.id}")
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${project.title}, ${project.clientName}, Status: ${project.status.displayName}, ${(project.progress * 100).toInt()}% complete"
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Animated status pill: color + label cross-fade on status change
@@ -65,7 +70,7 @@ fun ProjectListItem(
             Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
             Spacer(Modifier.width(14.dp))
             if (due != null) {
-                Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
+                Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(
                     if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
@@ -74,7 +79,7 @@ fun ProjectListItem(
                 )
             }
             Spacer(Modifier.weight(1f))
-            Icon(Icons.Outlined.FolderOpen, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Icon(Icons.Outlined.FolderOpen, contentDescription = "Deliverable files", tint = c.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
             Text("${project.deliverables.size} files", style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
         }
@@ -84,5 +89,11 @@ fun ProjectListItem(
 /** Project status as a themed pill. Kept for screens that show status on its own. */
 @Composable
 fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
-    StatusPill(status.displayName, status.tone, modifier = modifier)
+    StatusPill(
+        status.displayName,
+        status.tone,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "Project status: ${status.displayName}"
+        }
+    )
 }

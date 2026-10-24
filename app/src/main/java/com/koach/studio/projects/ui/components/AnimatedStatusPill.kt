@@ -23,6 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.components.color
@@ -51,6 +53,9 @@ fun AnimatedStatusPill(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Status: $text"
+            }
             .clip(RoundedCornerShape(50))
             .background(accent.copy(alpha = 0.12f))
             .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(50))

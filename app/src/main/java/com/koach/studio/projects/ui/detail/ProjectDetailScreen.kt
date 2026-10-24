@@ -125,7 +125,7 @@ fun ProjectDetailScreen(
                         project.dueLocalDate?.let { due ->
                             Spacer(Modifier.height(10.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     if (project.status == ProjectStatus.COMPLETED) "Delivered · ${formatDate(due, today)}"
@@ -305,7 +305,7 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
                 .background(if (milestone.completed) c.brand else c.surface)
                 .border(1.5.dp, if (milestone.completed) c.brand else if (overdue) Tone.Warning.color() else c.outline, CircleShape)
         ) {
-            if (milestone.completed) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
+            if (milestone.completed) Icon(Icons.Filled.Check, contentDescription = "Milestone completed", tint = c.onBrand, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(14.dp))
         Text(
