@@ -13,6 +13,7 @@ import com.koach.studio.projects.data.SecuredProjectRepository
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskDraft
 import com.koach.studio.tasks.data.TaskValidator
+import com.koach.studio.tasks.ui.TaskDetailViewModel
 import com.koach.studio.tasks.ui.TaskFormViewModel
 import com.koach.studio.tasks.ui.TaskListViewModel
 import com.koach.studio.tasks.ui.TaskSort
@@ -114,4 +115,100 @@ class TaskManagementTest {
         vm.save()
         assertTrue(vm.uiState.value.done)
     }
-}
+
+    @Test
+    fun list_searchMatchesTitleCaseInsensitively_andClearsBack() = runTest {
+        auth.signInAsDemo("u-isha")
+        tasks.createTask(draft.copy(title = "Zebra teaser grade")).getOrThrow()
+        val vm = listVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val all = vm.uiState.first { !it.isLoading }.rows.size
+
+        vm.onQuery("zEBRa")
+        assertEquals(listOf("Zebra teaser grade"), vm.uiState.value.rows.map { it.task.title })
+
+        vm.onQuery("no-such-task-xyz")
+        assertTrue(vm.uiState.value.rows.isEmpty())
+
+        vm.onQuery("   ")
+        assertEquals(all, vm.uiState.value.rows.size)
+    }
+
+    @Test
+    fun detail_showsTaskAndAssignee_andTogglesDone() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val vm = TaskDetailViewModel("t-1", auth.currentUser.value!!, tasks, projects, data.users, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val before = vm.uiState.first { !it.isLoading }
+        assertEquals("t-1", before.task?.id)
+        assertTrue(before.canManage)
+
+        vm.toggleDone()
+        assertEquals(TaskStatus.DONE, vm.uiState.value.task?.status)
+        vm.toggleDone()
+        assertEquals(TaskStatus.TODO, vm.uiState.value.task?.status)
+    }
+
+    @Test
+    fun detail_unknownTask_hasNoTask() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val vm = TaskDetailViewModel("t-missing", auth.currentUser.value!!, tasks, projects, data.users, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        assertEquals(null, vm.uiState.first { !it.isLoading }.task)
+    }
+
+    @Test
+    fun validator_enforcesTitleAndDescriptionBoundaries() {
+        fun errorsFor(title: String, description: String = "") =
+            TaskValidator.validate(draft.copy(title = title, description = description)).keys
+
+        assertTrue(errorsFor("abc").isEmpty())
+        assertEquals(setOf(TaskValidator.Field.TITLE), errorsFor("ab"))
+        assertEquals(setOf(TaskValidator.Field.TITLE), errorsFor("   a   "))
+        assertTrue(errorsFor("x".repeat(TaskValidator.TITLE_MAX)).isEmpty())
+        assertEquals(setOf(TaskValidator.Field.TITLE), errorsFor("x".repeat(TaskValidator.TITLE_MAX + 1)))
+        assertTrue(errorsFor("abc", "d".repeat(TaskValidator.DESCRIPTION_MAX)).isEmpty())
+        assertEquals(
+            setOf(TaskValidator.Field.DESCRIPTION),
+            errorsFor("abc", "d".repeat(TaskValidator.DESCRIPTION_MAX + 1))
+        )
+    }
+
+    @Test
+    fun form_save_withInvalidInput_doesNotCreateTask() = runTest {
+        auth.signInAsDemo("u-isha")
+        val before = tasks.observeTasks().first().size
+        val vm = TaskFormViewModel(null, auth.currentUser.value!!, tasks, projects, data.users, clock)
+        vm.onTitle("ab")
+        vm.save()
+        assertEquals(setOf(TaskValidator.Field.TITLE, TaskValidator.Field.DUE_DATE), vm.uiState.value.errors.keys)
+        assertTrue(!vm.uiState.value.done)
+        assertEquals(before, tasks.observeTasks().first().size)
+
+        vm.onTitle("Valid title")
+        assertTrue(TaskValidator.Field.TITLE !in vm.uiState.value.errors)
+    }
+
+    @Test
+    fun form_delete_removesTask_andReportsDone() = runTest {
+        auth.signInAsDemo("u-isha")
+        val created = tasks.createTask(draft).getOrThrow()
+        val vm = TaskFormViewModel(created.id, auth.currentUser.value!!, tasks, projects, data.users, clock)
+        vm.delete()
+        assertTrue(vm.uiState.value.done)
+        assertEquals(null, tasks.observeTask(created.id).first())
+    }
+
+    @Test
+    fun form_delete_withoutPermission_showsErrorAndKeepsTask() = runTest {
+        auth.signInAsDemo("u-isha")
+        val created = tasks.createTask(draft).getOrThrow()
+        auth.signInAsDemo("u-maya")
+        val vm = TaskFormViewModel(created.id, auth.currentUser.value!!, tasks, projects, data.users, clock)
+        vm.delete()
+        assertTrue(!vm.uiState.value.done)
+        assertTrue(vm.uiState.value.errorMessage != null)
+        assertTrue(!vm.uiState.value.isSaving)
+        auth.signInAsDemo("u-isha")
+        assertTrue(tasks.observeTask(created.id).first() != null)
+    }}

@@ -26,17 +26,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,12 +64,16 @@ import com.koach.studio.core.designsystem.components.EmptyState
 import com.koach.studio.core.designsystem.components.ErrorState
 import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.FormSection
+import com.koach.studio.core.designsystem.components.InfoRow
 import com.koach.studio.core.designsystem.components.KoachAvatar
+import androidx.compose.ui.text.style.TextAlign
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachDateField
+import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.components.KoachDropdownField
 import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
+import com.koach.studio.core.designsystem.components.KoachSearchField
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTextField
@@ -74,6 +85,7 @@ import com.koach.studio.core.designsystem.components.color
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.model.TaskPriority
 import com.koach.studio.core.model.TaskStatus
+import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.tasks.data.TaskValidator
 import com.koach.studio.tasks.data.TaskValidator.Field
@@ -94,6 +106,10 @@ val TaskStatus.tone: Tone
         TaskStatus.IN_REVIEW -> Tone.Review
         TaskStatus.DONE -> Tone.Success
     }
+
+// ---------------------------------------------------------------------------
+// Task List Screen
+// ---------------------------------------------------------------------------
 
 @Composable
 fun TaskListScreen(
@@ -153,7 +169,15 @@ fun TaskListScreen(
                     }
                     Spacer(Modifier.height(6.dp))
                     Text("Tasks", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
+                    // Search bar
+                    KoachSearchField(
+                        query = state.query,
+                        onQueryChange = viewModel::onQuery,
+                        placeholder = "Search tasks, projects or assignees",
+                        modifier = Modifier.testTag("task_search")
+                    )
+                    Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         KoachSegmentedControl(
                             options = listOf("All tasks", "Assigned to me"),
@@ -179,10 +203,14 @@ fun TaskListScreen(
                 item {
                     EmptyState(
                         icon = Icons.Outlined.Checklist,
-                        title = "Nothing here",
-                        message = if (state.onlyMine) "No tasks assigned to you match this filter." else "No tasks match this filter.",
-                        actionLabel = if (state.canManage) "New task" else null,
-                        onAction = if (state.canManage) onNewTask else null
+                        title = if (state.query.isNotBlank()) "No results for \"${state.query}\"" else "Nothing here",
+                        message = when {
+                            state.query.isNotBlank() -> "Try a different search term or clear the filters."
+                            state.onlyMine -> "No tasks assigned to you match this filter."
+                            else -> "No tasks match this filter."
+                        },
+                        actionLabel = if (state.canManage && state.query.isBlank()) "New task" else null,
+                        onAction = if (state.canManage && state.query.isBlank()) onNewTask else null
                     )
                 }
             }
@@ -221,6 +249,42 @@ private fun SortMenu(sort: TaskSort, onSort: (TaskSort) -> Unit) {
     }
 }
 
+/**
+ * Round done/not-done control. The visible circle stays small, but the touch target is 48dp and the
+ * control is announced with the task title (e.g. "Mark Cut teaser as done, checkbox, not checked").
+ */
+@Composable
+private fun TaskDoneToggle(
+    done: Boolean,
+    enabled: Boolean,
+    taskTitle: String,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    circleSize: Dp = 26.dp
+) {
+    val c = KoachTheme.colors
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .offset(y = (-10).dp)
+            .size(48.dp)
+            .clip(CircleShape)
+            .toggleable(value = done, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
+            .semantics { contentDescription = "Mark $taskTitle as done" }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(circleSize)
+                .clip(CircleShape)
+                .background(if (done) c.brand else c.surface)
+                .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
+        ) {
+            if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
 @Composable
 private fun TaskCard(
     row: TaskRow,
@@ -234,25 +298,19 @@ private fun TaskCard(
     val task = row.task
     val done = task.status == TaskStatus.DONE
     KoachCard(
-        onClick = if (canManage) onClick else null,
+        onClick = onClick,
         contentPadding = PaddingValues(16.dp),
         modifier = modifier.fillMaxWidth().testTag("task_${task.id}")
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .padding(top = 2.dp)
-                    .size(26.dp)
-                    .clip(CircleShape)
-                    .background(if (done) c.brand else c.surface)
-                    .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
-                    .toggleable(value = done, enabled = canManage, role = Role.Checkbox, onValueChange = { onToggleDone() })
-                    .testTag("task_done_${task.id}")
-            ) {
-                if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
-            }
-            Spacer(Modifier.width(14.dp))
+            TaskDoneToggle(
+                done = done,
+                enabled = canManage,
+                taskTitle = task.title,
+                onToggle = onToggleDone,
+                modifier = Modifier.testTag("task_done_${task.id}")
+            )
+            Spacer(Modifier.width(4.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     task.title,
@@ -293,6 +351,161 @@ private fun TaskCard(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Task Detail Screen — read-only; Edit FAB for agency users
+// ---------------------------------------------------------------------------
+
+@Composable
+fun TaskDetailScreen(
+    viewModel: TaskDetailViewModel,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val state by viewModel.uiState.collectAsState()
+    val c = KoachTheme.colors
+    val gutter = KoachTheme.spacing.gutter
+    val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.message) {
+        state.message?.let {
+            snackbar.showSnackbar(it)
+            viewModel.messageShown()
+        }
+    }
+
+    Scaffold(
+        containerColor = c.background,
+        topBar = { KoachTopBar(title = "Task", onBack = onBack) },
+        floatingActionButton = {
+            if (state.canManage && state.task != null) {
+                FloatingActionButton(
+                    onClick = onEdit,
+                    containerColor = c.brand,
+                    contentColor = c.onBrand,
+                    modifier = Modifier.testTag("edit_task_fab")
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Edit task")
+                }
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+        modifier = modifier
+    ) { padding ->
+        when {
+            state.isLoading -> LoadingState(Modifier.padding(padding))
+            state.task == null -> ErrorState("This task no longer exists.", Modifier.padding(padding))
+            else -> {
+                val task = state.task!!
+                val done = task.status == TaskStatus.DONE
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        top = padding.calculateTopPadding() + 8.dp,
+                        bottom = 96.dp,
+                        start = gutter,
+                        end = gutter
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.testTag("task_detail")
+                ) {
+                    // Header card
+                    item {
+                        KoachCard(contentPadding = PaddingValues(20.dp), modifier = Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                TaskDoneToggle(
+                                    done = done,
+                                    enabled = state.canManage,
+                                    taskTitle = task.title,
+                                    onToggle = viewModel::toggleDone,
+                                    circleSize = 28.dp,
+                                    modifier = Modifier.testTag("task_detail_done")
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        task.title,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = if (done) c.textTertiary else c.textPrimary,
+                                        textDecoration = if (done) TextDecoration.LineThrough else null
+                                    )
+                                    if (task.description.isNotBlank()) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            task.description,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = c.textSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Status chips row
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            StatusPill(task.priority.displayName, task.priority.tone)
+                            StatusPill(task.status.displayName, task.status.tone, showDot = false)
+                            if (state.isOverdue) StatusPill("Overdue", Tone.Danger)
+                        }
+                    }
+                    // Details card
+                    item {
+                        KoachCard(contentPadding = PaddingValues(0.dp), modifier = Modifier.fillMaxWidth()) {
+                            Column {
+                                InfoRow("Project", state.projectTitle ?: "Studio (no project)")
+                                KoachDivider()
+                                InfoRow(
+                                    "Assignee",
+                                    state.assignee?.let { "${it.name} · ${it.title}" } ?: "Unassigned"
+                                )
+                                KoachDivider()
+                                // Due date row — show in danger colour when overdue
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                ) {
+                                    Text("Due date", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f))
+                                    Text(
+                                        formatDate(task.dueDate),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = if (state.isOverdue) c.danger else c.textPrimary,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
+                                KoachDivider()
+                                InfoRow("Created", formatDate(task.createdOn))
+                            }
+                        }
+                    }
+                    // Mark done / undone button (for non-managers who can't reach the form)
+                    item {
+                        if (state.canManage) {
+                            Spacer(Modifier.height(4.dp))
+                            if (done) {
+                                KoachSecondaryButton(
+                                    text = "Reopen task",
+                                    onClick = viewModel::toggleDone,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                KoachPrimaryButton(
+                                    text = "Mark as done",
+                                    onClick = viewModel::toggleDone,
+                                    modifier = Modifier.fillMaxWidth().testTag("mark_done")
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task Form Screen
+// ---------------------------------------------------------------------------
+
 @Composable
 fun TaskFormScreen(
     viewModel: TaskFormViewModel,
@@ -302,7 +515,27 @@ fun TaskFormScreen(
     val state by viewModel.uiState.collectAsState()
     val c = KoachTheme.colors
 
+    var confirmDelete by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.done) { if (state.done) onBack() }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete this task?") },
+            text = { Text("\"${state.title}\" will be removed for the whole team. This can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        viewModel.delete()
+                    },
+                    modifier = Modifier.testTag("confirm_delete_task")
+                ) { Text("Delete", color = c.danger) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
+    }
 
     Scaffold(
         containerColor = c.background,
@@ -380,7 +613,7 @@ fun TaskFormScreen(
                     Spacer(Modifier.height(10.dp))
                     KoachSecondaryButton(
                         text = "Delete task",
-                        onClick = viewModel::delete,
+                        onClick = { confirmDelete = true },
                         destructive = true,
                         leadingIcon = Icons.Outlined.Delete,
                         modifier = Modifier.fillMaxWidth().testTag("delete_task")
