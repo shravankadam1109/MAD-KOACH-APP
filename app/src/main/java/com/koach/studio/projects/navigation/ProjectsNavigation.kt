@@ -1,5 +1,11 @@
 package com.koach.studio.projects.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraphBuilder
@@ -48,7 +54,21 @@ fun NavGraphBuilder.projectsGraph(
     /** Opens a project's documents; supplied by the app shell, which owns that route. */
     onOpenDocuments: ((projectId: String) -> Unit)? = null
 ) {
-    composable(ProjectsDestinations.PROJECT_LIST) {
+    composable(
+        route = ProjectsDestinations.PROJECT_LIST,
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+        }
+    ) {
         ProjectListScreen(
             onProjectClick = { projectId ->
                 navController.navigate(ProjectsDestinations.projectDetail(projectId))
@@ -58,7 +78,19 @@ fun NavGraphBuilder.projectsGraph(
 
     composable(
         route = ProjectsDestinations.PROJECT_DETAIL,
-        arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        arguments = listOf(navArgument("projectId") { type = NavType.StringType }),
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(350)) + fadeIn(animationSpec = tween(350))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(350)) + fadeOut(animationSpec = tween(350))
+        }
     ) { backStackEntry ->
         val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
         ProjectDetailScreen(
@@ -79,7 +111,19 @@ fun NavGraphBuilder.projectsGraph(
         arguments = listOf(
             navArgument("projectId") { type = NavType.StringType },
             navArgument("deliverableId") { type = NavType.StringType }
-        )
+        ),
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(350)) + fadeIn(animationSpec = tween(350))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(350)) + fadeOut(animationSpec = tween(350))
+        }
     ) { backStackEntry ->
         val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
         val deliverableId = backStackEntry.arguments?.getString("deliverableId").orEmpty()
@@ -95,7 +139,19 @@ fun NavGraphBuilder.projectsGraph(
         arguments = listOf(
             navArgument("projectId") { type = NavType.StringType },
             navArgument("deliverableId") { type = NavType.StringType; defaultValue = "" }
-        )
+        ),
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(350)) + fadeIn(animationSpec = tween(350))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(350)) + fadeOut(animationSpec = tween(350))
+        }
     ) { backStackEntry ->
         val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
         RevisionRequestScreen(
