@@ -74,6 +74,7 @@ import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTextField
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
+import com.koach.studio.documents.data.DocumentValidator
 import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.theme.KoachTheme
@@ -374,7 +375,7 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
             )
             Spacer(Modifier.height(18.dp))
             FormSection {
-                KoachTextField(state.name, viewModel::onName, "Document name", error = state.nameError, modifier = Modifier.testTag("document_name"))
+                KoachTextField(state.name, viewModel::onName, "Document name", error = state.nameError, maxLength = DocumentValidator.NAME_MAX, modifier = Modifier.testTag("document_name"))
                 KoachDropdownField("Category", DocumentCategory.entries, state.category, viewModel::onCategory, { it.displayName })
                 KoachDropdownField(
                     label = "Project",

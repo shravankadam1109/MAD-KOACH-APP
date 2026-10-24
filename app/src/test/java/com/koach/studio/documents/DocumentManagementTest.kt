@@ -8,6 +8,7 @@ import com.koach.studio.core.model.DocumentCategory
 import com.koach.studio.core.model.DocumentVisibility
 import com.koach.studio.documents.data.DemoDocumentStorage
 import com.koach.studio.documents.data.DocumentDraft
+import com.koach.studio.documents.data.DocumentValidator
 import com.koach.studio.documents.data.InMemoryDocumentRepository
 import com.koach.studio.documents.ui.AddDocumentViewModel
 import com.koach.studio.documents.ui.DocumentsViewModel
@@ -107,4 +108,43 @@ class DocumentManagementTest {
         assertEquals("cl-apex", stored.clientId)
         assertEquals(48_000, stored.sizeBytes)
     }
-}
+
+    @Test
+    fun validator_acceptsTrimmedNamesUpToTheLimit_andRejectsBlankOrLong() {
+        assertNull(DocumentValidator.nameError("Brief.pdf"))
+        assertNull(DocumentValidator.nameError("  x  "))
+        assertNull(DocumentValidator.nameError("n".repeat(DocumentValidator.NAME_MAX)))
+        assertEquals("Give the document a name", DocumentValidator.nameError("   "))
+        assertEquals(
+            "Keep the name under ${DocumentValidator.NAME_MAX} characters",
+            DocumentValidator.nameError("n".repeat(DocumentValidator.NAME_MAX + 1))
+        )
+    }
+
+    @Test
+    fun repository_rejectsInvalidNames_andStoresTrimmedOnes() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val before = docs.observeDocuments().first().size
+        fun draft(name: String) = DocumentDraft(name, DocumentCategory.BRIEF, "proj-1", "cl-aetheria", "application/pdf", 10, DocumentVisibility.INTERNAL)
+
+        assertTrue(docs.addDocument(draft("   ")).isFailure)
+        assertTrue(docs.addDocument(draft("n".repeat(DocumentValidator.NAME_MAX + 1))).isFailure)
+        assertEquals(before, docs.observeDocuments().first().size)
+
+        assertEquals("Call sheet.pdf", docs.addDocument(draft("  Call sheet.pdf  ")).getOrThrow().name)
+    }
+
+    @Test
+    fun addForm_showsNameErrorAndDoesNotSave_whenNameTooLong() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val vm = AddDocumentViewModel(auth.currentUser.value!!, docs, projects)
+        vm.onName("n".repeat(DocumentValidator.NAME_MAX + 1))
+        vm.save()
+        assertEquals("Keep the name under ${DocumentValidator.NAME_MAX} characters", vm.uiState.value.nameError)
+        assertFalse(vm.uiState.value.saved)
+
+        vm.onName("")
+        vm.save()
+        assertEquals("Give the document a name", vm.uiState.value.nameError)
+        assertFalse(vm.uiState.value.saved)
+    }}

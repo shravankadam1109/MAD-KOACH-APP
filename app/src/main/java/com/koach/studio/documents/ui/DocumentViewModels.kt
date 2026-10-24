@@ -11,6 +11,7 @@ import com.koach.studio.core.model.User
 import com.koach.studio.documents.data.DocumentDraft
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.DocumentStorage
+import com.koach.studio.documents.data.DocumentValidator
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.model.Project
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -147,8 +148,9 @@ class AddDocumentViewModel(
     fun save() {
         val state = _uiState.value
         if (state.isSaving) return
-        if (state.name.isBlank()) {
-            _uiState.update { it.copy(nameError = "Give the document a name") }
+        val nameError = DocumentValidator.nameError(state.name)
+        if (nameError != null) {
+            _uiState.update { it.copy(nameError = nameError) }
             return
         }
         viewModelScope.launch {

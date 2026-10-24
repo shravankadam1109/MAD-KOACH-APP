@@ -28,6 +28,21 @@ data class DocumentDraft(
     val visibility: DocumentVisibility
 )
 
+/** Rules for document metadata, shared by the add form and the repository. */
+object DocumentValidator {
+    const val NAME_MAX = 100
+
+    /** Returns a user-facing message, or null when the name is acceptable. */
+    fun nameError(name: String): String? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isEmpty() -> "Give the document a name"
+            trimmed.length > NAME_MAX -> "Keep the name under $NAME_MAX characters"
+            else -> null
+        }
+    }
+}
+
 /**
  * Where file bytes would live (e.g. Firebase Storage). The demo build has no
  * storage, so documents are saved as metadata only and nothing is uploaded.
@@ -68,7 +83,7 @@ class InMemoryDocumentRepository(
 
     override suspend fun addDocument(draft: DocumentDraft): Result<StudioDocument> = runCatching {
         val user = access.require(Permission.UPLOAD_DOCUMENTS)
-        require(draft.name.isNotBlank()) { "Give the document a name" }
+        DocumentValidator.nameError(draft.name)?.let { throw IllegalArgumentException(it) }
         require(draft.sizeBytes >= 0) { "Invalid file size" }
         // Clients can only add shared documents to their own organisation.
         val clientId = if (user.role.isAgency) draft.clientId else user.clientId
