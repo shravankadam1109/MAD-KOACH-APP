@@ -111,17 +111,30 @@ fun LazyListScope.portfolioGrid(
 @Composable
 private fun PortfolioTile(item: PortfolioItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
-    Column(
-        modifier
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClickLabel = "View ${item.title} sample project", onClick = onClick)
+    KoachCard(
+        onClick = onClick,
+        modifier = modifier
             .testTag("portfolio_${item.id}")
+            .semantics { contentDescription = "View ${item.title} sample project in ${item.category.displayName}" }
     ) {
-        PortfolioCover(item, aspect = 0.8f, iconSize = 56.dp)
+        PortfolioCover(item, aspect = 1.05f, iconSize = 48.dp)
         Spacer(Modifier.height(10.dp))
-        Text(item.title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("${item.category.displayName} · ${item.year}", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-        Spacer(Modifier.height(6.dp))
+        Text(
+            text = item.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = c.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            StatusPill(text = item.category.displayName, tone = item.category.tone, showDot = false)
+            Text(item.year.toString(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+        }
     }
 }
 
