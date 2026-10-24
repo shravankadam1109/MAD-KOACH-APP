@@ -114,6 +114,7 @@ fun DocumentsScreen(
     val gutter = KoachTheme.spacing.gutter
     val snackbar = remember { SnackbarHostState() }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmRemove by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -170,10 +171,15 @@ fun DocumentsScreen(
             }
             if (state.rows.isEmpty()) {
                 item {
+                    val filtering = state.query.isNotBlank() || state.category != null
                     EmptyState(
                         icon = Icons.Outlined.FolderOpen,
-                        title = "No documents",
-                        message = if (state.isAgency) "Nothing matches these filters." else "Documents your studio shares with you will appear here.",
+                        title = if (filtering) "No matching documents" else "No documents yet",
+                        message = when {
+                            filtering -> "Try a different search or category."
+                            state.isAgency -> "Add the first document to keep project files in one place."
+                            else -> "Documents your studio shares with you will appear here."
+                        },
                         actionLabel = if (state.canUpload) "Add document" else null,
                         onAction = if (state.canUpload) onAddDocument else null
                     )
@@ -190,16 +196,40 @@ fun DocumentsScreen(
         DocumentDetailsDialog(
             row = selected,
             isAgency = state.isAgency,
-            onDismiss = { selectedId = null },
+            onDismiss = {
+                selectedId = null
+                confirmRemove = false
+            },
             onToggleVisibility = {
                 val next = if (selected.document.visibility == DocumentVisibility.SHARED) DocumentVisibility.INTERNAL else DocumentVisibility.SHARED
                 viewModel.setVisibility(selected.document.id, next)
             },
-            onDelete = {
-                viewModel.delete(selected.document.id)
-                selectedId = null
-            }
+            onDelete = { confirmRemove = true }
         )
+        if (confirmRemove) {
+            AlertDialog(
+                onDismissRequest = { confirmRemove = false },
+                containerColor = c.surfaceRaised,
+                title = { Text("Remove this document?", color = c.textPrimary) },
+                text = {
+                    Text(
+                        "\"${selected.document.name}\" will be removed from the list. This can't be undone.",
+                        color = c.textSecondary
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.delete(selected.document.id)
+                            confirmRemove = false
+                            selectedId = null
+                        },
+                        modifier = Modifier.testTag("confirm_delete_document")
+                    ) { Text("Remove", color = c.danger) }
+                },
+                dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel", color = c.textSecondary) } }
+            )
+        }
     }
 }
 
