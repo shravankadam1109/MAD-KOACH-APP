@@ -1,5 +1,14 @@
 package com.koach.studio.projects.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,9 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +70,11 @@ fun DeliverableDownloadButton(
             }
         }
         DownloadState.DOWNLOADING -> {
+            val animatedProgress by animateFloatAsState(
+                targetValue = deliverable.downloadProgress,
+                animationSpec = tween(durationMillis = 300),
+                label = "download_progress_${deliverable.id}"
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -69,14 +85,14 @@ fun DeliverableDownloadButton(
                     .testTag("downloading_progress_${deliverable.id}")
             ) {
                 CircularProgressIndicator(
-                    progress = { deliverable.downloadProgress },
+                    progress = { animatedProgress },
                     modifier = Modifier.size(14.dp),
                     color = brandGreen,
                     strokeWidth = 2.dp,
                     trackColor = KoachTheme.colors.brandOutline
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                val percentage = (deliverable.downloadProgress * 100).toInt()
+                val percentage = (animatedProgress * 100).toInt()
                 Text(
                     text = "$percentage%",
                     color = brandGreen,
@@ -86,6 +102,14 @@ fun DeliverableDownloadButton(
             }
         }
         DownloadState.DONE -> {
+            val checkmarkScale by animateFloatAsState(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "download_done_scale_${deliverable.id}"
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -100,7 +124,12 @@ fun DeliverableDownloadButton(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Downloaded",
                     tint = brandGreen,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier
+                        .size(14.dp)
+                        .graphicsLayer(
+                            scaleX = checkmarkScale,
+                            scaleY = checkmarkScale
+                        )
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
