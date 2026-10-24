@@ -28,6 +28,7 @@ import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachSearchField
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.koachViewModel
+import com.koach.studio.projects.model.ProjectSortOrder
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.ServiceType
 import com.koach.studio.projects.ui.components.ProjectListItem
@@ -90,6 +91,16 @@ fun ProjectListScreen(
                     label = { it.displayName },
                     allLabel = "All statuses",
                     modifier = Modifier.testTag("status_filter_chips")
+                )
+            }
+            item {
+                KoachFilterChips(
+                    options = ProjectSortOrder.entries,
+                    selected = uiState.sortOrder,
+                    onSelected = { it?.let(viewModel::onSortOrderSelected) },
+                    label = { "Sort: ${it.displayName}" },
+                    allLabel = null,
+                    modifier = Modifier.testTag("sort_filter_chips")
                 )
             }
             if (uiState.projects.isEmpty()) {
