@@ -191,7 +191,7 @@ fun ServiceDetailScreen(
                         .padding(horizontal = gutter, vertical = 12.dp)
                 ) {
                     KoachPrimaryButton(
-                        text = if (pkg != null) "Enquire · ${pkg.name}" else "Send an enquiry",
+                        text = if (pkg != null) "Book · ${pkg.name} (${formatInr(pkg.priceInr)})" else "Book this service",
                         onClick = { onEnquire(service.id, pkg?.id) },
                         modifier = Modifier.fillMaxWidth().testTag("enquire_button")
                     )
@@ -226,6 +226,17 @@ fun ServiceDetailScreen(
                         Spacer(Modifier.height(10.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             service.deliverables.forEach { StatusPill(it, Tone.Neutral, showDot = false) }
+                        }
+                        Spacer(Modifier.height(18.dp))
+                        KoachCard(modifier = Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Pricing estimate", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                                    Spacer(Modifier.height(2.dp))
+                                    Text("From ${formatInr(service.startingPriceInr)}", style = MaterialTheme.typography.titleMedium, color = c.brand)
+                                }
+                                StatusPill("${service.packages.size} tiers", Tone.Brand, showDot = false)
+                            }
                         }
                         Spacer(Modifier.height(24.dp))
                         Text("Choose a package", style = MaterialTheme.typography.titleLarge, color = c.textPrimary)
