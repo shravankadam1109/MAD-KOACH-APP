@@ -78,16 +78,29 @@ fun ProjectListScreen(
                     selected = uiState.selectedServiceFilter,
                     onSelected = viewModel::onFilterSelected,
                     label = { it.displayName },
-                    allLabel = "All services"
+                    allLabel = "All services",
+                    modifier = Modifier.testTag("service_filter_chips")
+                )
+            }
+            item {
+                KoachFilterChips(
+                    options = ProjectStatus.entries,
+                    selected = uiState.selectedStatusFilter,
+                    onSelected = viewModel::onStatusFilterSelected,
+                    label = { it.displayName },
+                    allLabel = "All statuses",
+                    modifier = Modifier.testTag("status_filter_chips")
                 )
             }
             if (uiState.projects.isEmpty()) {
                 item {
-                    val searching = uiState.searchQuery.isNotBlank() || uiState.selectedServiceFilter != null
+                    val searching = uiState.searchQuery.isNotBlank() ||
+                        uiState.selectedServiceFilter != null ||
+                        uiState.selectedStatusFilter != null
                     EmptyState(
                         icon = if (searching) Icons.Outlined.SearchOff else Icons.Outlined.Movie,
                         title = if (searching) "No matching projects" else "No projects yet",
-                        message = if (searching) "Try a different search or service." else "Projects appear here once work is booked."
+                        message = if (searching) "Try a different search or filter." else "Projects appear here once work is booked."
                     )
                 }
             }

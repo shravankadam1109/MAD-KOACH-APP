@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.model.Project
+import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.ServiceType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,6 +16,7 @@ data class ProjectListUiState(
     val projects: List<Project> = emptyList(),
     val isLoading: Boolean = false,
     val selectedServiceFilter: ServiceType? = null,
+    val selectedStatusFilter: ProjectStatus? = null,
     val searchQuery: String = ""
 )
 
@@ -23,24 +25,28 @@ class ProjectListViewModel(
 ) : ViewModel() {
 
     private val _selectedFilter = MutableStateFlow<ServiceType?>(null)
+    private val _selectedStatusFilter = MutableStateFlow<ProjectStatus?>(null)
     private val _searchQuery = MutableStateFlow("")
 
     val uiState: StateFlow<ProjectListUiState> = combine(
         repository.getProjects(),
         _selectedFilter,
+        _selectedStatusFilter,
         _searchQuery
-    ) { allProjects, filter, query ->
+    ) { allProjects, serviceFilter, statusFilter, query ->
         val filtered = allProjects.filter { project ->
-            val matchesFilter = filter == null || project.serviceType == filter
+            val matchesService = serviceFilter == null || project.serviceType == serviceFilter
+            val matchesStatus = statusFilter == null || project.status == statusFilter
             val matchesQuery = query.isBlank() ||
                 project.title.contains(query, ignoreCase = true) ||
                 project.clientName.contains(query, ignoreCase = true)
-            matchesFilter && matchesQuery
+            matchesService && matchesStatus && matchesQuery
         }
         ProjectListUiState(
             projects = filtered,
             isLoading = false,
-            selectedServiceFilter = filter,
+            selectedServiceFilter = serviceFilter,
+            selectedStatusFilter = statusFilter,
             searchQuery = query
         )
     }.stateIn(
@@ -51,6 +57,10 @@ class ProjectListViewModel(
 
     fun onFilterSelected(serviceType: ServiceType?) {
         _selectedFilter.value = serviceType
+    }
+
+    fun onStatusFilterSelected(status: ProjectStatus?) {
+        _selectedStatusFilter.value = status
     }
 
     fun onSearchQueryChanged(query: String) {
