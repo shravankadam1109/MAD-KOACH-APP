@@ -102,7 +102,11 @@ fun NewBookingScreen(
             BookingConfirmation(
                 reference = submitted.id.uppercase(),
                 serviceName = state.selectedService?.name.orEmpty(),
+                packageName = state.selectedService?.packages?.find { it.id == state.packageId }?.name,
                 date = formatDate(submitted.preferredDate, state.today),
+                budget = state.budget.toLongOrNull()?.let(::formatInr),
+                contactName = state.contactName,
+                contactEmail = state.contactEmail,
                 onViewBookings = onViewBookings,
                 onDone = onBack,
                 modifier = Modifier.padding(padding)
@@ -299,7 +303,11 @@ fun NewBookingScreen(
 private fun BookingConfirmation(
     reference: String,
     serviceName: String,
+    packageName: String? = null,
     date: String,
+    budget: String? = null,
+    contactName: String = "",
+    contactEmail: String = "",
     onViewBookings: () -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -309,34 +317,49 @@ private fun BookingConfirmation(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(KoachTheme.spacing.gutter)
             .testTag("booking_confirmation")
     ) {
-        Spacer(Modifier.height(32.dp))
-        Box(Modifier.koachGlow(c.brand, 0.35f).padding(24.dp)) {
-            IconTile(Icons.Filled.CheckCircle, size = 88.dp)
-        }
         Spacer(Modifier.height(20.dp))
-        Text("Request received", style = MaterialTheme.typography.headlineLarge, color = c.textPrimary)
+        Box(Modifier.koachGlow(c.brand, 0.35f).padding(20.dp)) {
+            IconTile(Icons.Filled.CheckCircle, size = 80.dp)
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("Request Received", style = MaterialTheme.typography.headlineLarge, color = c.textPrimary)
         Spacer(Modifier.height(8.dp))
         Text(
-            "The studio will review your request and confirm availability. You'll get a notification when it's confirmed.",
+            "The studio has received your booking request. Our team will review your scope and confirm availability.",
             style = MaterialTheme.typography.bodyLarge,
             color = c.textSecondary,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(24.dp))
-        KoachCard(modifier = Modifier.fillMaxWidth()) {
+        KoachCard(modifier = Modifier.fillMaxWidth().testTag("booking_summary_card")) {
+            Eyebrow("Booking Summary", color = c.brand)
+            Spacer(Modifier.height(10.dp))
             InfoRow("Reference", reference)
             KoachDivider()
             InfoRow("Service", serviceName)
+            if (!packageName.isNullOrBlank()) {
+                KoachDivider()
+                InfoRow("Package tier", packageName)
+            }
             KoachDivider()
             InfoRow("Preferred date", date)
+            if (!budget.isNullOrBlank()) {
+                KoachDivider()
+                InfoRow("Estimated budget", budget)
+            }
+            if (contactName.isNotBlank()) {
+                KoachDivider()
+                InfoRow("Client contact", if (contactEmail.isNotBlank()) "$contactName ($contactEmail)" else contactName)
+            }
             KoachDivider()
-            InfoRow("Status", "Pending")
+            InfoRow("Status", "Pending Review")
         }
-        Spacer(Modifier.weight(1f))
-        KoachPrimaryButton("View my bookings", onClick = onViewBookings, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(24.dp))
+        KoachPrimaryButton("View my bookings", onClick = onViewBookings, modifier = Modifier.fillMaxWidth().testTag("view_my_bookings_btn"))
         Spacer(Modifier.height(10.dp))
         KoachSecondaryButton("Done", onClick = onDone, modifier = Modifier.fillMaxWidth().navigationBarsPadding())
     }
