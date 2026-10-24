@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.EmptyState
+import com.koach.studio.core.designsystem.components.ErrorState
 import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.KoachBackground
 import com.koach.studio.core.designsystem.components.KoachFilterChips
@@ -49,6 +50,17 @@ fun ProjectListScreen(
     KoachBackground(modifier.fillMaxSize()) {
         if (uiState.isLoading) {
             ProjectListShimmer()
+            return@KoachBackground
+        }
+        if (uiState.errorMessage != null) {
+            ErrorState(
+                message = uiState.errorMessage ?: "Failed to load projects",
+                onRetry = viewModel::retry,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .testTag("project_list_error")
+            )
             return@KoachBackground
         }
         LazyColumn(
@@ -111,7 +123,10 @@ fun ProjectListScreen(
                     EmptyState(
                         icon = if (searching) Icons.Outlined.SearchOff else Icons.Outlined.Movie,
                         title = if (searching) "No matching projects" else "No projects yet",
-                        message = if (searching) "Try a different search or filter." else "Projects appear here once work is booked."
+                        message = if (searching) "Try a different search or filter." else "Projects appear here once work is booked.",
+                        actionLabel = if (searching) "Clear filters" else null,
+                        onAction = if (searching) { { viewModel.clearFilters() } } else null,
+                        modifier = Modifier.testTag("project_list_empty")
                     )
                 }
             }

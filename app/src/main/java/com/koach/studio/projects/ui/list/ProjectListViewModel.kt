@@ -17,10 +17,18 @@ import kotlinx.coroutines.flow.stateIn
 data class ProjectListUiState(
     val projects: List<Project> = emptyList(),
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
     val selectedServiceFilter: ServiceType? = null,
     val selectedStatusFilter: ProjectStatus? = null,
     val sortOrder: ProjectSortOrder = ProjectSortOrder.NEWEST,
     val searchQuery: String = ""
+)
+
+private data class FilterParams(
+    val service: ServiceType?,
+    val status: ProjectStatus?,
+    val sort: ProjectSortOrder,
+    val query: String
 )
 
 class ProjectListViewModel(
@@ -31,23 +39,31 @@ class ProjectListViewModel(
     private val _selectedStatusFilter = MutableStateFlow<ProjectStatus?>(null)
     private val _sortOrder = MutableStateFlow(ProjectSortOrder.NEWEST)
     private val _searchQuery = MutableStateFlow("")
+    private val _errorMessage = MutableStateFlow<String?>(null)
 
-    val uiState: StateFlow<ProjectListUiState> = combine(
-        repository.getProjects(),
+    private val _filterParams = combine(
         _selectedFilter,
         _selectedStatusFilter,
         _sortOrder,
         _searchQuery
-    ) { allProjects, serviceFilter, statusFilter, sortOrder, query ->
+    ) { service, status, sort, query ->
+        FilterParams(service, status, sort, query)
+    }
+
+    val uiState: StateFlow<ProjectListUiState> = combine(
+        repository.getProjects(),
+        _filterParams,
+        _errorMessage
+    ) { allProjects, params, error ->
         val filtered = allProjects.filter { project ->
-            val matchesService = serviceFilter == null || project.serviceType == serviceFilter
-            val matchesStatus = statusFilter == null || project.status == statusFilter
-            val matchesQuery = query.isBlank() ||
-                project.title.contains(query, ignoreCase = true) ||
-                project.clientName.contains(query, ignoreCase = true)
+            val matchesService = params.service == null || project.serviceType == params.service
+            val matchesStatus = params.status == null || project.status == params.status
+            val matchesQuery = params.query.isBlank() ||
+                project.title.contains(params.query, ignoreCase = true) ||
+                project.clientName.contains(params.query, ignoreCase = true)
             matchesService && matchesStatus && matchesQuery
         }
-        val sorted = when (sortOrder) {
+        val sorted = when (params.sort) {
             ProjectSortOrder.NEWEST -> filtered.sortedByDescending { it.id }
             ProjectSortOrder.DUE_DATE -> filtered.sortedWith(compareBy(nullsLast()) { it.dueLocalDate })
             ProjectSortOrder.STATUS -> filtered.sortedBy { it.status.ordinal }
@@ -55,10 +71,11 @@ class ProjectListViewModel(
         ProjectListUiState(
             projects = sorted,
             isLoading = false,
-            selectedServiceFilter = serviceFilter,
-            selectedStatusFilter = statusFilter,
-            sortOrder = sortOrder,
-            searchQuery = query
+            errorMessage = error,
+            selectedServiceFilter = params.service,
+            selectedStatusFilter = params.status,
+            sortOrder = params.sort,
+            searchQuery = params.query
         )
     }.stateIn(
         scope = viewModelScope,
@@ -80,5 +97,15 @@ class ProjectListViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+    }
+
+    fun retry() {
+        _errorMessage.value = null
+    }
+
+    fun clearFilters() {
+        _selectedFilter.value = null
+        _selectedStatusFilter.value = null
+        _searchQuery.value = ""
     }
 }
