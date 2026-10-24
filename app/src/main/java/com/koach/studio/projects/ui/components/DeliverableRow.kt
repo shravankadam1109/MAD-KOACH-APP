@@ -35,11 +35,11 @@ import com.koach.studio.core.designsystem.components.IconTile
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
-import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
+import com.koach.studio.projects.ui.icon
 import com.koach.studio.projects.ui.tone
 
 private val Deliverable.icon: ImageVector
@@ -161,9 +161,10 @@ fun DeliverableRow(
 
 @Composable
 fun DeliverableStatusBadge(status: DeliverableStatus, modifier: Modifier = Modifier) {
-    StatusPill(
-        status.displayName,
-        status.tone,
+    AnimatedStatusPill(
+        text = status.displayName,
+        tone = status.tone,
+        icon = status.icon,
         modifier = modifier.semantics(mergeDescendants = true) {
             contentDescription = "Deliverable status: ${status.displayName}"
         }

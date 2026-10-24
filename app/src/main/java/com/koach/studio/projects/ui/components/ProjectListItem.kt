@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachProgressBar
-import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.components.color
 import com.koach.studio.core.designsystem.theme.KoachTheme
@@ -30,6 +29,7 @@ import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.dueLocalDate
+import com.koach.studio.projects.ui.icon
 import com.koach.studio.projects.ui.tone
 import java.time.LocalDate
 
@@ -54,8 +54,8 @@ fun ProjectListItem(
             }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Animated status pill: color + label cross-fade on status change
-            AnimatedStatusPill(project.status.displayName, project.status.tone)
+            // Animated status pill: color + label cross-fade on status change with status icon
+            AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon)
             Spacer(Modifier.weight(1f))
             Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
         }
@@ -86,12 +86,13 @@ fun ProjectListItem(
     }
 }
 
-/** Project status as a themed pill. Kept for screens that show status on its own. */
+/** Project status as a themed pill with icon. Kept for screens that show status on its own. */
 @Composable
 fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
-    StatusPill(
-        status.displayName,
-        status.tone,
+    AnimatedStatusPill(
+        text = status.displayName,
+        tone = status.tone,
+        icon = status.icon,
         modifier = modifier.semantics(mergeDescendants = true) {
             contentDescription = "Project status: ${status.displayName}"
         }

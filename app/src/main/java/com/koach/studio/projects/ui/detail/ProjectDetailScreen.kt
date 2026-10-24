@@ -62,8 +62,10 @@ import com.koach.studio.projects.model.Milestone
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.components.DeliverableRow
+import com.koach.studio.projects.ui.components.AnimatedStatusPill
 import com.koach.studio.projects.ui.components.ProjectDetailShimmer
 import com.koach.studio.projects.ui.tone
+import com.koach.studio.projects.ui.icon
 import java.time.LocalDate
 
 @Composable
@@ -110,7 +112,7 @@ fun ProjectDetailScreen(
                 item {
                     KoachCard(highlighted = true, modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            StatusPill(project.status.displayName, project.status.tone, modifier = Modifier.testTag("project_status"))
+                            AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon, modifier = Modifier.testTag("project_status"))
                             Spacer(Modifier.weight(1f))
                             Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
                         }
