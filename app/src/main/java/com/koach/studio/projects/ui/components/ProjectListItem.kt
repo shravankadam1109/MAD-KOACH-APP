@@ -16,11 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachProgressBar
-import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.components.color
 import com.koach.studio.core.designsystem.theme.KoachTheme
@@ -28,6 +29,7 @@ import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.dueLocalDate
+import com.koach.studio.projects.ui.icon
 import com.koach.studio.projects.ui.tone
 import java.time.LocalDate
 
@@ -47,41 +49,71 @@ fun ProjectListItem(
         modifier = modifier
             .fillMaxWidth()
             .testTag("project_item_${project.id}")
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${project.title}, ${project.clientName}, Status: ${project.status.displayName}, ${(project.progress * 100).toInt()}% complete"
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusPill(project.status.displayName, project.status.tone)
+            // Animated status pill: color + label cross-fade on status change with status icon
+            AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon)
             Spacer(Modifier.weight(1f))
-            Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            Text(
+                project.serviceType.displayName.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = c.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
         Spacer(Modifier.height(14.dp))
         Text(project.title, style = MaterialTheme.typography.titleLarge, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(project.clientName, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+        Text(project.clientName, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(16.dp))
         KoachProgressBar(project.progress, height = 5.dp)
         Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(10.dp))
             if (due != null) {
-                Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
+                Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(
                     if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (overdue) Tone.Danger.color() else c.textSecondary
+                    color = if (overdue) Tone.Danger.color() else c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+            } else {
+                Spacer(Modifier.weight(1f))
             }
-            Spacer(Modifier.weight(1f))
-            Icon(Icons.Outlined.FolderOpen, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Outlined.FolderOpen, contentDescription = "Deliverable files", tint = c.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
-            Text("${project.deliverables.size} files", style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+            Text(
+                "${project.deliverables.size} files",
+                style = MaterialTheme.typography.labelMedium,
+                color = c.textSecondary,
+                maxLines = 1
+            )
         }
     }
 }
 
-/** Project status as a themed pill. Kept for screens that show status on its own. */
+/** Project status as a themed pill with icon. Kept for screens that show status on its own. */
 @Composable
 fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
-    StatusPill(status.displayName, status.tone, modifier = modifier)
+    AnimatedStatusPill(
+        text = status.displayName,
+        tone = status.tone,
+        icon = status.icon,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "Project status: ${status.displayName}"
+        }
+    )
 }
