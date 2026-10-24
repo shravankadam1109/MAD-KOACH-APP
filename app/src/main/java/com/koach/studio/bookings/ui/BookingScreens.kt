@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.Email
@@ -273,15 +276,34 @@ fun NewBookingScreen(
                 )
             }
 
-            state.errorMessage?.let {
-                Spacer(Modifier.height(12.dp))
-                Text(it, color = c.danger, style = MaterialTheme.typography.bodyMedium)
+            state.errorMessage?.let { errorText ->
+                Spacer(Modifier.height(16.dp))
+                KoachCard(
+                    highlighted = true,
+                    modifier = Modifier.fillMaxWidth().testTag("booking_error_card")
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.ErrorOutline, contentDescription = null, tint = c.danger, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Submission error", style = MaterialTheme.typography.titleSmall, color = c.danger)
+                            Text(errorText, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    KoachSecondaryButton(
+                        text = "Retry request",
+                        onClick = viewModel::submit,
+                        modifier = Modifier.fillMaxWidth().testTag("booking_retry")
+                    )
+                }
             }
             Spacer(Modifier.height(24.dp))
             KoachPrimaryButton(
-                text = "Send booking request",
+                text = if (state.isSubmitting) "Submitting request..." else "Send booking request",
                 onClick = viewModel::submit,
                 loading = state.isSubmitting,
+                enabled = !state.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("booking_submit")
