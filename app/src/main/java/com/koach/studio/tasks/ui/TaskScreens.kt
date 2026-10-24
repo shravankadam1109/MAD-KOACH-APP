@@ -53,6 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -245,6 +249,42 @@ private fun SortMenu(sort: TaskSort, onSort: (TaskSort) -> Unit) {
     }
 }
 
+/**
+ * Round done/not-done control. The visible circle stays small, but the touch target is 48dp and the
+ * control is announced with the task title (e.g. "Mark Cut teaser as done, checkbox, not checked").
+ */
+@Composable
+private fun TaskDoneToggle(
+    done: Boolean,
+    enabled: Boolean,
+    taskTitle: String,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    circleSize: Dp = 26.dp
+) {
+    val c = KoachTheme.colors
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .offset(y = (-10).dp)
+            .size(48.dp)
+            .clip(CircleShape)
+            .toggleable(value = done, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
+            .semantics { contentDescription = "Mark $taskTitle as done" }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(circleSize)
+                .clip(CircleShape)
+                .background(if (done) c.brand else c.surface)
+                .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
+        ) {
+            if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
 @Composable
 private fun TaskCard(
     row: TaskRow,
@@ -263,20 +303,14 @@ private fun TaskCard(
         modifier = modifier.fillMaxWidth().testTag("task_${task.id}")
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .padding(top = 2.dp)
-                    .size(26.dp)
-                    .clip(CircleShape)
-                    .background(if (done) c.brand else c.surface)
-                    .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
-                    .toggleable(value = done, enabled = canManage, role = Role.Checkbox, onValueChange = { onToggleDone() })
-                    .testTag("task_done_${task.id}")
-            ) {
-                if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
-            }
-            Spacer(Modifier.width(14.dp))
+            TaskDoneToggle(
+                done = done,
+                enabled = canManage,
+                taskTitle = task.title,
+                onToggle = onToggleDone,
+                modifier = Modifier.testTag("task_done_${task.id}")
+            )
+            Spacer(Modifier.width(4.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     task.title,
@@ -378,25 +412,15 @@ fun TaskDetailScreen(
                     item {
                         KoachCard(contentPadding = PaddingValues(20.dp), modifier = Modifier.fillMaxWidth()) {
                             Row(verticalAlignment = Alignment.Top) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .padding(top = 3.dp)
-                                        .size(28.dp)
-                                        .clip(CircleShape)
-                                        .background(if (done) c.brand else c.surface)
-                                        .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
-                                        .toggleable(
-                                            value = done,
-                                            enabled = state.canManage,
-                                            role = Role.Checkbox,
-                                            onValueChange = { viewModel.toggleDone() }
-                                        )
-                                        .testTag("task_detail_done")
-                                ) {
-                                    if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
-                                }
-                                Spacer(Modifier.width(14.dp))
+                                TaskDoneToggle(
+                                    done = done,
+                                    enabled = state.canManage,
+                                    taskTitle = task.title,
+                                    onToggle = viewModel::toggleDone,
+                                    circleSize = 28.dp,
+                                    modifier = Modifier.testTag("task_detail_done")
+                                )
+                                Spacer(Modifier.width(4.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         task.title,
