@@ -1,5 +1,10 @@
 package com.koach.studio.projects.ui.revision
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -256,7 +261,11 @@ fun RevisionRequestScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
-                            .testTag("submit_revision_button"),
+                            .testTag("submit_revision_button")
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                if (uiState.isSubmitted) { stateDescription = "Revision request submitted successfully" }
+                            },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = KoachTheme.colors.brand,

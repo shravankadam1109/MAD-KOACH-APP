@@ -1,5 +1,10 @@
 package com.koach.studio.projects.ui.edit
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -249,7 +254,11 @@ fun EditDeliverableScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
-                            .testTag("save_deliverable_button"),
+                            .testTag("save_deliverable_button")
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                if (uiState.isSaved) { stateDescription = "Deliverable changes saved successfully" }
+                            },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = brandGreen,

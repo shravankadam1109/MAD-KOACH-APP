@@ -39,6 +39,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +62,12 @@ fun DeliverableDownloadButton(
         DownloadState.IDLE -> {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                modifier = modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        stateDescription = "Ready to download"
+                    }
             ) {
                 IconButton(
                     onClick = onDownloadClick,
@@ -83,9 +92,15 @@ fun DeliverableDownloadButton(
                 animationSpec = tween(durationMillis = 300),
                 label = "download_progress_${deliverable.id}"
             )
+            val percentage = (animatedProgress * 100).toInt()
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                modifier = modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        stateDescription = "Downloading $percentage%"
+                    }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -104,7 +119,6 @@ fun DeliverableDownloadButton(
                         trackColor = KoachTheme.colors.brandOutline
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    val percentage = (animatedProgress * 100).toInt()
                     Text(
                         text = "$percentage%",
                         color = brandGreen,
@@ -125,7 +139,12 @@ fun DeliverableDownloadButton(
             )
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                modifier = modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        stateDescription = "Download completed and saved"
+                    }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -161,7 +180,12 @@ fun DeliverableDownloadButton(
         DownloadState.FAILED -> {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                modifier = modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        stateDescription = "Download failed, tap to retry"
+                    }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
