@@ -39,7 +39,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +72,7 @@ import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTextField
 import com.koach.studio.core.designsystem.components.KoachTopBar
+import com.koach.studio.core.designsystem.components.KoachSnackbarHost
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.documents.data.DocumentValidator
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -139,7 +139,7 @@ fun DocumentsScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { KoachSnackbarHost(snackbar, isError = state.messageIsError) },
         modifier = modifier
     ) { padding ->
         if (state.isLoading) {

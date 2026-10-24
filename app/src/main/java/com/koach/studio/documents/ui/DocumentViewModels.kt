@@ -9,6 +9,7 @@ import com.koach.studio.core.model.DocumentVisibility
 import com.koach.studio.core.model.StudioDocument
 import com.koach.studio.core.model.User
 import com.koach.studio.documents.data.DocumentDraft
+import com.koach.studio.documents.data.DocumentEvent
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.DocumentStorage
 import com.koach.studio.documents.data.DocumentValidator
@@ -35,8 +36,12 @@ data class DocumentsUiState(
     val isAgency: Boolean = false,
     val canUpload: Boolean = false,
     val storageAvailable: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    /** True when [message] reports a failure, so the UI can style it as an error. */
+    val messageIsError: Boolean = false
 )
+
+private data class Feedback(val text: String, val isError: Boolean = false)
 
 private data class DocFilters(val query: String, val category: DocumentCategory?)
 
@@ -51,7 +56,16 @@ class DocumentsViewModel(
 ) : ViewModel() {
 
     private val filters = MutableStateFlow(DocFilters("", null))
-    private val message = MutableStateFlow<String?>(null)
+    private val message = MutableStateFlow<Feedback?>(null)
+
+    init {
+        // The add form closes itself on success; confirm here, on the list the user returns to.
+        viewModelScope.launch {
+            documents.events.collect { event ->
+                if (event is DocumentEvent.Added) message.value = Feedback("Added \"${event.name}\"")
+            }
+        }
+    }
 
     val uiState: StateFlow<DocumentsUiState> =
         combine(documents.observeDocuments(), projects.getProjects(), filters, message) { docs, projectList, f, msg ->
@@ -72,7 +86,8 @@ class DocumentsViewModel(
                 isAgency = user.role.isAgency,
                 canUpload = user.can(Permission.UPLOAD_DOCUMENTS),
                 storageAvailable = storage.isAvailable,
-                message = msg
+                message = msg?.text,
+                messageIsError = msg?.isError == true
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DocumentsUiState())
 
@@ -82,13 +97,19 @@ class DocumentsViewModel(
     fun setVisibility(documentId: String, visibility: DocumentVisibility) {
         viewModelScope.launch {
             message.value = documents.setVisibility(documentId, visibility)
-                .fold({ "Now ${visibility.displayName.lowercase()}" }, { it.message ?: "Couldn't change visibility" })
+                .fold(
+                    { Feedback("Now ${visibility.displayName.lowercase()}") },
+                    { Feedback(it.message ?: "Couldn't change visibility", isError = true) }
+                )
         }
     }
 
     fun delete(documentId: String) {
         viewModelScope.launch {
-            message.value = documents.deleteDocument(documentId).fold({ "Document removed" }, { it.message ?: "Couldn't remove document" })
+            message.value = documents.deleteDocument(documentId).fold(
+                { Feedback("Document removed") },
+                { Feedback(it.message ?: "Couldn't remove document", isError = true) }
+            )
         }
     }
 

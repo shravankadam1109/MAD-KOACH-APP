@@ -9,9 +9,12 @@ import com.koach.studio.core.model.DocumentVisibility
 import com.koach.studio.core.model.StudioDocument
 import com.koach.studio.core.model.User
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.update
 import java.time.Clock
 import java.time.LocalDateTime
@@ -55,7 +58,15 @@ object DemoDocumentStorage : DocumentStorage {
     override val isAvailable: Boolean = false
 }
 
+/** One-off outcomes of successful writes, so a screen further back in the stack can confirm them. */
+sealed interface DocumentEvent {
+    data class Added(val name: String) : DocumentEvent
+}
+
 interface DocumentRepository {
+    /** Emits after a document is added. Not replayed: only screens already listening see it. */
+    val events: Flow<DocumentEvent> get() = emptyFlow()
+
     /** Agency users see everything; clients only documents shared with their organisation. */
     fun observeDocuments(): Flow<List<StudioDocument>>
     suspend fun addDocument(draft: DocumentDraft): Result<StudioDocument>
@@ -71,6 +82,8 @@ class InMemoryDocumentRepository(
 ) : DocumentRepository {
 
     private val store = MutableStateFlow(initial)
+    private val _events = MutableSharedFlow<DocumentEvent>(extraBufferCapacity = 8)
+    override val events: Flow<DocumentEvent> = _events.asSharedFlow()
 
     override fun observeDocuments(): Flow<List<StudioDocument>> =
         combine(store, currentUser) { all, user ->
@@ -103,6 +116,7 @@ class InMemoryDocumentRepository(
             storagePath = null
         )
         store.update { listOf(document) + it }
+        _events.tryEmit(DocumentEvent.Added(document.name))
         document
     }
 
