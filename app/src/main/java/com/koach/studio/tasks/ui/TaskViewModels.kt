@@ -11,6 +11,7 @@ import com.koach.studio.core.model.User
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.model.Project
 import com.koach.studio.tasks.data.TaskDraft
+import com.koach.studio.tasks.data.TaskEvent
 import com.koach.studio.tasks.data.TaskRepository
 import com.koach.studio.tasks.data.TaskValidator
 import com.koach.studio.tasks.data.TaskValidator.Field
@@ -50,8 +51,11 @@ data class TaskListUiState(
     val overdueCount: Int = 0,
     val canManage: Boolean = false,
     val today: LocalDate = LocalDate.now(),
-    val message: String? = null
+    val message: String? = null,
+    val messageIsError: Boolean = false
 )
+
+private data class TaskFeedback(val text: String, val isError: Boolean = false)
 
 private data class TaskFilters(val query: String, val status: TaskStatus?, val onlyMine: Boolean, val sort: TaskSort)
 
@@ -89,7 +93,19 @@ class TaskListViewModel(
 ) : ViewModel() {
 
     private val filters = MutableStateFlow(TaskFilters("", null, false, TaskSort.DUE_DATE))
-    private val message = MutableStateFlow<String?>(null)
+    private val message = MutableStateFlow<TaskFeedback?>(null)
+
+    init {
+        viewModelScope.launch {
+            tasks.events.collect { event ->
+                message.value = when (event) {
+                    is TaskEvent.Created -> TaskFeedback("Task \"${event.title}\" created")
+                    is TaskEvent.Updated -> TaskFeedback("Task \"${event.title}\" saved")
+                    is TaskEvent.Deleted -> TaskFeedback("Task \"${event.title}\" deleted")
+                }
+            }
+        }
+    }
 
     val uiState: StateFlow<TaskListUiState> =
         combine(tasks.observeTasks(), projects.getProjects(), filters, message) { all, projectList, f, msg ->
@@ -106,7 +122,8 @@ class TaskListViewModel(
                 overdueCount = all.count { it.isOverdue(today) },
                 canManage = user.can(Permission.MANAGE_TASKS),
                 today = today,
-                message = msg
+                message = msg?.text,
+                messageIsError = msg?.isError == true
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskListUiState())
 
@@ -118,7 +135,10 @@ class TaskListViewModel(
     fun toggleDone(task: TaskItem) {
         viewModelScope.launch {
             val next = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
-            tasks.setStatus(task.id, next).onFailure { message.value = it.message ?: "Couldn't update task" }
+            message.value = tasks.setStatus(task.id, next).fold(
+                { TaskFeedback(if (next == TaskStatus.DONE) "Marked \"${task.title}\" as done" else "Reopened \"${task.title}\"") },
+                { TaskFeedback(it.message ?: "Couldn't update task", isError = true) }
+            )
         }
     }
 
@@ -144,7 +164,9 @@ data class TaskDetailUiState(
     val isOverdue: Boolean = false,
     val canManage: Boolean = false,
     val today: LocalDate = LocalDate.now(),
-    val message: String? = null
+    val message: String? = null,
+    val messageIsError: Boolean = false,
+    val isDeleted: Boolean = false
 )
 
 class TaskDetailViewModel(
@@ -156,10 +178,27 @@ class TaskDetailViewModel(
     private val clock: Clock
 ) : ViewModel() {
 
-    private val message = MutableStateFlow<String?>(null)
+    private val message = MutableStateFlow<TaskFeedback?>(null)
+    private val deleted = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            tasks.events.collect { event ->
+                when (event) {
+                    is TaskEvent.Updated -> if (event.taskId == taskId) {
+                        message.value = TaskFeedback("Task \"${event.title}\" saved")
+                    }
+                    is TaskEvent.Deleted -> if (event.taskId == taskId) {
+                        deleted.value = true
+                    }
+                    is TaskEvent.Created -> Unit
+                }
+            }
+        }
+    }
 
     val uiState: StateFlow<TaskDetailUiState> =
-        combine(tasks.observeTask(taskId), projects.getProjects(), message) { task, projectList, msg ->
+        combine(tasks.observeTask(taskId), projects.getProjects(), message, deleted) { task, projectList, msg, isDeleted ->
             val today = LocalDate.now(clock)
             TaskDetailUiState(
                 isLoading = false,
@@ -169,7 +208,9 @@ class TaskDetailViewModel(
                 isOverdue = task?.isOverdue(today) == true,
                 canManage = user.can(Permission.MANAGE_TASKS),
                 today = today,
-                message = msg
+                message = msg?.text,
+                messageIsError = msg?.isError == true,
+                isDeleted = isDeleted
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskDetailUiState())
 
@@ -177,7 +218,10 @@ class TaskDetailViewModel(
         val task = uiState.value.task ?: return
         viewModelScope.launch {
             val next = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
-            tasks.setStatus(task.id, next).onFailure { message.value = it.message ?: "Couldn't update task" }
+            message.value = tasks.setStatus(task.id, next).fold(
+                { TaskFeedback(if (next == TaskStatus.DONE) "Marked \"${task.title}\" as done" else "Reopened \"${task.title}\"") },
+                { TaskFeedback(it.message ?: "Couldn't update task", isError = true) }
+            )
         }
     }
 

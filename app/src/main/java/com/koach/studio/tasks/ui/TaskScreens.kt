@@ -36,7 +36,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
@@ -77,6 +76,7 @@ import com.koach.studio.core.designsystem.components.KoachSearchField
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTextField
+import com.koach.studio.core.designsystem.components.KoachSnackbarHost
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -144,7 +144,7 @@ fun TaskListScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { KoachSnackbarHost(snackbar, isError = state.messageIsError) },
         modifier = modifier
     ) { padding ->
         if (state.isLoading) {
@@ -367,6 +367,8 @@ fun TaskDetailScreen(
     val gutter = KoachTheme.spacing.gutter
     val snackbar = remember { SnackbarHostState() }
 
+    LaunchedEffect(state.isDeleted) { if (state.isDeleted) onBack() }
+
     LaunchedEffect(state.message) {
         state.message?.let {
             snackbar.showSnackbar(it)
@@ -389,7 +391,7 @@ fun TaskDetailScreen(
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { KoachSnackbarHost(snackbar, isError = state.messageIsError) },
         modifier = modifier
     ) { padding ->
         when {

@@ -211,4 +211,59 @@ class TaskManagementTest {
         assertTrue(!vm.uiState.value.isSaving)
         auth.signInAsDemo("u-isha")
         assertTrue(tasks.observeTask(created.id).first() != null)
-    }}
+    }
+
+    @Test
+    fun list_and_detail_confirmCreateSaveAndDelete_andNeverReportFailedOperationsAsSuccess() = runTest {
+        auth.signInAsDemo("u-isha")
+        val list = listVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { list.uiState.collect {} }
+        list.uiState.first { !it.isLoading }
+
+        // Failed create (invalid title) must not show a success message on the list.
+        assertTrue(tasks.createTask(draft.copy(title = "x")).isFailure)
+        assertEquals(null, list.uiState.value.message)
+
+        // Successful create confirms on the list.
+        val created = tasks.createTask(draft.copy(title = "Colour grade pass")).getOrThrow()
+        assertEquals("Task \"Colour grade pass\" created", list.uiState.value.message)
+        assertTrue(!list.uiState.value.messageIsError)
+        list.messageShown()
+        assertEquals(null, list.uiState.value.message)
+
+        // Open detail for the created task, then update it.
+        val detail = TaskDetailViewModel(created.id, auth.currentUser.value!!, tasks, projects, data.users, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { detail.uiState.collect {} }
+        detail.uiState.first { !it.isLoading }
+
+        tasks.updateTask(created.id, draft.copy(title = "Final colour grade")).getOrThrow()
+        assertEquals("Task \"Final colour grade\" saved", detail.uiState.value.message)
+        assertTrue(!detail.uiState.value.messageIsError)
+        assertEquals("Task \"Final colour grade\" saved", list.uiState.value.message)
+
+        // Deleting marks detail as deleted so it pops back, and confirms deletion on the list.
+        tasks.deleteTask(created.id).getOrThrow()
+        assertTrue(detail.uiState.value.isDeleted)
+        assertEquals("Task \"Final colour grade\" deleted", list.uiState.value.message)
+        assertTrue(!list.uiState.value.messageIsError)
+    }
+
+    @Test
+    fun toggleDone_reportsSuccessAndFlagsForbiddenToggleAsError() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val list = listVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { list.uiState.collect {} }
+        val row = list.uiState.first { !it.isLoading }.rows.first { it.task.id == "t-1" }
+
+        list.toggleDone(row.task)
+        assertEquals("Marked \"${row.task.title}\" as done", list.uiState.value.message)
+        assertTrue(!list.uiState.value.messageIsError)
+
+        // Sign in as a client so setStatus fails with PermissionDeniedException.
+        auth.signInAsDemo("u-maya")
+        list.toggleDone(row.task.copy(status = TaskStatus.DONE))
+        assertTrue(list.uiState.value.messageIsError)
+        assertTrue(list.uiState.value.message != null)
+        assertTrue(!list.uiState.value.message!!.startsWith("Reopened"))
+    }
+}
