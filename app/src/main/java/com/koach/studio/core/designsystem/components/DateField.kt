@@ -3,6 +3,8 @@ package com.koach.studio.core.designsystem.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.DatePicker
@@ -100,11 +102,21 @@ fun KoachDatePickerDialog(
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { state.selectedDateMillis?.let { onConfirm(it.toUtcLocalDate()) } }) {
+            TextButton(
+                onClick = { state.selectedDateMillis?.let { onConfirm(it.toUtcLocalDate()) } },
+                modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            ) {
                 Text("Select", color = c.brand)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = c.textSecondary) } },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            ) {
+                Text("Cancel", color = c.textSecondary)
+            }
+        },
         colors = DatePickerDefaults.colors(containerColor = c.surfaceRaised)
     ) {
         DatePicker(

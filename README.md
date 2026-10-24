@@ -21,6 +21,7 @@ Built with Kotlin, Jetpack Compose and Material 3. Dark UI with KOACH neon green
 | Explore | Services catalogue (7 categories, packages in INR) and a portfolio of clearly labelled **sample** work |
 | Booking | Service and package picker, date picker (2+ days' notice), budget, brief, validation, confirmation, booking history |
 | Messages | One conversation per project, unread badges, live updates |
+| Contact | Studio address (Bandra West), operating hours, direct phone dialer, urgent production hotline, direct email, map location, and quick booking |
 | Account | Notifications, bookings, documents, invoices (simulated payments), feedback and complaints, profile, sign-out |
 
 ### For the agency team
@@ -112,7 +113,7 @@ Last verified on 22 Oct 2026 on an API 37 emulator:
 
 | Check | Result |
 |---|---|
-| Unit tests | 92 tests, 0 failures |
+| Unit tests | 96 tests, 0 failures |
 | Instrumented UI tests | 6 tests, 0 failures in each of 5 consecutive from-scratch runs |
 | Lint | 0 errors; 13 warnings, all dependency/SDK version advisories |
 | `assembleDebug`, `assembleRelease` | Successful |
@@ -145,6 +146,7 @@ com.koach.studio
 ├── messaging/      Project conversations
 ├── notifications/  Notification repository and centre
 ├── feedback/       Feedback and complaints
+├── contact/        Studio location, hotlines, direct email, map & actions
 ├── bookings/       Booking form, history, inbox
 ├── catalog/ services/ portfolio/   Explore tab
 ├── home/           Client home and Studio dashboard
@@ -195,7 +197,7 @@ Each repository is an interface, so the path is:
 | **Shravan Kadam** | Integration lead: architecture, design system, navigation shell, shared models and repositories, Git workflow, QA |
 | **Aditya Menon** | Client management, plus the original projects and deliverables flow (PR #4) |
 | **Kushagra Khare** | Tasks and documents |
-| **Suhani** | Messaging, notifications, feedback and complaints |
+| **Suhani Jain** | Client-facing UI & UX quality, studio contact workflows, service & portfolio booking integration, accessibility, and documentation |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for module ownership, the branch workflow and review rules.
 

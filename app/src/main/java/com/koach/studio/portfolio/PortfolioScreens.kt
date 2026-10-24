@@ -54,6 +54,7 @@ import com.koach.studio.core.designsystem.components.IconTile
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
+import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -113,7 +114,7 @@ private fun PortfolioTile(item: PortfolioItem, onClick: () -> Unit, modifier: Mo
     Column(
         modifier
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = "View ${item.title} sample project", onClick = onClick)
             .testTag("portfolio_${item.id}")
     ) {
         PortfolioCover(item, aspect = 0.8f, iconSize = 56.dp)
@@ -182,6 +183,7 @@ fun PortfolioDetailScreen(
     viewModel: PortfolioDetailViewModel,
     onBack: () -> Unit,
     onStartSimilar: (serviceId: String) -> Unit,
+    onBookSimilar: (serviceId: String) -> Unit = onStartSimilar,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -201,7 +203,21 @@ fun PortfolioDetailScreen(
                         .navigationBarsPadding()
                         .padding(horizontal = gutter, vertical = 12.dp)
                 ) {
-                    KoachPrimaryButton("Start a similar project", onClick = { onStartSimilar(serviceId) }, modifier = Modifier.fillMaxWidth())
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        KoachSecondaryButton(
+                            text = "Explore service",
+                            onClick = { onStartSimilar(serviceId) },
+                            modifier = Modifier.weight(1f).testTag("portfolio_explore_service_button")
+                        )
+                        KoachPrimaryButton(
+                            text = "Book similar",
+                            onClick = { onBookSimilar(serviceId) },
+                            modifier = Modifier.weight(1f).testTag("portfolio_book_similar_button")
+                        )
+                    }
                 }
             }
         },

@@ -39,6 +39,7 @@ object Routes {
     const val FEEDBACK = "feedback"
     const val NOTIFICATIONS = "notifications"
     const val PROFILE = "profile"
+    const val CONTACT = "contact"
     const val SERVICE_DETAIL = "services/{serviceId}"
     const val NEW_BOOKING = "bookings/new?serviceId={serviceId}&packageId={packageId}"
 

@@ -50,4 +50,16 @@ class PortfolioViewModelTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
         assertEquals("svc-motion", vm.uiState.first { !it.isLoading }.relatedServiceId)
     }
+
+    @Test
+    fun detail_resolvesRelatedServiceForAllSamplePieces() = runTest {
+        val filmingVm = PortfolioDetailViewModel("pf-1", catalog)
+        val brandingVm = PortfolioDetailViewModel("pf-4", catalog)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            filmingVm.uiState.collect {}
+            brandingVm.uiState.collect {}
+        }
+        assertEquals("svc-film", filmingVm.uiState.first { !it.isLoading }.relatedServiceId)
+        assertEquals("svc-brand", brandingVm.uiState.first { !it.isLoading }.relatedServiceId)
+    }
 }
