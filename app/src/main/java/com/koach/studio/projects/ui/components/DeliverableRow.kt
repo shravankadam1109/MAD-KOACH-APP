@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
@@ -98,7 +99,9 @@ fun DeliverableRow(
             if (onEditClick != null) {
                 IconButton(
                     onClick = onEditClick,
-                    modifier = Modifier.testTag("edit_deliverable_button_${deliverable.id}")
+                    modifier = Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .testTag("edit_deliverable_button_${deliverable.id}")
                 ) {
                     Icon(
                         Icons.Outlined.Edit,
