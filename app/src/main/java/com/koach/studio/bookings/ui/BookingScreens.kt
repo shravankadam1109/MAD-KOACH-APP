@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -183,7 +184,17 @@ fun NewBookingScreen(
                     label = "Email",
                     leadingIcon = Icons.Outlined.Email,
                     error = state.errors[Field.EMAIL],
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.testTag("booking_email")
+                )
+                KoachTextField(
+                    value = state.contactPhone,
+                    onValueChange = viewModel::onPhoneChanged,
+                    label = "Phone number (optional)",
+                    leadingIcon = Icons.Outlined.Phone,
+                    error = state.errors[Field.PHONE],
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.testTag("booking_phone")
                 )
             }
 

@@ -34,6 +34,7 @@ data class NewBookingUiState(
     val details: String = "",
     val contactName: String = "",
     val contactEmail: String = "",
+    val contactPhone: String = "",
     val errors: Map<Field, String> = emptyMap(),
     val isSubmitting: Boolean = false,
     val submitted: Booking? = null,
@@ -89,9 +90,20 @@ class NewBookingViewModel(
         it.copy(details = value, errors = if (Field.DETAILS in it.errors) it.errors.updated(Field.DETAILS, BookingValidator.detailsError(value)) else it.errors)
     }
 
-    fun onNameChanged(value: String) = _uiState.update { it.copy(contactName = value, errors = it.errors - Field.NAME) }
+    fun onNameChanged(value: String) = _uiState.update {
+        val err = if (Field.NAME in it.errors) BookingValidator.nameError(value) else null
+        it.copy(contactName = value, errors = it.errors.updated(Field.NAME, err))
+    }
 
-    fun onEmailChanged(value: String) = _uiState.update { it.copy(contactEmail = value, errors = it.errors - Field.EMAIL) }
+    fun onEmailChanged(value: String) = _uiState.update {
+        val err = if (Field.EMAIL in it.errors) BookingValidator.emailError(value) else null
+        it.copy(contactEmail = value, errors = it.errors.updated(Field.EMAIL, err))
+    }
+
+    fun onPhoneChanged(value: String) = _uiState.update {
+        val err = if (Field.PHONE in it.errors) BookingValidator.phoneError(value) else null
+        it.copy(contactPhone = value, errors = it.errors.updated(Field.PHONE, err))
+    }
 
     fun submit() {
         val state = _uiState.value
@@ -104,7 +116,8 @@ class NewBookingViewModel(
             budgetInr = state.budget.toLongOrNull(),
             details = state.details,
             contactName = state.contactName,
-            contactEmail = state.contactEmail
+            contactEmail = state.contactEmail,
+            contactPhone = state.contactPhone
         )
         val errors = BookingValidator.validate(request, state.today).let {
             if (date == null) it + (Field.DATE to "Pick a preferred date") else it

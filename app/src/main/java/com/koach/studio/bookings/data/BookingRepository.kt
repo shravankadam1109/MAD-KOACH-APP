@@ -27,7 +27,8 @@ data class BookingRequest(
     val budgetInr: Long?,
     val details: String,
     val contactName: String,
-    val contactEmail: String
+    val contactEmail: String,
+    val contactPhone: String = ""
 )
 
 interface BookingRepository {
