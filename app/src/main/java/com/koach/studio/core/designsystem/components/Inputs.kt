@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenuItem
@@ -41,6 +42,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
@@ -235,31 +239,68 @@ fun <T> KoachFilterChips(
             .padding(horizontal = KoachTheme.spacing.gutter)
     ) {
         if (allLabel != null) {
+            val isSelected = selected == null
+            val containerColor by animateColorAsState(if (isSelected) c.brand else c.surface, animationSpec = tween(200), label = "chipBgAll")
+            val contentColor by animateColorAsState(if (isSelected) c.onBrand else c.textSecondary, animationSpec = tween(200), label = "chipTextAll")
+            val borderColor by animateColorAsState(if (isSelected) c.brand else c.outline, animationSpec = tween(200), label = "chipBorderAll")
             FilterChip(
-                selected = selected == null,
+                selected = isSelected,
                 onClick = { onSelected(null) },
                 label = { Text(allLabel) },
+                leadingIcon = if (isSelected) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null,
                 shape = RoundedCornerShape(50),
-                colors = chipColors,
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = containerColor,
+                    labelColor = contentColor,
+                    selectedContainerColor = containerColor,
+                    selectedLabelColor = contentColor
+                ),
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
-                    enabled = true, selected = selected == null,
-                    borderColor = c.outline, selectedBorderColor = c.brand
+                    enabled = true, selected = isSelected,
+                    borderColor = borderColor, selectedBorderColor = borderColor
                 )
             )
         }
         options.forEach { option ->
             val isSelected = option == selected
+            val containerColor by animateColorAsState(if (isSelected) c.brand else c.surface, animationSpec = tween(200), label = "chipBgOpt")
+            val contentColor by animateColorAsState(if (isSelected) c.onBrand else c.textSecondary, animationSpec = tween(200), label = "chipTextOpt")
+            val borderColor by animateColorAsState(if (isSelected) c.brand else c.outline, animationSpec = tween(200), label = "chipBorderOpt")
             FilterChip(
                 selected = isSelected,
                 onClick = { onSelected(if (isSelected && allLabel != null) null else option) },
                 label = { Text(label(option)) },
+                leadingIcon = if (isSelected) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null,
                 shape = RoundedCornerShape(50),
-                colors = chipColors,
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = containerColor,
+                    labelColor = contentColor,
+                    selectedContainerColor = containerColor,
+                    selectedLabelColor = contentColor
+                ),
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true, selected = isSelected,
-                    borderColor = c.outline, selectedBorderColor = c.brand
+                    borderColor = borderColor, selectedBorderColor = borderColor
                 )
             )
         }
