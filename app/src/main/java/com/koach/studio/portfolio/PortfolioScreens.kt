@@ -81,7 +81,8 @@ fun LazyListScope.portfolioGrid(
             options = state.categories,
             selected = state.selectedCategory,
             onSelected = onSelectCategory,
-            label = { it.displayName }
+            label = { it.displayName },
+            modifier = Modifier.testTag("portfolio_filters")
         )
     }
     item {
