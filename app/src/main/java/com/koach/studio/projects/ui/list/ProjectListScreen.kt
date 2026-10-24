@@ -1,23 +1,30 @@
 package com.koach.studio.projects.ui.list
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -43,11 +50,31 @@ fun ProjectListScreen(
     onProjectClick: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isWide = maxWidth > 600.dp
+        if (isWide) {
+            WideProjectListLayout(uiState, viewModel, onProjectClick)
+        } else {
+            NarrowProjectListLayout(uiState, viewModel, onProjectClick)
+        }
+    }
+}
+
+/**
+ * Narrow (phone portrait) layout — single-column project list.
+ */
+@Composable
+private fun NarrowProjectListLayout(
+    uiState: ProjectListUiState,
+    viewModel: ProjectListViewModel,
+    onProjectClick: (String) -> Unit
+) {
     val c = KoachTheme.colors
     val gutter = KoachTheme.spacing.gutter
     val activeCount = uiState.projects.count { it.status != ProjectStatus.COMPLETED }
 
-    KoachBackground(modifier.fillMaxSize()) {
+    KoachBackground(Modifier.fillMaxSize()) {
         if (uiState.isLoading) {
             ProjectListShimmer()
             return@KoachBackground
@@ -63,82 +90,192 @@ fun ProjectListScreen(
             )
             return@KoachBackground
         }
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .statusBarsPadding()
-                .testTag("project_list")
-        ) {
-            item {
-                Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp)) {
-                    Eyebrow("$activeCount active")
-                    Spacer(Modifier.height(6.dp))
-                    Text("Projects", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(16.dp))
-                    KoachSearchField(
-                        query = uiState.searchQuery,
-                        onQueryChange = viewModel::onSearchQueryChanged,
-                        placeholder = "Search projects or clients",
-                        modifier = Modifier.testTag("project_search")
+        ProjectLazyList(
+            uiState = uiState,
+            viewModel = viewModel,
+            onProjectClick = onProjectClick,
+            activeCount = activeCount,
+            gutter = gutter
+        )
+    }
+}
+
+/**
+ * Wide (tablet / landscape) layout — list on the left, "select a project" hint panel on the right.
+ */
+@Composable
+private fun WideProjectListLayout(
+    uiState: ProjectListUiState,
+    viewModel: ProjectListViewModel,
+    onProjectClick: (String) -> Unit
+) {
+    val c = KoachTheme.colors
+    val gutter = KoachTheme.spacing.gutter
+    val activeCount = uiState.projects.count { it.status != ProjectStatus.COMPLETED }
+
+    KoachBackground(Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            // Left pane: project list
+            Column(
+                modifier = Modifier
+                    .weight(0.45f)
+                    .fillMaxHeight()
+            ) {
+                if (uiState.isLoading) {
+                    ProjectListShimmer()
+                } else if (uiState.errorMessage != null) {
+                    ErrorState(
+                        message = uiState.errorMessage ?: "Failed to load projects",
+                        onRetry = viewModel::retry,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .testTag("project_list_error")
                     )
-                    Spacer(Modifier.height(4.dp))
-                }
-            }
-            item {
-                KoachFilterChips(
-                    options = ServiceType.entries,
-                    selected = uiState.selectedServiceFilter,
-                    onSelected = viewModel::onFilterSelected,
-                    label = { it.displayName },
-                    allLabel = "All services",
-                    modifier = Modifier.testTag("service_filter_chips")
-                )
-            }
-            item {
-                KoachFilterChips(
-                    options = ProjectStatus.entries,
-                    selected = uiState.selectedStatusFilter,
-                    onSelected = viewModel::onStatusFilterSelected,
-                    label = { it.displayName },
-                    allLabel = "All statuses",
-                    modifier = Modifier.testTag("status_filter_chips")
-                )
-            }
-            item {
-                KoachFilterChips(
-                    options = ProjectSortOrder.entries,
-                    selected = uiState.sortOrder,
-                    onSelected = { it?.let(viewModel::onSortOrderSelected) },
-                    label = { "Sort: ${it.displayName}" },
-                    allLabel = null,
-                    modifier = Modifier.testTag("sort_filter_chips")
-                )
-            }
-            if (uiState.projects.isEmpty()) {
-                item {
-                    val searching = uiState.searchQuery.isNotBlank() ||
-                        uiState.selectedServiceFilter != null ||
-                        uiState.selectedStatusFilter != null
-                    EmptyState(
-                        icon = if (searching) Icons.Outlined.SearchOff else Icons.Outlined.Movie,
-                        title = if (searching) "No matching projects" else "No projects yet",
-                        message = if (searching) "Try a different search or filter." else "Projects appear here once work is booked.",
-                        actionLabel = if (searching) "Clear filters" else null,
-                        onAction = if (searching) { { viewModel.clearFilters() } } else null,
-                        modifier = Modifier.testTag("project_list_empty")
+                } else {
+                    ProjectLazyList(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        onProjectClick = onProjectClick,
+                        activeCount = activeCount,
+                        gutter = gutter
                     )
                 }
             }
-            itemsIndexed(uiState.projects, key = { _, project -> project.id }) { index, project ->
-                ProjectListItem(
-                    project = project,
-                    onClick = { onProjectClick(project.id) },
+
+            // Thin divider
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .fillMaxHeight()
+                    .padding(vertical = 16.dp)
+            ) {
+                Spacer(
                     modifier = Modifier
-                        .padding(horizontal = gutter)
-                        .staggeredEntrance(index = index)
+                        .fillMaxSize()
+                        .then(Modifier.fillMaxWidth())
                 )
             }
+
+            // Right pane: placeholder to open project details
+            Column(
+                modifier = Modifier
+                    .weight(0.55f)
+                    .fillMaxHeight()
+                    .statusBarsPadding()
+                    .padding(gutter),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Outlined.TouchApp,
+                    contentDescription = null,
+                    tint = c.textTertiary,
+                    modifier = Modifier.height(48.dp).width(48.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Select a project",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = c.textSecondary
+                )
+                Text(
+                    text = "Tap a project from the list to view its details.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textTertiary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The shared LazyColumn content used in both narrow and wide layouts.
+ */
+@Composable
+private fun ProjectLazyList(
+    uiState: ProjectListUiState,
+    viewModel: ProjectListViewModel,
+    onProjectClick: (String) -> Unit,
+    activeCount: Int,
+    gutter: androidx.compose.ui.unit.Dp
+) {
+    val c = KoachTheme.colors
+    LazyColumn(
+        contentPadding = PaddingValues(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .statusBarsPadding()
+            .testTag("project_list")
+    ) {
+        item {
+            Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp)) {
+                Eyebrow("$activeCount active")
+                Spacer(Modifier.height(6.dp))
+                Text("Projects", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
+                Spacer(Modifier.height(16.dp))
+                KoachSearchField(
+                    query = uiState.searchQuery,
+                    onQueryChange = viewModel::onSearchQueryChanged,
+                    placeholder = "Search projects or clients",
+                    modifier = Modifier.testTag("project_search")
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+        item {
+            KoachFilterChips(
+                options = ServiceType.entries,
+                selected = uiState.selectedServiceFilter,
+                onSelected = viewModel::onFilterSelected,
+                label = { it.displayName },
+                allLabel = "All services",
+                modifier = Modifier.testTag("service_filter_chips")
+            )
+        }
+        item {
+            KoachFilterChips(
+                options = ProjectStatus.entries,
+                selected = uiState.selectedStatusFilter,
+                onSelected = viewModel::onStatusFilterSelected,
+                label = { it.displayName },
+                allLabel = "All statuses",
+                modifier = Modifier.testTag("status_filter_chips")
+            )
+        }
+        item {
+            KoachFilterChips(
+                options = ProjectSortOrder.entries,
+                selected = uiState.sortOrder,
+                onSelected = { it?.let(viewModel::onSortOrderSelected) },
+                label = { "Sort: ${it.displayName}" },
+                allLabel = null,
+                modifier = Modifier.testTag("sort_filter_chips")
+            )
+        }
+        if (uiState.projects.isEmpty()) {
+            item {
+                val searching = uiState.searchQuery.isNotBlank() ||
+                    uiState.selectedServiceFilter != null ||
+                    uiState.selectedStatusFilter != null
+                EmptyState(
+                    icon = if (searching) Icons.Outlined.SearchOff else Icons.Outlined.Movie,
+                    title = if (searching) "No matching projects" else "No projects yet",
+                    message = if (searching) "Try a different search or filter." else "Projects appear here once work is booked.",
+                    actionLabel = if (searching) "Clear filters" else null,
+                    onAction = if (searching) { { viewModel.clearFilters() } } else null,
+                    modifier = Modifier.testTag("project_list_empty")
+                )
+            }
+        }
+        itemsIndexed(uiState.projects, key = { _, project -> project.id }) { index, project ->
+            ProjectListItem(
+                project = project,
+                onClick = { onProjectClick(project.id) },
+                modifier = Modifier
+                    .padding(horizontal = gutter)
+                    .staggeredEntrance(index = index)
+            )
         }
     }
 }
