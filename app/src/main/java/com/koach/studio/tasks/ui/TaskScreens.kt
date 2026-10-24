@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,10 +53,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -168,7 +173,12 @@ fun TaskListScreen(
                         }
                     }
                     Spacer(Modifier.height(6.dp))
-                    Text("Tasks", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
+                    Text(
+                        "Tasks",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = c.textPrimary,
+                        modifier = Modifier.semantics { heading() }
+                    )
                     Spacer(Modifier.height(12.dp))
                     // Search bar
                     KoachSearchField(
@@ -233,7 +243,12 @@ private fun SortMenu(sort: TaskSort, onSort: (TaskSort) -> Unit) {
     val c = KoachTheme.colors
     var open by remember { mutableStateOf(false) }
     Box {
-        TextButton(onClick = { open = true }, modifier = Modifier.testTag("task_sort")) {
+        TextButton(
+            onClick = { open = true },
+            modifier = Modifier
+                .semantics { contentDescription = "Sort tasks, current: ${sort.label}" }
+                .testTag("task_sort")
+        ) {
             Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
             Text(sort.label, color = c.textSecondary, style = MaterialTheme.typography.labelLarge)
@@ -285,6 +300,7 @@ private fun TaskDoneToggle(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TaskCard(
     row: TaskRow,
@@ -328,24 +344,31 @@ private fun TaskCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     StatusPill(task.priority.displayName, task.priority.tone)
-                    Spacer(Modifier.width(8.dp))
                     if (!done) StatusPill(task.status.displayName, task.status.tone, showDot = false)
                     Spacer(Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
                     Text(
                         if (done) "Done" else formatDue(task.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.labelMedium,
                         color = if (row.isOverdue) Tone.Danger.color() else c.textTertiary,
                         maxLines = 1,
-                        modifier = Modifier.testTag("task_due_${task.id}")
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.align(Alignment.CenterVertically).testTag("task_due_${task.id}")
                     )
                 }
             }
             row.assignee?.let {
                 Spacer(Modifier.width(10.dp))
-                KoachAvatar(it.initials, size = 30.dp)
+                KoachAvatar(
+                    it.initials,
+                    size = 30.dp,
+                    modifier = Modifier.semantics { contentDescription = "Assigned to ${it.name}" }
+                )
             }
         }
     }
@@ -355,6 +378,7 @@ private fun TaskCard(
 // Task Detail Screen — read-only; Edit FAB for agency users
 // ---------------------------------------------------------------------------
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TaskDetailScreen(
     viewModel: TaskDetailViewModel,
@@ -444,7 +468,10 @@ fun TaskDetailScreen(
                     }
                     // Status chips row
                     item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             StatusPill(task.priority.displayName, task.priority.tone)
                             StatusPill(task.status.displayName, task.status.tone, showDot = false)
                             if (state.isOverdue) StatusPill("Overdue", Tone.Danger)
@@ -602,7 +629,12 @@ fun TaskFormScreen(
                 }
                 state.errorMessage?.let {
                     Spacer(Modifier.height(12.dp))
-                    Text(it, color = c.danger, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        it,
+                        color = c.danger,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    )
                 }
                 Spacer(Modifier.height(24.dp))
                 KoachPrimaryButton(
