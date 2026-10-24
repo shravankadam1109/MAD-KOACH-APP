@@ -12,6 +12,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -152,6 +164,80 @@ fun MetricTile(
         Text(value, style = MaterialTheme.typography.headlineMedium, color = KoachTheme.colors.textPrimary)
         Spacer(Modifier.height(2.dp))
         Text(label, style = MaterialTheme.typography.bodySmall, color = KoachTheme.colors.textSecondary)
+    }
+}
+
+@Composable
+fun Modifier.koachShimmer(): Modifier {
+    val transition = rememberInfiniteTransition(label = "shimmer_transition")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1200f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_anim"
+    )
+    val colors = listOf(
+        KoachTheme.colors.surface,
+        KoachTheme.colors.surfaceRaised,
+        KoachTheme.colors.surface
+    )
+    return this.background(
+        brush = Brush.linearGradient(
+            colors = colors,
+            start = Offset(translateAnim - 400f, translateAnim - 400f),
+            end = Offset(translateAnim, translateAnim)
+        )
+    )
+}
+
+@Composable
+fun ServicesShimmerPlaceholder(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = KoachTheme.spacing.gutter),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        repeat(3) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .koachShimmer()
+            )
+        }
+    }
+}
+
+@Composable
+fun PortfolioShimmerPlaceholder(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = KoachTheme.spacing.gutter),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        repeat(2) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .koachShimmer()
+                )
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .koachShimmer()
+                )
+            }
+        }
     }
 }
 

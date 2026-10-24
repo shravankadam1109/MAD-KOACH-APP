@@ -68,6 +68,8 @@ import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
+import com.koach.studio.core.designsystem.components.PortfolioShimmerPlaceholder
+import com.koach.studio.core.designsystem.components.ServicesShimmerPlaceholder
 import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.components.color
@@ -337,7 +339,13 @@ fun ExploreScreen(
 
     KoachBackground(modifier.fillMaxSize()) {
         if (services.isLoading || portfolio.isLoading) {
-            LoadingState()
+            Column(Modifier.statusBarsPadding().padding(top = 24.dp)) {
+                if (section == 0) {
+                    ServicesShimmerPlaceholder()
+                } else {
+                    PortfolioShimmerPlaceholder()
+                }
+            }
             return@KoachBackground
         }
         LazyColumn(
