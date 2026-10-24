@@ -18,6 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -86,9 +95,10 @@ fun LazyListScope.servicesCatalog(
             modifier = Modifier.testTag("service_filters")
         )
     }
-    items(state.services, key = { it.id }) { service ->
+    itemsIndexed(state.services, key = { _, service -> service.id }) { index, service ->
         ServiceCard(
-            service,
+            service = service,
+            index = index,
             onClick = { onOpenService(service.id) },
             modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter)
         )
@@ -96,12 +106,37 @@ fun LazyListScope.servicesCatalog(
 }
 
 @Composable
-private fun ServiceCard(service: CreativeService, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ServiceCard(
+    service: CreativeService,
+    index: Int = 0,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val c = KoachTheme.colors
+    val visible = remember { mutableStateOf(false) }
+    LaunchedEffect(service.id) {
+        delay(index * 40L)
+        visible.value = true
+    }
+    val alpha by animateFloatAsState(
+        targetValue = if (visible.value) 1f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "service_card_alpha"
+    )
+    val translationY by animateFloatAsState(
+        targetValue = if (visible.value) 0f else 28f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "service_card_translation"
+    )
+
     KoachCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                this.alpha = alpha
+                this.translationY = translationY
+            }
             .testTag("service_${service.id}")
             .semantics {
                 contentDescription = "${service.name}, starting from ${formatInr(service.startingPriceInr)}, ${service.packages.size} packages available"
