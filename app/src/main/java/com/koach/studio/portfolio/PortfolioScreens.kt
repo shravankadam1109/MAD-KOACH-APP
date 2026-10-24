@@ -1,5 +1,11 @@
 package com.koach.studio.portfolio
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -236,49 +242,58 @@ fun PortfolioDetailScreen(
         },
         modifier = modifier
     ) { padding ->
-        when {
-            state.isLoading -> LoadingState(Modifier.padding(padding))
-            item == null -> ErrorState("This piece is no longer in the portfolio.", Modifier.padding(padding))
-            else -> LazyColumn(
-                contentPadding = PaddingValues(start = gutter, end = gutter, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
-                item { PortfolioCover(item, aspect = 1.5f, iconSize = 84.dp) }
-                item {
-                    Eyebrow("${item.category.displayName} · ${item.year}")
-                    Spacer(Modifier.height(8.dp))
-                    Text(item.summary, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
-                }
-                item {
-                    KoachCard(modifier = Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.Top) {
-                            IconTile(Icons.Outlined.Info, tone = Tone.Info, size = 32.dp)
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                "This is a sample project created to illustrate the kind of work KOACH Studio does. The client and results are illustrative.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = c.textSecondary
-                            )
-                        }
+        AnimatedContent(
+            targetState = state.isLoading to item,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(350)) { it / 8 })
+                    .togetherWith(fadeOut(animationSpec = tween(200)))
+            },
+            label = "portfolio_detail_state"
+        ) { (isLoading, targetItem) ->
+            when {
+                isLoading -> LoadingState(Modifier.padding(padding))
+                targetItem == null -> ErrorState("This piece is no longer in the portfolio.", Modifier.padding(padding))
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(start = gutter, end = gutter, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    item { PortfolioCover(targetItem, aspect = 1.5f, iconSize = 84.dp) }
+                    item {
+                        Eyebrow("${targetItem.category.displayName} · ${targetItem.year}")
+                        Spacer(Modifier.height(8.dp))
+                        Text(targetItem.summary, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
                     }
-                }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        item.metrics.forEach { (value, label) ->
-                            KoachCard(modifier = Modifier.weight(1f)) {
-                                Text(value, style = MaterialTheme.typography.headlineSmall, color = c.brand)
-                                Text(label, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                    item {
+                        KoachCard(modifier = Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                IconTile(Icons.Outlined.Info, tone = Tone.Info, size = 32.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    "This is a sample project created to illustrate the kind of work KOACH Studio does. The client and results are illustrative.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = c.textSecondary
+                                )
                             }
                         }
                     }
-                }
-                item { DetailSection("The brief", item.brief) }
-                item { DetailSection("Our approach", item.approach) }
-                item {
-                    Eyebrow("Services used", color = c.textTertiary)
-                    Spacer(Modifier.height(10.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        item.services.forEach { StatusPill(it.displayName, it.tone) }
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            targetItem.metrics.forEach { (value, label) ->
+                                KoachCard(modifier = Modifier.weight(1f)) {
+                                    Text(value, style = MaterialTheme.typography.headlineSmall, color = c.brand)
+                                    Text(label, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                                }
+                            }
+                        }
+                    }
+                    item { DetailSection("The brief", targetItem.brief) }
+                    item { DetailSection("Our approach", targetItem.approach) }
+                    item {
+                        Eyebrow("Services used", color = c.textTertiary)
+                        Spacer(Modifier.height(10.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            targetItem.services.forEach { StatusPill(it.displayName, it.tone) }
+                        }
                     }
                 }
             }
