@@ -275,9 +275,13 @@ class TaskFormViewModel(
 
     fun delete() {
         val id = taskId ?: return
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             val result = tasks.deleteTask(id)
-            _uiState.update { it.copy(done = result.isSuccess, errorMessage = result.exceptionOrNull()?.message) }
+            _uiState.update {
+                it.copy(isSaving = false, done = result.isSuccess, errorMessage = result.exceptionOrNull()?.message)
+            }
         }
     }
 }

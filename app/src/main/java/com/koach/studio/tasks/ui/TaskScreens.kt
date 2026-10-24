@@ -39,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -490,7 +491,27 @@ fun TaskFormScreen(
     val state by viewModel.uiState.collectAsState()
     val c = KoachTheme.colors
 
+    var confirmDelete by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.done) { if (state.done) onBack() }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete this task?") },
+            text = { Text("\"${state.title}\" will be removed for the whole team. This can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        viewModel.delete()
+                    },
+                    modifier = Modifier.testTag("confirm_delete_task")
+                ) { Text("Delete", color = c.danger) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
+    }
 
     Scaffold(
         containerColor = c.background,
@@ -568,7 +589,7 @@ fun TaskFormScreen(
                     Spacer(Modifier.height(10.dp))
                     KoachSecondaryButton(
                         text = "Delete task",
-                        onClick = viewModel::delete,
+                        onClick = { confirmDelete = true },
                         destructive = true,
                         leadingIcon = Icons.Outlined.Delete,
                         modifier = Modifier.fillMaxWidth().testTag("delete_task")
