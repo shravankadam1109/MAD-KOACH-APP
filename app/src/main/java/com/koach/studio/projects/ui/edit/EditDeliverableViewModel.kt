@@ -27,6 +27,14 @@ data class EditDeliverableUiState(
     val isFormValid: Boolean
         get() = nameError == null && notesError == null && name.isNotBlank()
 
+    /** True when form values differ from the originally loaded deliverable. */
+    val hasUnsavedChanges: Boolean
+        get() = initialDeliverable != null && !isSaved && (
+            name != initialDeliverable.name ||
+            notes != initialDeliverable.notes ||
+            status != initialDeliverable.status
+        )
+
     /**
      * Statuses the agency may pick. Approved and Revision Requested are client
      * decisions; they're only listed when already current so the chip still shows.

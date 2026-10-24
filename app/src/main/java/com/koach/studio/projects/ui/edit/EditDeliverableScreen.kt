@@ -1,5 +1,11 @@
 package com.koach.studio.projects.ui.edit
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -73,6 +79,28 @@ fun EditDeliverableScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = uiState.hasUnsavedChanges) { showDiscardDialog = true }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?", color = KoachTheme.colors.textPrimary) },
+            text = { Text("Your unsaved changes will be lost.", color = KoachTheme.colors.textSecondary) },
+            confirmButton = {
+                TextButton(onClick = { showDiscardDialog = false; onNavigateBack() }) {
+                    Text("Discard", color = KoachTheme.colors.danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text("Keep Editing", color = KoachTheme.colors.brand)
+                }
+            },
+            containerColor = KoachTheme.colors.surface
+        )
+    }
 
     val darkBackground = KoachTheme.colors.background
     val cardBackground = KoachTheme.colors.surface
@@ -96,7 +124,7 @@ fun EditDeliverableScreen(
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = onNavigateBack,
+                        onClick = { if (uiState.hasUnsavedChanges) showDiscardDialog = true else onNavigateBack() },
                         modifier = Modifier.testTag("navigate_back_button")
                     ) {
                         Icon(
