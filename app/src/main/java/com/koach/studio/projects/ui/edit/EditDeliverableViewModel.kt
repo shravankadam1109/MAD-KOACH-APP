@@ -45,6 +45,7 @@ class EditDeliverableViewModel(
 
     private val _uiState = MutableStateFlow(EditDeliverableUiState())
     val uiState: StateFlow<EditDeliverableUiState> = _uiState.asStateFlow()
+    private var lastSavedDeliverable: Deliverable? = null
 
     init {
         loadDeliverable()
@@ -140,6 +141,7 @@ class EditDeliverableViewModel(
         }
 
         val original = current.initialDeliverable ?: return
+        lastSavedDeliverable = original
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -159,6 +161,25 @@ class EditDeliverableViewModel(
                         errorMessage = result.exceptionOrNull()?.message ?: "Failed to save deliverable"
                     )
                 }
+            }
+        }
+    }
+
+    fun undoSave() {
+        val previous = lastSavedDeliverable ?: return
+        viewModelScope.launch {
+            val result = repository.updateDeliverable(projectId, previous)
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        name = previous.name,
+                        notes = previous.notes,
+                        status = previous.status,
+                        initialDeliverable = previous,
+                        isSaved = false
+                    )
+                }
+                lastSavedDeliverable = null
             }
         }
     }
