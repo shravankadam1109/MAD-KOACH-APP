@@ -13,6 +13,7 @@ import com.koach.studio.projects.data.SecuredProjectRepository
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskDraft
 import com.koach.studio.tasks.data.TaskValidator
+import com.koach.studio.tasks.ui.TaskDetailViewModel
 import com.koach.studio.tasks.ui.TaskFormViewModel
 import com.koach.studio.tasks.ui.TaskListViewModel
 import com.koach.studio.tasks.ui.TaskSort
@@ -114,4 +115,44 @@ class TaskManagementTest {
         vm.save()
         assertTrue(vm.uiState.value.done)
     }
-}
+
+    @Test
+    fun list_searchMatchesTitleCaseInsensitively_andClearsBack() = runTest {
+        auth.signInAsDemo("u-isha")
+        tasks.createTask(draft.copy(title = "Zebra teaser grade")).getOrThrow()
+        val vm = listVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val all = vm.uiState.first { !it.isLoading }.rows.size
+
+        vm.onQuery("zEBRa")
+        assertEquals(listOf("Zebra teaser grade"), vm.uiState.value.rows.map { it.task.title })
+
+        vm.onQuery("no-such-task-xyz")
+        assertTrue(vm.uiState.value.rows.isEmpty())
+
+        vm.onQuery("   ")
+        assertEquals(all, vm.uiState.value.rows.size)
+    }
+
+    @Test
+    fun detail_showsTaskAndAssignee_andTogglesDone() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val vm = TaskDetailViewModel("t-1", auth.currentUser.value!!, tasks, projects, data.users, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val before = vm.uiState.first { !it.isLoading }
+        assertEquals("t-1", before.task?.id)
+        assertTrue(before.canManage)
+
+        vm.toggleDone()
+        assertEquals(TaskStatus.DONE, vm.uiState.value.task?.status)
+        vm.toggleDone()
+        assertEquals(TaskStatus.TODO, vm.uiState.value.task?.status)
+    }
+
+    @Test
+    fun detail_unknownTask_hasNoTask() = runTest {
+        auth.signInAsDemo("u-zoya")
+        val vm = TaskDetailViewModel("t-missing", auth.currentUser.value!!, tasks, projects, data.users, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        assertEquals(null, vm.uiState.first { !it.isLoading }.task)
+    }}

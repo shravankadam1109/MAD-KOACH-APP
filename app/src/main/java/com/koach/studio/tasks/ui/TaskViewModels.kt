@@ -42,6 +42,7 @@ data class TaskRow(
 data class TaskListUiState(
     val isLoading: Boolean = true,
     val rows: List<TaskRow> = emptyList(),
+    val query: String = "",
     val statusFilter: TaskStatus? = null,
     val onlyMine: Boolean = false,
     val sort: TaskSort = TaskSort.DUE_DATE,
@@ -52,12 +53,24 @@ data class TaskListUiState(
     val message: String? = null
 )
 
-private data class TaskFilters(val status: TaskStatus?, val onlyMine: Boolean, val sort: TaskSort)
+private data class TaskFilters(val query: String, val status: TaskStatus?, val onlyMine: Boolean, val sort: TaskSort)
 
 /** Sorts and filters tasks; pure so it can be unit-tested directly. */
-fun List<TaskRow>.arranged(status: TaskStatus?, onlyMineId: String?, sort: TaskSort): List<TaskRow> =
+fun List<TaskRow>.arranged(
+    query: String,
+    status: TaskStatus?,
+    onlyMineId: String?,
+    sort: TaskSort
+): List<TaskRow> =
     filter { status == null || it.task.status == status }
         .filter { onlyMineId == null || it.task.assigneeId == onlyMineId }
+        .filter { row ->
+            query.isBlank() ||
+                row.task.title.contains(query, ignoreCase = true) ||
+                row.task.description.contains(query, ignoreCase = true) ||
+                row.projectTitle?.contains(query, ignoreCase = true) == true ||
+                row.assignee?.name?.contains(query, ignoreCase = true) == true
+        }
         .let { rows ->
             when (sort) {
                 // Done tasks sink to the bottom in every sort.
@@ -75,7 +88,7 @@ class TaskListViewModel(
     private val clock: Clock
 ) : ViewModel() {
 
-    private val filters = MutableStateFlow(TaskFilters(null, false, TaskSort.DUE_DATE))
+    private val filters = MutableStateFlow(TaskFilters("", null, false, TaskSort.DUE_DATE))
     private val message = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<TaskListUiState> =
@@ -84,7 +97,8 @@ class TaskListViewModel(
             val rows = all.map { it.toRow(projectList, today) }
             TaskListUiState(
                 isLoading = false,
-                rows = rows.arranged(f.status, if (f.onlyMine) user.id else null, f.sort),
+                rows = rows.arranged(f.query, f.status, if (f.onlyMine) user.id else null, f.sort),
+                query = f.query,
                 statusFilter = f.status,
                 onlyMine = f.onlyMine,
                 sort = f.sort,
@@ -96,6 +110,7 @@ class TaskListViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskListUiState())
 
+    fun onQuery(query: String) = filters.update { it.copy(query = query) }
     fun setStatusFilter(status: TaskStatus?) = filters.update { it.copy(status = status) }
     fun setOnlyMine(onlyMine: Boolean) = filters.update { it.copy(onlyMine = onlyMine) }
     fun setSort(sort: TaskSort) = filters.update { it.copy(sort = sort) }
@@ -116,6 +131,62 @@ class TaskListViewModel(
         isOverdue = isOverdue(today)
     )
 }
+
+// ---------------------------------------------------------------------------
+// Task detail ViewModel — read-only summary of a single task
+// ---------------------------------------------------------------------------
+
+data class TaskDetailUiState(
+    val isLoading: Boolean = true,
+    val task: TaskItem? = null,
+    val projectTitle: String? = null,
+    val assignee: User? = null,
+    val isOverdue: Boolean = false,
+    val canManage: Boolean = false,
+    val today: LocalDate = LocalDate.now(),
+    val message: String? = null
+)
+
+class TaskDetailViewModel(
+    private val taskId: String,
+    private val user: User,
+    private val tasks: TaskRepository,
+    projects: ProjectRepository,
+    private val people: List<User>,
+    private val clock: Clock
+) : ViewModel() {
+
+    private val message = MutableStateFlow<String?>(null)
+
+    val uiState: StateFlow<TaskDetailUiState> =
+        combine(tasks.observeTask(taskId), projects.getProjects(), message) { task, projectList, msg ->
+            val today = LocalDate.now(clock)
+            TaskDetailUiState(
+                isLoading = false,
+                task = task,
+                projectTitle = task?.projectId?.let { id -> projectList.find { it.id == id }?.title },
+                assignee = task?.assigneeId?.let { id -> people.find { it.id == id } },
+                isOverdue = task?.isOverdue(today) == true,
+                canManage = user.can(Permission.MANAGE_TASKS),
+                today = today,
+                message = msg
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskDetailUiState())
+
+    fun toggleDone() {
+        val task = uiState.value.task ?: return
+        viewModelScope.launch {
+            val next = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
+            tasks.setStatus(task.id, next).onFailure { message.value = it.message ?: "Couldn't update task" }
+        }
+    }
+
+    fun messageShown() = message.update { null }
+}
+
+// ---------------------------------------------------------------------------
+// Task form ViewModel
+// ---------------------------------------------------------------------------
 
 data class TaskFormUiState(
     val isEditing: Boolean = false,
