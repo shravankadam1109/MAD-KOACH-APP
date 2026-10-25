@@ -14,14 +14,14 @@ Built with Kotlin, Jetpack Compose and Material 3. Dark UI with KOACH neon green
 
 | Area | What you can do |
 |---|---|
-| Home | Greeting, featured project with progress and next milestone, quick actions, deliverables awaiting review, upcoming milestones |
+| Home | Greeting, featured project progress, quick actions, studio discovery CTAs (services, portfolio, book now), deliverables awaiting review, upcoming milestones |
 | Projects | Your projects only, with search, service filters, progress and due dates |
 | Project detail | Milestones, crew, description, deliverables, revision history, project documents |
 | Deliverables | Simulated download, **Approve**, or **Request changes** (a reason is required and kept in history) |
-| Explore | Services catalogue (7 categories, packages in INR) and a portfolio of clearly labelled **sample** work |
-| Booking | Service and package picker, date picker (2+ days' notice), budget, brief, validation, confirmation, booking history |
+| Explore | Services catalogue (animated category filter chips, shimmer loading, service detail pricing and direct booking CTA) and a portfolio of clearly labelled **sample** work (animated transitions, category filter chips) |
+| Booking | Service and package picker, date picker with quick suggestion chips, recommended budget tier chips, inline validation (name, email, phone, date, details), submitting & retry states, detailed confirmation summary screen |
 | Messages | One conversation per project, unread badges, live updates |
-| Contact | Studio address (Bandra West), operating hours, direct phone dialer, urgent production hotline, direct email, map location, and quick booking |
+| Contact | Agency info card with direct call, email and map intents, studio address & operating schedule, direct inquiry form with validation and confirmation, client fast channels |
 | Account | Notifications, bookings, documents, invoices (simulated payments), feedback and complaints, profile, sign-out |
 
 ### For the agency team

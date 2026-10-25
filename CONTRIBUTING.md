@@ -9,7 +9,7 @@ Each module has an owner who reviews changes to it and leads its future work. An
 | **Shravan Kadam** (integration lead) | Architecture, design system, navigation shell, shared models and repository interfaces, dependency container, Git workflow, final QA | `app/`, `core/`, `auth/`, `home/`, `catalog/`, `services/`, `portfolio/`, `bookings/`, `payments/`, `profile/` |
 | **Aditya Menon** | Client management; projects and deliverables (original PR #4) | `clients/`, `projects/` |
 | **Kushagra Khare** | Tasks and documents | `tasks/`, `documents/` |
-| **Suhani Jain** | Client-facing UI/UX, contact workflows, messaging, notifications, feedback | `contact/`, `messaging/`, `notifications/`, `feedback/` |
+| **Suhani Jain** | Client-facing UI & UX quality, home dashboard, services & portfolio discovery, booking workflow, studio contact & inquiry integration, accessibility, and documentation | `contact/`, `services/`, `portfolio/`, `bookings/`, `home/` |
 
 Changes to shared code (`core/`, `app/`, repository interfaces, `AppContainer`) affect every module, so Shravan reviews them and the affected owners are tagged.
 
