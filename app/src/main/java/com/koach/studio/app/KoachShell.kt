@@ -1,5 +1,27 @@
 package com.koach.studio.app
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -88,6 +110,8 @@ import com.koach.studio.portfolio.PortfolioDetailScreen
 import com.koach.studio.portfolio.PortfolioDetailViewModel
 import com.koach.studio.portfolio.PortfolioViewModel
 import com.koach.studio.services.ExploreScreen
+import com.koach.studio.tasks.ui.TaskDetailScreen
+import com.koach.studio.tasks.ui.TaskDetailViewModel
 import com.koach.studio.tasks.ui.TaskFormScreen
 import com.koach.studio.tasks.ui.TaskFormViewModel
 import com.koach.studio.tasks.ui.TaskListScreen
@@ -143,6 +167,11 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
     }
 }
 
+/**
+ * Floating pill navigation. Unselected tabs are icon-only; the selected tab
+ * expands into a green capsule with its label. Every tab keeps its label for
+ * accessibility services.
+ */
 @Composable
 private fun KoachBottomBar(
     tabs: List<TopLevelDestination>,
@@ -151,30 +180,55 @@ private fun KoachBottomBar(
     onSelect: (TopLevelDestination) -> Unit
 ) {
     val c = KoachTheme.colors
-    Column(Modifier.background(c.background)) {
-        KoachDivider()
-        NavigationBar(containerColor = c.background, tonalElevation = androidx.compose.ui.unit.Dp(0f)) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(24.dp, RoundedCornerShape(50), ambientColor = Color.Black, spotColor = Color.Black)
+                .clip(RoundedCornerShape(50))
+                .background(c.surfaceRaised)
+                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(50))
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .selectableGroup()
+        ) {
             tabs.forEach { tab ->
                 val selected = isSelected(tab)
-                NavigationBarItem(
-                    selected = selected,
-                    onClick = { onSelect(tab) },
-                    icon = {
-                        val count = badges[tab] ?: 0
-                        BadgedBox(badge = { if (count > 0) CountBadge(count) }) {
-                            Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null)
+                val count = badges[tab] ?: 0
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selected) c.brand else Color.Transparent)
+                        .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(tab) })
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
                         }
-                    },
-                    label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = c.brand,
-                        selectedTextColor = c.textPrimary,
-                        indicatorColor = c.brandContainer,
-                        unselectedIconColor = c.textTertiary,
-                        unselectedTextColor = c.textTertiary
-                    ),
-                    modifier = Modifier.testTag("tab_${tab.route}")
-                )
+                        .padding(horizontal = if (selected) 16.dp else 14.dp)
+                        .animateContentSize()
+                        .testTag("tab_${tab.route}")
+                ) {
+                    BadgedBox(badge = { if (count > 0 && !selected) CountBadge(count) }) {
+                        Icon(
+                            if (selected) tab.selectedIcon else tab.icon,
+                            contentDescription = null,
+                            tint = if (selected) c.onBrand else c.textSecondary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    if (selected) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(tab.label, style = MaterialTheme.typography.labelLarge, color = c.onBrand, maxLines = 1)
+                    }
+                }
             }
         }
     }
@@ -298,7 +352,7 @@ private fun KoachNavHost(
                 actions = AgencyHomeActions(
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
-                    onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                    onOpenTask = { id -> navController.navigate(Routes.taskDetail(id)) },
                     onAllTasks = { navController.navigateToTopLevel(Routes.TASKS) },
                     onNewTask = { navController.navigate(Routes.taskForm()) },
                     onBookings = { navController.navigate(Routes.BOOKINGS) },
@@ -309,8 +363,21 @@ private fun KoachNavHost(
         composable(Routes.TASKS) {
             TaskListScreen(
                 viewModel = koachViewModel { TaskListViewModel(user, it.taskRepository, it.projectRepository, it.people, it.clock) },
-                onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                onOpenTask = { id -> navController.navigate(Routes.taskDetail(id)) },
                 onNewTask = { navController.navigate(Routes.taskForm()) }
+            )
+        }
+        composable(
+            Routes.TASK_DETAIL,
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { entry ->
+            val taskId = entry.arguments?.getString("taskId").orEmpty()
+            TaskDetailScreen(
+                viewModel = koachViewModel(key = "task-detail-$taskId") {
+                    TaskDetailViewModel(taskId, user, it.taskRepository, it.projectRepository, it.people, it.clock)
+                },
+                onBack = back,
+                onEdit = { navController.navigate(Routes.taskForm(taskId)) }
             )
         }
         composable(

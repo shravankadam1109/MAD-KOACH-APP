@@ -128,12 +128,22 @@ object FakeProjectDataSource {
             ),
             revisions = listOf(
                 Revision(
+                    id = "rev-302",
+                    projectId = "proj-3",
+                    deliverableId = "del-301",
+                    reason = "Color grade looks slightly saturated on the skin tones in the opening stadium scene.",
+                    requestedBy = "u-dev",
+                    requestedOn = LocalDate.of(2026, 10, 22),
+                    resolved = false
+                ),
+                Revision(
                     id = "rev-301",
                     projectId = "proj-3",
                     deliverableId = "del-301",
                     reason = "Open on the sprinter close-up and tighten the logo end card to 2 seconds.",
                     requestedBy = "u-dev",
-                    requestedOn = LocalDate.of(2026, 10, 19)
+                    requestedOn = LocalDate.of(2026, 10, 19),
+                    resolved = true
                 )
             ),
             deliverables = listOf(

@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -60,7 +63,10 @@ import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Milestone
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.ui.components.DeliverableRow
+import com.koach.studio.projects.ui.components.AnimatedStatusPill
+import com.koach.studio.projects.ui.components.ProjectDetailShimmer
 import com.koach.studio.projects.ui.tone
+import com.koach.studio.projects.ui.icon
 import java.time.LocalDate
 
 @Composable
@@ -96,7 +102,7 @@ fun ProjectDetailScreen(
         modifier = modifier
     ) { innerPadding ->
         when {
-            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+            uiState.isLoading -> ProjectDetailShimmer(Modifier.padding(innerPadding))
             uiState.errorMessage != null || project == null ->
                 ErrorState(uiState.errorMessage ?: "Project not found", Modifier.padding(innerPadding))
             else -> LazyColumn(
@@ -107,7 +113,7 @@ fun ProjectDetailScreen(
                 item {
                     KoachCard(highlighted = true, modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            StatusPill(project.status.displayName, project.status.tone, modifier = Modifier.testTag("project_status"))
+                            AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon, modifier = Modifier.testTag("project_status"))
                             Spacer(Modifier.weight(1f))
                             Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
                         }
@@ -123,7 +129,7 @@ fun ProjectDetailScreen(
                         project.dueDate.let { due ->
                             Spacer(Modifier.height(10.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     if (project.status == ProjectStatus.COMPLETED) "Delivered · ${formatDate(due, today)}"
@@ -271,8 +277,8 @@ fun ProjectDetailScreen(
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
-                    items(uiState.revisionHistory, key = { it.revision.id }) { entry ->
-                        RevisionHistoryItem(entry, today)
+                    itemsIndexed(uiState.revisionHistory, key = { _, entry -> entry.revision.id }) { index, entry ->
+                        RevisionTimelineItem(entry, today, index == 0, index == uiState.revisionHistory.lastIndex)
                     }
                 }
             }
@@ -291,6 +297,7 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.small)
             .then(rowModifier)
             .padding(vertical = 10.dp)
@@ -304,7 +311,7 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
                 .background(if (milestone.completed) c.brand else c.surface)
                 .border(1.5.dp, if (milestone.completed) c.brand else if (overdue) Tone.Warning.color() else c.outline, CircleShape)
         ) {
-            if (milestone.completed) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
+            if (milestone.completed) Icon(Icons.Filled.Check, contentDescription = "Milestone completed", tint = c.onBrand, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(14.dp))
         Text(
@@ -323,9 +330,19 @@ private fun MilestoneItem(milestone: Milestone, today: LocalDate, editable: Bool
 }
 
 @Composable
-private fun RevisionHistoryItem(entry: RevisionEntry, today: LocalDate) {
+private fun RevisionTimelineItem(entry: RevisionEntry, today: LocalDate, isFirst: Boolean, isLast: Boolean) {
     val c = KoachTheme.colors
-    KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth().testTag("revision_${entry.revision.id}")) {
+    val accent = if (entry.revision.resolved) c.success else c.warning
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(28.dp)) {
+            Box(modifier = Modifier.width(2.dp).height(14.dp).background(if (isFirst) Color.Transparent else c.outline))
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(14.dp).clip(CircleShape).background(accent.copy(alpha = 0.2f)).border(2.dp, accent, CircleShape)) {
+                Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(accent))
+            }
+            Box(modifier = Modifier.width(2.dp).heightIn(min = 40.dp).background(if (isLast) Color.Transparent else c.outline))
+        }
+        Spacer(Modifier.width(8.dp))
+        KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.weight(1f).padding(bottom = 12.dp).testTag("revision_${entry.revision.id}")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KoachAvatar(entry.requesterName.split(" ").take(2).joinToString("") { it.take(1) }, size = 32.dp)
             Spacer(Modifier.width(10.dp))
@@ -341,5 +358,6 @@ private fun RevisionHistoryItem(entry: RevisionEntry, today: LocalDate) {
         }
         Spacer(Modifier.height(10.dp))
         Text("\u201C${entry.revision.reason}\u201D", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+        }
     }
 }

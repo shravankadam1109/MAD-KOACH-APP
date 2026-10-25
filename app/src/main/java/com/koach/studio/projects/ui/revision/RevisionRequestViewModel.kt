@@ -90,4 +90,8 @@ class RevisionRequestViewModel(
             }
         }
     }
+
+    fun undoSubmit() {
+        _uiState.update { it.copy(isSubmitted = false) }
+    }
 }

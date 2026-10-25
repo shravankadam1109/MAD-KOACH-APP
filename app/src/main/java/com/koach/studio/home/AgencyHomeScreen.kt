@@ -1,5 +1,9 @@
 package com.koach.studio.home
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import com.koach.studio.core.designsystem.components.KoachHeroCard
+import com.koach.studio.core.designsystem.components.KoachGlassPanel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,11 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.AddTask
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.TaskAlt
-import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +39,6 @@ import com.koach.studio.core.designsystem.components.KoachBackground
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachProgressBar
 import com.koach.studio.core.designsystem.components.LoadingState
-import com.koach.studio.core.designsystem.components.MetricTile
 import com.koach.studio.core.designsystem.components.QuickActionTile
 import com.koach.studio.core.designsystem.components.SectionHeader
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -93,19 +93,7 @@ fun AgencyHomeScreen(viewModel: AgencyHomeViewModel, actions: AgencyHomeActions,
                 }
             }
             item {
-                Column(Modifier.padding(horizontal = gutter), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        MetricTile(state.activeProjects.toString(), "Active projects", Modifier.weight(1f), Icons.Outlined.Movie)
-                        MetricTile(state.pendingBookings.toString(), "Booking requests", Modifier.weight(1f), Icons.AutoMirrored.Outlined.EventNote, Tone.Warning)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        MetricTile(state.openTasks.toString(), "Open tasks", Modifier.weight(1f), Icons.Outlined.Checklist, Tone.Info)
-                        MetricTile(
-                            state.overdueTasks.toString(), "Overdue tasks", Modifier.weight(1f), Icons.Outlined.WarningAmber,
-                            if (state.overdueTasks > 0) Tone.Danger else Tone.Neutral
-                        )
-                    }
-                }
+                StudioSummary(state, actions, Modifier.padding(horizontal = gutter))
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(horizontal = gutter)) {
@@ -188,3 +176,37 @@ private fun AttentionRow(project: Project, onClick: () -> Unit) {
         KoachProgressBar(project.progress, height = 4.dp)
     }
 }
+
+@Composable
+private fun StudioSummary(state: AgencyHomeUiState, actions: AgencyHomeActions, modifier: Modifier = Modifier) {
+    val ink = KoachTheme.colors.onBrand
+    KoachHeroCard(modifier = modifier.fillMaxWidth().testTag("studio_summary")) {
+        Text("STUDIO RIGHT NOW", style = MaterialTheme.typography.labelSmall, color = ink.copy(alpha = 0.7f))
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(state.activeProjects.toString(), style = MaterialTheme.typography.displayLarge, color = ink)
+            Spacer(Modifier.width(10.dp))
+            Text("active\nprojects", style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.75f), modifier = Modifier.padding(bottom = 8.dp))
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SummaryPanel(state.pendingBookings.toString(), "Booking\nrequests", actions.onBookings, Modifier.weight(1f).testTag("summary_bookings"))
+            SummaryPanel(state.openTasks.toString(), "Open\ntasks", actions.onAllTasks, Modifier.weight(1f).testTag("summary_tasks"))
+            SummaryPanel(state.overdueTasks.toString(), "Overdue\ntasks", actions.onAllTasks, Modifier.weight(1f).testTag("summary_overdue"))
+        }
+    }
+}
+
+@Composable
+private fun SummaryPanel(value: String, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val ink = KoachTheme.colors.onBrand
+    KoachGlassPanel(
+        onClick = onClick,
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = "$value ${label.replace("\n", " ")}" }
+    ) {
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = ink)
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = ink.copy(alpha = 0.78f))
+    }
+}
+

@@ -27,6 +27,14 @@ data class EditDeliverableUiState(
     val isFormValid: Boolean
         get() = nameError == null && notesError == null && name.isNotBlank()
 
+    /** True when form values differ from the originally loaded deliverable. */
+    val hasUnsavedChanges: Boolean
+        get() = initialDeliverable != null && !isSaved && (
+            name != initialDeliverable.name ||
+            notes != initialDeliverable.notes ||
+            status != initialDeliverable.status
+        )
+
     /**
      * Statuses the agency may pick. Approved and Revision Requested are client
      * decisions; they're only listed when already current so the chip still shows.
@@ -45,6 +53,7 @@ class EditDeliverableViewModel(
 
     private val _uiState = MutableStateFlow(EditDeliverableUiState())
     val uiState: StateFlow<EditDeliverableUiState> = _uiState.asStateFlow()
+    private var lastSavedDeliverable: Deliverable? = null
 
     init {
         loadDeliverable()
@@ -140,6 +149,7 @@ class EditDeliverableViewModel(
         }
 
         val original = current.initialDeliverable ?: return
+        lastSavedDeliverable = original
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -159,6 +169,25 @@ class EditDeliverableViewModel(
                         errorMessage = result.exceptionOrNull()?.message ?: "Failed to save deliverable"
                     )
                 }
+            }
+        }
+    }
+
+    fun undoSave() {
+        val previous = lastSavedDeliverable ?: return
+        viewModelScope.launch {
+            val result = repository.updateDeliverable(projectId, previous)
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        name = previous.name,
+                        notes = previous.notes,
+                        status = previous.status,
+                        initialDeliverable = previous,
+                        isSaved = false
+                    )
+                }
+                lastSavedDeliverable = null
             }
         }
     }

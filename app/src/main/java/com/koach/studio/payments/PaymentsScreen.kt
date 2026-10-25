@@ -37,10 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.core.designsystem.components.EmptyState
-import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.IconTile
 import com.koach.studio.core.designsystem.components.InfoRow
 import com.koach.studio.core.designsystem.components.KoachCard
+import com.koach.studio.core.designsystem.components.KoachGlassPanel
+import com.koach.studio.core.designsystem.components.KoachHeroCard
 import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.components.KoachFilterChips
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
@@ -160,12 +161,14 @@ fun PaymentsScreen(viewModel: PaymentsViewModel, onBack: () -> Unit, modifier: M
             modifier = Modifier.testTag("payments_list")
         ) {
             item {
-                KoachCard(highlighted = true, modifier = Modifier.padding(horizontal = gutter).fillMaxWidth()) {
-                    Eyebrow("Outstanding")
-                    Spacer(Modifier.height(6.dp))
-                    Text(formatInr(state.outstandingInr), style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(4.dp))
-                    Text("${formatInr(state.paidInr)} paid to date", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                KoachHeroCard(modifier = Modifier.padding(horizontal = gutter).fillMaxWidth().testTag("payments_summary")) {
+                    Text("OUTSTANDING", style = MaterialTheme.typography.labelSmall, color = c.onBrand.copy(alpha = 0.7f))
+                    Spacer(Modifier.height(8.dp))
+                    Text(formatInr(state.outstandingInr), style = MaterialTheme.typography.displayMedium, color = c.onBrand)
+                    Spacer(Modifier.height(14.dp))
+                    KoachGlassPanel {
+                        Text("${formatInr(state.paidInr)} paid to date", style = MaterialTheme.typography.titleSmall, color = c.onBrand)
+                    }
                 }
             }
             item {
