@@ -1,5 +1,18 @@
 package com.koach.studio.app
 
+import com.koach.studio.core.designsystem.theme.KoachTheme
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -37,7 +50,17 @@ fun KoachApp() {
             SignedOutFlow(isDemo = container.authRepository.isDemo)
         } else {
             // Keyed so switching accounts starts with fresh navigation state.
-            key(signedIn.id) { KoachShell(signedIn) }
+            key(signedIn.id) {
+                val notice = container.dataNotice
+                if (notice == null) {
+                    KoachShell(signedIn)
+                } else {
+                    Column(Modifier.fillMaxSize()) {
+                        DataNoticeBar(notice)
+                        Box(Modifier.weight(1f)) { KoachShell(signedIn) }
+                    }
+                }
+            }
         }
     }
 }
@@ -74,3 +97,21 @@ private fun SignedOutFlow(isDemo: Boolean) {
         }
     }
 }
+
+/** Thin, always-visible notice that part of the backend is still sample data. */
+@Composable
+private fun DataNoticeBar(text: String) {
+    val c = KoachTheme.colors
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = c.textPrimary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(c.info.copy(alpha = 0.18f))
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .testTag("data_notice")
+    )
+}
+

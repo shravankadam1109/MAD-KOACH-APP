@@ -60,3 +60,11 @@ google-services.json
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Firebase tooling
+node_modules/
+firebase-debug.log
+firestore-debug.log
+storage-debug.log
+ui-debug.log
+.firebase/
