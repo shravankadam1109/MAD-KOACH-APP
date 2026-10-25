@@ -47,6 +47,7 @@ import com.koach.studio.core.designsystem.components.KoachBackground
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachProgressBar
+import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.components.QuickActionTile
 import com.koach.studio.core.designsystem.components.SectionHeader
@@ -67,7 +68,9 @@ data class ClientHomeActions(
     val onMessages: () -> Unit,
     val onPayments: () -> Unit,
     val onNotifications: () -> Unit,
-    val onContact: () -> Unit = {}
+    val onContact: () -> Unit = {},
+    val onServices: () -> Unit = onBook,
+    val onPortfolio: () -> Unit = {}
 )
 
 @Composable
@@ -114,6 +117,53 @@ fun ClientHomeScreen(viewModel: ClientHomeViewModel, actions: ClientHomeActions,
                     QuickActionTile(Icons.Outlined.VideoCall, "Book a\nservice", actions.onBook, Modifier.weight(1f))
                     QuickActionTile(Icons.Outlined.ChatBubbleOutline, "Message\nyour crew", actions.onMessages, Modifier.weight(1f), tone = Tone.Info)
                     QuickActionTile(Icons.AutoMirrored.Outlined.ReceiptLong, "Invoices &\npayments", actions.onPayments, Modifier.weight(1f), tone = Tone.Review)
+                }
+            }
+
+            item {
+                val c = KoachTheme.colors
+                KoachCard(
+                    highlighted = true,
+                    modifier = Modifier
+                        .padding(horizontal = gutter)
+                        .fillMaxWidth()
+                        .testTag("home_discovery_card")
+                ) {
+                    Text(
+                        "Craft Your Next Production",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = c.textPrimary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Browse transparent package pricing, inspect delivered client films, or submit a custom booking request.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        KoachSecondaryButton(
+                            text = "Services",
+                            leadingIcon = Icons.Outlined.Movie,
+                            onClick = actions.onServices,
+                            modifier = Modifier.weight(1f).testTag("home_cta_services")
+                        )
+                        KoachSecondaryButton(
+                            text = "Portfolio",
+                            leadingIcon = Icons.Outlined.PlayCircle,
+                            onClick = actions.onPortfolio,
+                            modifier = Modifier.weight(1f).testTag("home_cta_portfolio")
+                        )
+                        KoachPrimaryButton(
+                            text = "Book now",
+                            leadingIcon = Icons.Outlined.VideoCall,
+                            onClick = actions.onBook,
+                            modifier = Modifier.weight(1f).testTag("home_cta_book")
+                        )
+                    }
                 }
             }
 

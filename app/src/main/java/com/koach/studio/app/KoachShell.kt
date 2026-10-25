@@ -212,7 +212,9 @@ private fun KoachNavHost(
                     onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
                     onPayments = { navController.navigate(Routes.PAYMENTS) },
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                    onContact = { navController.navigate(Routes.CONTACT) }
+                    onContact = { navController.navigate(Routes.CONTACT) },
+                    onServices = { navController.navigateToTopLevel(Routes.EXPLORE) },
+                    onPortfolio = { navController.navigateToTopLevel(Routes.EXPLORE) }
                 )
             )
         }
