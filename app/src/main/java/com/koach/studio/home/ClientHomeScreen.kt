@@ -1,5 +1,12 @@
 package com.koach.studio.home
 
+import com.koach.studio.core.designsystem.components.KoachHeroCard
+import com.koach.studio.core.designsystem.components.KoachGlassPanel
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,7 +98,7 @@ fun ClientHomeScreen(viewModel: ClientHomeViewModel, actions: ClientHomeActions,
             item {
                 val featured = state.featuredProject
                 if (featured != null) {
-                    FeaturedProjectCard(featured, state, onOpen = { actions.onOpenProject(featured.id) }, modifier = Modifier.padding(horizontal = gutter))
+                    FeaturedProjectCard(featured, state, actions, modifier = Modifier.padding(horizontal = gutter))
                 } else {
                     KoachCard(highlighted = true, modifier = Modifier.padding(horizontal = gutter).fillMaxWidth()) {
                         EmptyState(
@@ -105,7 +112,7 @@ fun ClientHomeScreen(viewModel: ClientHomeViewModel, actions: ClientHomeActions,
                 }
             }
 
-            item {
+            if (state.featuredProject == null) item {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.padding(horizontal = gutter)
@@ -207,39 +214,82 @@ private fun Header(state: ClientHomeUiState, onNotifications: () -> Unit) {
 }
 
 @Composable
-private fun FeaturedProjectCard(project: Project, state: ClientHomeUiState, onOpen: () -> Unit, modifier: Modifier = Modifier) {
-    val c = KoachTheme.colors
+private fun FeaturedProjectCard(
+    project: Project,
+    state: ClientHomeUiState,
+    actions: ClientHomeActions,
+    modifier: Modifier = Modifier
+) {
+    val ink = KoachTheme.colors.onBrand
     val next = project.milestones.firstOrNull { !it.completed }
-    KoachCard(highlighted = true, onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("featured_project")) {
+    KoachHeroCard(
+        onClick = { actions.onOpenProject(project.id) },
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("featured_project")
+            .semantics { contentDescription = "Open ${project.title}, ${(project.progress * 100).toInt()} percent complete" }
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusPill(project.status.displayName, project.status.tone)
-            Spacer(Modifier.weight(1f))
-            Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(project.title, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
-        Spacer(Modifier.height(4.dp))
-        project.dueDate.let {
-            Text(formatDue(it, state.today), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
-        }
-        Spacer(Modifier.height(20.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.headlineLarge, color = c.brand)
-            Spacer(Modifier.width(8.dp))
-            Text("complete", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.padding(bottom = 4.dp))
-        }
-        Spacer(Modifier.height(10.dp))
-        KoachProgressBar(project.progress)
-        if (next != null) {
-            Spacer(Modifier.height(14.dp))
             Text(
-                "Next: ${next.title} · ${formatDate(next.dueDate, state.today)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = c.textSecondary
+                project.status.displayName.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = ink,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(ink.copy(alpha = 0.12f))
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             )
+            Spacer(Modifier.weight(1f))
+            Text(project.serviceType.displayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = ink.copy(alpha = 0.7f))
         }
         Spacer(Modifier.height(18.dp))
-        KoachPrimaryButton(text = "Open project", onClick = onOpen, modifier = Modifier.fillMaxWidth())
+        Text(project.title, style = MaterialTheme.typography.headlineMedium, color = ink)
+        Spacer(Modifier.height(4.dp))
+        Text(formatDue(project.dueDate, state.today), style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.72f))
+        Spacer(Modifier.height(22.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.displayMedium, color = ink)
+            Spacer(Modifier.width(8.dp))
+            Text("complete", style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.72f), modifier = Modifier.padding(bottom = 8.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(50))
+                .background(ink.copy(alpha = 0.16f))
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(project.progress.coerceIn(0f, 1f))
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(ink)
+            )
+        }
+        if (next != null) {
+            Spacer(Modifier.height(12.dp))
+            Text("Next: ${next.title} · ${formatDate(next.dueDate, state.today)}", style = MaterialTheme.typography.bodySmall, color = ink.copy(alpha = 0.8f))
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HeroAction(Icons.Outlined.VideoCall, "Book", actions.onBook, Modifier.weight(1f).testTag("hero_book"))
+            HeroAction(Icons.Outlined.ChatBubbleOutline, "Message", actions.onMessages, Modifier.weight(1f).testTag("hero_message"))
+            HeroAction(Icons.AutoMirrored.Outlined.ReceiptLong, "Invoices", actions.onPayments, Modifier.weight(1f).testTag("hero_invoices"))
+        }
+    }
+}
+
+@Composable
+private fun HeroAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val ink = KoachTheme.colors.onBrand
+    KoachGlassPanel(onClick = onClick, modifier = modifier.semantics(mergeDescendants = true) { role = Role.Button }) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, color = ink)
+        }
     }
 }
 

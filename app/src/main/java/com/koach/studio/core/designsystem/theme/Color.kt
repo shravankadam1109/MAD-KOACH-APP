@@ -5,23 +5,27 @@ import androidx.compose.ui.graphics.Color
 
 /** Raw KOACH palette. Screens should read colours through [KoachTheme.colors], not these values. */
 object KoachPalette {
+    /** KOACH signature green. Every other green here is derived from it. */
     val Green = Color(0xFF41BA00)
     val GreenBright = Color(0xFF62DB1F)
     val GreenDeep = Color(0xFF2C7F00)
+    /** Darkest stop of the hero gradient, keeps dark text readable across the card. */
+    val GreenShadow = Color(0xFF1F5A00)
     val GreenContainer = Color(0xFF12230B)
     val GreenOutline = Color(0xFF24461A)
 
     val Ink = Color(0xFF08090B)
     val Background = Color(0xFF0D0E11)
     val Surface = Color(0xFF16181D)
-    val SurfaceRaised = Color(0xFF1C1F25)
-    val SurfaceHigh = Color(0xFF242832)
-    val Outline = Color(0xFF2A2E38)
+    val SurfaceRaised = Color(0xFF1D2026)
+    val SurfaceHigh = Color(0xFF262A33)
+    val Outline = Color(0xFF2C303A)
     val OutlineSubtle = Color(0xFF1F2229)
 
     val White = Color(0xFFFFFFFF)
-    val Grey = Color(0xFFA1A6B3)
-    val GreyDim = Color(0xFF6C7180)
+    val Grey = Color(0xFFA6ABB8)
+    /** Tertiary text; kept at 4.5:1 or better against Background. */
+    val GreyDim = Color(0xFF7E8494)
 
     val Amber = Color(0xFFF5B83D)
     val Red = Color(0xFFF26B6B)
