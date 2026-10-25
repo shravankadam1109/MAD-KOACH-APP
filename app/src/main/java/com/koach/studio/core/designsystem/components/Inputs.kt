@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -240,6 +241,7 @@ fun <T> KoachFilterChips(
                 label = { Text(allLabel) },
                 shape = RoundedCornerShape(50),
                 colors = chipColors,
+                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true, selected = selected == null,
                     borderColor = c.outline, selectedBorderColor = c.brand
@@ -254,6 +256,7 @@ fun <T> KoachFilterChips(
                 label = { Text(label(option)) },
                 shape = RoundedCornerShape(50),
                 colors = chipColors,
+                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true, selected = isSelected,
                     borderColor = c.outline, selectedBorderColor = c.brand
@@ -294,6 +297,7 @@ fun KoachSegmentedControl(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
                     .clip(RoundedCornerShape(50))
                     .background(if (selected) c.brand else androidx.compose.ui.graphics.Color.Transparent)
                     .selectable(selected = selected, onClick = { onSelect(index) }, role = Role.Tab)

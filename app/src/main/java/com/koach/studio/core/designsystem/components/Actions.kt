@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -35,7 +36,7 @@ fun BadgedIconButton(
         IconButton(
             onClick = onClick,
             modifier = Modifier
-                .size(44.dp)
+                .size(48.dp)
                 .clip(CircleShape)
                 .background(c.surface)
                 .border(1.dp, c.outlineSubtle, CircleShape)
@@ -57,7 +58,10 @@ fun QuickActionTile(
     modifier: Modifier = Modifier,
     tone: Tone = Tone.Brand
 ) {
-    KoachCard(onClick = onClick, modifier = modifier) {
+    KoachCard(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+    ) {
         Column {
             IconTile(icon, tone = tone, size = 38.dp)
             Spacer(Modifier.height(14.dp))

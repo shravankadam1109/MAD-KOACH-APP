@@ -51,7 +51,7 @@ fun KoachPrimaryButton(
             disabledContentColor = colors.textTertiary
         ),
         modifier = modifier
-            .defaultMinSize(minHeight = 52.dp)
+            .defaultMinSize(minWidth = 48.dp, minHeight = 52.dp)
             .shadow(
                 elevation = if (enabled) 18.dp else 0.dp,
                 shape = ButtonShape,
@@ -87,7 +87,7 @@ fun KoachSecondaryButton(
             contentColor = accent,
             disabledContentColor = colors.textTertiary
         ),
-        modifier = modifier.defaultMinSize(minHeight = 52.dp)
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 52.dp)
     ) {
         ButtonContent(text, leadingIcon, loading, progressColor = accent)
     }
@@ -103,7 +103,7 @@ fun KoachTextButton(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
         colors = ButtonDefaults.textButtonColors(contentColor = KoachTheme.colors.brand)
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge)

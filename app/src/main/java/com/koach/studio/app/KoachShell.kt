@@ -42,6 +42,8 @@ import com.koach.studio.clients.ui.ClientFormScreen
 import com.koach.studio.clients.ui.ClientFormViewModel
 import com.koach.studio.clients.ui.ClientListScreen
 import com.koach.studio.clients.ui.ClientListViewModel
+import com.koach.studio.contact.ContactScreen
+import com.koach.studio.contact.ContactViewModel
 import com.koach.studio.bookings.ui.BookingsViewModel
 import com.koach.studio.bookings.ui.NewBookingScreen
 import com.koach.studio.bookings.ui.NewBookingViewModel
@@ -209,7 +211,8 @@ private fun KoachNavHost(
                     onBook = { navController.navigate(Routes.newBooking()) },
                     onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
                     onPayments = { navController.navigate(Routes.PAYMENTS) },
-                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onContact = { navController.navigate(Routes.CONTACT) }
                 )
             )
         }
@@ -230,7 +233,8 @@ private fun KoachNavHost(
             PortfolioDetailScreen(
                 viewModel = koachViewModel(key = "portfolio-$itemId") { PortfolioDetailViewModel(itemId, it.catalogRepository) },
                 onBack = back,
-                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) }
+                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) },
+                onBookSimilar = { serviceId -> navController.navigate(Routes.newBooking(serviceId)) }
             )
         }
         composable(
@@ -426,6 +430,15 @@ private fun KoachNavHost(
                 isDemo = auth.isDemo,
                 onBack = back,
                 onSignOut = { scope.launch { auth.signOut() } }
+            )
+        }
+        composable(Routes.CONTACT) {
+            ContactScreen(
+                viewModel = koachViewModel { ContactViewModel() },
+                onBack = back,
+                onBookService = { navController.navigate(Routes.newBooking()) },
+                onSendMessage = { navController.navigateToTopLevel(Routes.MESSAGES) },
+                onSendFeedback = { navController.navigate(Routes.NEW_FEEDBACK) }
             )
         }
     }
