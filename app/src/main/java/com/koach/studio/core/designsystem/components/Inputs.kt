@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
@@ -63,7 +64,8 @@ fun koachTextFieldColors(): TextFieldColors {
         errorContainerColor = c.surface,
         cursorColor = c.brand,
         focusedBorderColor = c.brand,
-        unfocusedBorderColor = c.outline,
+        unfocusedBorderColor = Color.White.copy(alpha = 0.09f),
+        disabledBorderColor = Color.White.copy(alpha = 0.05f),
         errorBorderColor = c.danger,
         focusedLabelColor = c.brand,
         unfocusedLabelColor = c.textSecondary,
@@ -228,7 +230,7 @@ fun <T> KoachFilterChips(
 ) {
     val c = KoachTheme.colors
     val chipColors = FilterChipDefaults.filterChipColors(
-        containerColor = c.surface,
+        containerColor = Color.Transparent,
         labelColor = c.textSecondary,
         selectedContainerColor = c.brand,
         selectedLabelColor = c.onBrand
@@ -249,7 +251,7 @@ fun <T> KoachFilterChips(
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true, selected = selected == null,
-                    borderColor = c.outline, selectedBorderColor = c.brand
+                    borderColor = Color.White.copy(alpha = 0.12f), selectedBorderColor = c.brand
                 )
             )
         }
@@ -264,7 +266,7 @@ fun <T> KoachFilterChips(
                 modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true, selected = isSelected,
-                    borderColor = c.outline, selectedBorderColor = c.brand
+                    borderColor = Color.White.copy(alpha = 0.12f), selectedBorderColor = c.brand
                 )
             )
         }
@@ -293,7 +295,7 @@ fun KoachSegmentedControl(
         modifier = modifier
             .clip(RoundedCornerShape(50))
             .background(c.surface)
-            .border(1.dp, c.outlineSubtle, RoundedCornerShape(50))
+            .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(50))
             .padding(4.dp)
     ) {
         options.forEachIndexed { index, label ->
@@ -304,7 +306,7 @@ fun KoachSegmentedControl(
                     .weight(1f)
                     .defaultMinSize(minHeight = 48.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (selected) c.brand else androidx.compose.ui.graphics.Color.Transparent)
+                    .background(if (selected) c.brand else Color.Transparent)
                     .selectable(selected = selected, onClick = { onSelect(index) }, role = Role.Tab)
                     .padding(vertical = 10.dp)
                     .testTag("segment_$index")
