@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
@@ -26,18 +27,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.IconTile
 import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
-import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.projects.data.DownloadProgress
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
+import com.koach.studio.projects.ui.icon
 import com.koach.studio.projects.ui.tone
 
 private val Deliverable.icon: ImageVector
@@ -73,18 +76,21 @@ fun DeliverableRow(
         modifier = modifier
             .fillMaxWidth()
             .testTag("deliverable_row_${deliverable.id}")
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${deliverable.name}, version ${deliverable.version}, ${deliverable.type}, ${deliverable.size}, status ${deliverable.status.displayName}"
+            }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(deliverable.icon, tone = deliverable.status.tone.takeIf { it != Tone.Neutral } ?: Tone.Brand, size = 42.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(deliverable.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(deliverable.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${deliverable.version} · ${deliverable.type} · ${deliverable.size}",
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -93,15 +99,25 @@ fun DeliverableRow(
                 DeliverableDownloadButton(deliverable = deliverable, onDownloadClick = onDownloadClick, download = download)
             }
             if (onEditClick != null) {
-                IconButton(onClick = onEditClick, modifier = Modifier.testTag("edit_deliverable_button_${deliverable.id}")) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "Edit ${deliverable.name}", tint = c.textSecondary, modifier = Modifier.size(20.dp))
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .testTag("edit_deliverable_button_${deliverable.id}")
+                ) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = "Edit ${deliverable.name}",
+                        tint = c.textSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
 
         if (deliverable.notes.isNotBlank()) {
             Spacer(Modifier.height(10.dp))
-            Text(deliverable.notes, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(deliverable.notes, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -112,7 +128,9 @@ fun DeliverableRow(
                 Text(
                     "Earlier: ${deliverable.previousVersions.joinToString(", ")}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = c.textTertiary
+                    color = c.textTertiary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -125,7 +143,9 @@ fun DeliverableRow(
                         text = "Request changes",
                         onClick = onRequestChanges,
                         leadingIcon = Icons.Outlined.RateReview,
-                        modifier = Modifier.weight(1f).testTag("request_changes_${deliverable.id}")
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("request_changes_${deliverable.id}")
                     )
                 }
                 if (onApprove != null) {
@@ -133,7 +153,9 @@ fun DeliverableRow(
                         text = "Approve",
                         onClick = onApprove,
                         leadingIcon = Icons.Outlined.CheckCircle,
-                        modifier = Modifier.weight(1f).testTag("approve_${deliverable.id}")
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("approve_${deliverable.id}")
                     )
                 }
             }
@@ -143,5 +165,12 @@ fun DeliverableRow(
 
 @Composable
 fun DeliverableStatusBadge(status: DeliverableStatus, modifier: Modifier = Modifier) {
-    StatusPill(status.displayName, status.tone, modifier = modifier)
+    AnimatedStatusPill(
+        text = status.displayName,
+        tone = status.tone,
+        icon = status.icon,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "Deliverable status: ${status.displayName}"
+        }
+    )
 }
