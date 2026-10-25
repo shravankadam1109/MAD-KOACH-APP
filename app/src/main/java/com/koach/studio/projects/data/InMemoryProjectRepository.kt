@@ -2,11 +2,9 @@ package com.koach.studio.projects.data
 
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
-import com.koach.studio.projects.model.DownloadState
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.Revision
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,9 +112,7 @@ class InMemoryProjectRepository(
                     version = it.nextVersion(),
                     previousVersions = it.previousVersions + it.version,
                     status = DeliverableStatus.IN_REVIEW,
-                    notes = notes.trim().ifBlank { it.notes },
-                    downloadState = DownloadState.IDLE,
-                    downloadProgress = 0f
+                    notes = notes.trim().ifBlank { it.notes }
                 )
             }
             val revisions = p.revisions.map { if (it.deliverableId == deliverableId) it.copy(resolved = true) else it }
@@ -125,43 +121,6 @@ class InMemoryProjectRepository(
                 deliverables = deliverables,
                 revisions = revisions,
                 status = if (p.status == ProjectStatus.REVISION_REQUESTED && !stillOpen) ProjectStatus.IN_REVIEW else p.status
-            )
-        }
-    }
-
-    override suspend fun startDeliverableDownload(
-        projectId: String,
-        deliverableId: String,
-        simulateFailure: Boolean
-    ) {
-        val currentList = _projects.value
-        val project = currentList.find { it.id == projectId } ?: return
-        val deliverable = project.deliverables.find { it.id == deliverableId } ?: return
-
-        // Step 1: Start downloading
-        updateDeliverableState(
-            projectId,
-            deliverable.copy(downloadState = DownloadState.DOWNLOADING, downloadProgress = 0.2f)
-        )
-        delay(120)
-
-        // Step 2: Mid progress
-        updateDeliverableState(
-            projectId,
-            deliverable.copy(downloadState = DownloadState.DOWNLOADING, downloadProgress = 0.6f)
-        )
-        delay(120)
-
-        // Step 3: Finish or Fail
-        if (simulateFailure) {
-            updateDeliverableState(
-                projectId,
-                deliverable.copy(downloadState = DownloadState.FAILED, downloadProgress = 0f)
-            )
-        } else {
-            updateDeliverableState(
-                projectId,
-                deliverable.copy(downloadState = DownloadState.DONE, downloadProgress = 1.0f)
             )
         }
     }
@@ -187,17 +146,5 @@ class InMemoryProjectRepository(
         }
         _projects.value = currentList.map { if (it.id == projectId) change(it) else it }
         return Result.success(Unit)
-    }
-
-    private fun updateDeliverableState(projectId: String, deliverable: Deliverable) {
-        val currentList = _projects.value
-        val project = currentList.find { it.id == projectId } ?: return
-        val updatedDeliverables = project.deliverables.map {
-            if (it.id == deliverable.id) deliverable else it
-        }
-        val updatedProject = project.copy(deliverables = updatedDeliverables)
-        _projects.value = currentList.map {
-            if (it.id == projectId) updatedProject else it
-        }
     }
 }
