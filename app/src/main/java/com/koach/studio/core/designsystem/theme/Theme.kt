@@ -26,15 +26,19 @@ data class KoachSpacing(
     val gutter: Dp = 20.dp
 )
 
+/**
+ * Corner radii. Large, soft corners on cards and fully rounded controls give the
+ * layered, tactile feel of the reference designs.
+ */
 object KoachRadius {
-    val sm = 10.dp
-    val md = 14.dp
-    val lg = 20.dp
-    val xl = 28.dp
+    val sm = 12.dp
+    val md = 18.dp
+    val lg = 26.dp
+    val xl = 32.dp
 }
 
 val KoachShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
+    extraSmall = RoundedCornerShape(10.dp),
     small = RoundedCornerShape(KoachRadius.sm),
     medium = RoundedCornerShape(KoachRadius.md),
     large = RoundedCornerShape(KoachRadius.lg),
