@@ -3,6 +3,7 @@ package com.koach.studio.contact
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -47,5 +48,36 @@ class ContactViewModelTest {
 
         assertEquals("KOACH Studio Satellite", state.contactInfo.studioName)
         assertEquals("+91 98200 99999", state.contactInfo.deskPhone)
+    }
+
+    @Test
+    fun inquiryValidation_requiresNameEmailAndMessage() {
+        val vm = ContactViewModel()
+
+        // Submit empty form
+        vm.submitInquiry()
+        val state = vm.uiState.value
+        assertEquals("Name is required", state.inquiryNameError)
+        assertEquals("Please enter a valid email address", state.inquiryEmailError)
+        assertEquals("Message must be at least 10 characters", state.inquiryMessageError)
+        assertFalse(state.isInquirySuccess)
+
+        // Enter valid info
+        vm.onInquiryNameChanged("Rohan Varma")
+        vm.onInquiryEmailChanged("rohan@example.com")
+        vm.onInquiryMessageChanged("Need 3-day brand commercial shoot in Mumbai.")
+        vm.submitInquiry()
+
+        val successState = vm.uiState.value
+        assertTrue(successState.isInquirySuccess)
+        assertNull(successState.inquiryNameError)
+        assertNull(successState.inquiryEmailError)
+        assertNull(successState.inquiryMessageError)
+
+        // Reset
+        vm.resetInquiry()
+        val resetState = vm.uiState.value
+        assertFalse(resetState.isInquirySuccess)
+        assertEquals("", resetState.inquiryName)
     }
 }

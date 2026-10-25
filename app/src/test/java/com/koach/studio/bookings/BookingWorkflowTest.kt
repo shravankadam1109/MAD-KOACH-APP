@@ -100,4 +100,36 @@ class BookingWorkflowTest {
         assertNotNull(vm.uiState.value.submitted)
         assertEquals("Maya Rao", vm.uiState.value.contactName)
     }
+
+    @Test
+    fun validator_phoneValidation_handlesOptionalAndInvalidFormats() {
+        val validReq = request().copy(contactPhone = "+91 98200 12345")
+        assertTrue(BookingValidator.validate(validReq, today).isEmpty())
+
+        val blankReq = request().copy(contactPhone = "")
+        assertTrue(BookingValidator.validate(blankReq, today).isEmpty())
+
+        val shortPhoneReq = request().copy(contactPhone = "12345")
+        val errors1 = BookingValidator.validate(shortPhoneReq, today)
+        assertTrue(Field.PHONE in errors1)
+
+        val alphaPhoneReq = request().copy(contactPhone = "+91 98200 abcde")
+        val errors2 = BookingValidator.validate(alphaPhoneReq, today)
+        assertTrue(Field.PHONE in errors2)
+    }
+
+    @Test
+    fun newBookingViewModel_handlesBudgetRecommendation_andPhoneInput() = runTest {
+        auth.signInAsDemo("u-maya")
+        val vm = NewBookingViewModel(auth.currentUser.value!!, "svc-film", "film-2", catalog, bookings, clock)
+
+        vm.onBudgetChanged("75000")
+        assertEquals("75000", vm.uiState.value.budget)
+
+        vm.onPhoneChanged("+91 98200 33445")
+        assertEquals("+91 98200 33445", vm.uiState.value.contactPhone)
+
+        vm.onBudgetChanged("")
+        assertEquals("", vm.uiState.value.budget)
+    }
 }
