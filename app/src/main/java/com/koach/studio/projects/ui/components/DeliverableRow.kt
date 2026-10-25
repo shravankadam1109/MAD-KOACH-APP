@@ -37,6 +37,7 @@ import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.theme.KoachTheme
+import com.koach.studio.projects.data.DownloadProgress
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DeliverableStatus
 import com.koach.studio.projects.ui.icon
@@ -62,7 +63,8 @@ fun DeliverableRow(
     modifier: Modifier = Modifier,
     onDownloadClick: (() -> Unit)? = null,
     onApprove: (() -> Unit)? = null,
-    onRequestChanges: (() -> Unit)? = null
+    onRequestChanges: (() -> Unit)? = null,
+    download: DownloadProgress? = null
 ) {
     val c = KoachTheme.colors
     val inClientReview = deliverable.status == DeliverableStatus.IN_REVIEW && (onApprove != null || onRequestChanges != null)
@@ -94,7 +96,7 @@ fun DeliverableRow(
             }
             if (onDownloadClick != null) {
                 Spacer(Modifier.width(8.dp))
-                DeliverableDownloadButton(deliverable = deliverable, onDownloadClick = onDownloadClick)
+                DeliverableDownloadButton(deliverable = deliverable, onDownloadClick = onDownloadClick, download = download)
             }
             if (onEditClick != null) {
                 IconButton(

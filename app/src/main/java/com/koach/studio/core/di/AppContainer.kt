@@ -9,6 +9,8 @@ import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
+import com.koach.studio.core.auth.InMemorySessionStore
+import com.koach.studio.core.auth.SessionStore
 import com.koach.studio.core.data.DemoData
 import com.koach.studio.core.model.User
 import com.koach.studio.documents.data.DemoDocumentStorage
@@ -23,7 +25,9 @@ import com.koach.studio.notifications.data.InMemoryNotificationRepository
 import com.koach.studio.notifications.data.NotificationRepository
 import com.koach.studio.payments.InMemoryPaymentRepository
 import com.koach.studio.payments.PaymentRepository
+import com.koach.studio.projects.data.DeliverableDownloader
 import com.koach.studio.projects.data.InMemoryProjectRepository
+import com.koach.studio.projects.data.SimulatedDeliverableDownloader
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskRepository
 import com.koach.studio.projects.data.ProjectRepository
@@ -45,6 +49,8 @@ interface AppContainer {
     /** People directory (staff and client contacts) used to show names and avatars. */
     val people: List<User>
     val projectRepository: ProjectRepository
+    /** Device-local download progress, shared across screens for the session. */
+    val deliverableDownloader: DeliverableDownloader
     val notificationRepository: NotificationRepository
     val catalogRepository: CatalogRepository
     val bookingRepository: BookingRepository
@@ -59,12 +65,14 @@ interface AppContainer {
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
 class DemoAppContainer(
-    override val clock: Clock = Clock.systemDefaultZone()
+    override val clock: Clock = Clock.systemDefaultZone(),
+    /** In-memory by default (tests); the app passes a persistent store. */
+    private val sessionStore: SessionStore = InMemorySessionStore()
 ) : AppContainer {
 
     private val demoData by lazy { DemoData(LocalDate.now(clock)) }
 
-    override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users) }
+    override val authRepository: AuthRepository by lazy { DemoAuthRepository(demoData.users, sessionStore) }
 
     override val people: List<User> by lazy { demoData.users }
 
@@ -72,6 +80,8 @@ class DemoAppContainer(
 
     /** Unfiltered project store; everything outside this container goes through [projectRepository]. */
     private val projectStore by lazy { InMemoryProjectRepository(clock = clock) }
+
+    override val deliverableDownloader: DeliverableDownloader by lazy { SimulatedDeliverableDownloader() }
 
     override val projectRepository: ProjectRepository by lazy {
         SecuredProjectRepository(projectStore, authRepository.currentUser, accessControl)

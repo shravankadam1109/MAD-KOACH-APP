@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.Icon
@@ -71,6 +72,14 @@ fun menuEntriesFor(user: User): List<MenuEntry> = buildList {
             if (user.role.isAgency) "Feedback inbox" else "Feedback & support",
             if (user.role.isAgency) "Client feedback and complaints" else "Share feedback or raise an issue",
             Icons.Outlined.RateReview
+        )
+    )
+    add(
+        MenuEntry(
+            Routes.CONTACT,
+            "Contact studio",
+            "Studio address, hotline & direct inquiries",
+            Icons.Outlined.Phone
         )
     )
     add(MenuEntry(Routes.PROFILE, "Profile", "Your details", Icons.Outlined.Person))

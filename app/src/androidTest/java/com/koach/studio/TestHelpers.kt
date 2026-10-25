@@ -31,13 +31,18 @@ fun ComposeTestRule.awaitTag(tag: String, timeoutMillis: Long = 10_000) {
 }
 
 /**
- * Signs in with a demo account and waits for the app shell. The tap is retried
- * if the shell doesn't appear, because emulator focus changes occasionally
- * swallow the first tap after launch.
+ * Signs in with a demo account through the right portal and waits for the app
+ * shell. The tap is retried if the shell doesn't appear, because emulator focus
+ * changes occasionally swallow the first tap after launch.
  */
 fun ComposeTestRule.signInAs(userId: String, shellTag: String, attempts: Int = 3) {
+    val portalTag = if (shellTag == "tab_agency_home") "enter_team" else "enter_client"
     repeat(attempts) { attempt ->
         runCatching {
+            if (onAllNodes(hasTestTag("welcome_screen")).fetchSemanticsNodes().isNotEmpty()) {
+                onNode(hasTestTag(portalTag)).performClick()
+                awaitTag("demo_account_$userId", timeoutMillis = 5_000)
+            }
             onNode(hasTestTag("demo_account_$userId")).performScrollTo().performClick()
         }
         val appeared = runCatching { awaitTag(shellTag, timeoutMillis = 5_000) }.isSuccess

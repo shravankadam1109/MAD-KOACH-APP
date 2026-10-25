@@ -35,6 +35,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.koach.studio.app.menu.MenuScreen
+import com.koach.studio.bookings.ui.BookingDetailScreen
+import com.koach.studio.bookings.ui.BookingDetailViewModel
 import com.koach.studio.bookings.ui.BookingsScreen
 import com.koach.studio.clients.ui.ClientDetailScreen
 import com.koach.studio.clients.ui.ClientDetailViewModel
@@ -42,6 +44,8 @@ import com.koach.studio.clients.ui.ClientFormScreen
 import com.koach.studio.clients.ui.ClientFormViewModel
 import com.koach.studio.clients.ui.ClientListScreen
 import com.koach.studio.clients.ui.ClientListViewModel
+import com.koach.studio.contact.ContactScreen
+import com.koach.studio.contact.ContactViewModel
 import com.koach.studio.bookings.ui.BookingsViewModel
 import com.koach.studio.bookings.ui.NewBookingScreen
 import com.koach.studio.bookings.ui.NewBookingViewModel
@@ -209,7 +213,8 @@ private fun KoachNavHost(
                     onBook = { navController.navigate(Routes.newBooking()) },
                     onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
                     onPayments = { navController.navigate(Routes.PAYMENTS) },
-                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
+                    onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onContact = { navController.navigate(Routes.CONTACT) }
                 )
             )
         }
@@ -230,7 +235,8 @@ private fun KoachNavHost(
             PortfolioDetailScreen(
                 viewModel = koachViewModel(key = "portfolio-$itemId") { PortfolioDetailViewModel(itemId, it.catalogRepository) },
                 onBack = back,
-                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) }
+                onStartSimilar = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) },
+                onBookSimilar = { serviceId -> navController.navigate(Routes.newBooking(serviceId)) }
             )
         }
         composable(
@@ -267,7 +273,20 @@ private fun KoachNavHost(
             BookingsScreen(
                 viewModel = koachViewModel { BookingsViewModel(user, it.bookingRepository, it.catalogRepository) },
                 onBack = back,
-                onNewBooking = { navController.navigate(Routes.newBooking()) }
+                onNewBooking = { navController.navigate(Routes.newBooking()) },
+                onOpenBooking = { id -> navController.navigate(Routes.bookingDetail(id)) }
+            )
+        }
+        composable(
+            Routes.BOOKING_DETAIL,
+            arguments = listOf(navArgument("bookingId") { type = NavType.StringType })
+        ) { entry ->
+            val bookingId = entry.arguments?.getString("bookingId").orEmpty()
+            BookingDetailScreen(
+                viewModel = koachViewModel(key = "booking-detail-$bookingId") {
+                    BookingDetailViewModel(bookingId, user, it.bookingRepository, it.catalogRepository)
+                },
+                onBack = back
             )
         }
 
@@ -428,6 +447,15 @@ private fun KoachNavHost(
                 onSignOut = { scope.launch { auth.signOut() } }
             )
         }
+        composable(Routes.CONTACT) {
+            ContactScreen(
+                viewModel = koachViewModel { ContactViewModel() },
+                onBack = back,
+                onBookService = { navController.navigate(Routes.newBooking()) },
+                onSendMessage = { navController.navigateToTopLevel(Routes.MESSAGES) },
+                onSendFeedback = { navController.navigate(Routes.NEW_FEEDBACK) }
+            )
+        }
     }
 }
 
@@ -449,7 +477,7 @@ private fun NavHostController.openNotificationTarget(notification: AppNotificati
         target.startsWith("proj-") -> navigate(ProjectsDestinations.projectDetail(target))
         target.startsWith("th-") -> navigate(Routes.conversation(target))
         target.startsWith("t-") -> navigate(Routes.taskForm(target))
-        target.startsWith("bk-") -> navigate(Routes.BOOKINGS)
+        target.startsWith("bk-") -> navigate(Routes.bookingDetail(target))
         target.startsWith("fb-") -> navigate(Routes.FEEDBACK)
     }
 }

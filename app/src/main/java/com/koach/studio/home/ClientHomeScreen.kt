@@ -20,11 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.VideoCall
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +57,6 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
-import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.tone
 
 data class ClientHomeActions(
@@ -63,7 +65,8 @@ data class ClientHomeActions(
     val onBook: () -> Unit,
     val onMessages: () -> Unit,
     val onPayments: () -> Unit,
-    val onNotifications: () -> Unit
+    val onNotifications: () -> Unit,
+    val onContact: () -> Unit = {}
 )
 
 @Composable
@@ -154,6 +157,27 @@ fun ClientHomeScreen(viewModel: ClientHomeViewModel, actions: ClientHomeActions,
                     }
                 }
             }
+
+            item {
+                val c = KoachTheme.colors
+                KoachCard(
+                    onClick = actions.onContact,
+                    modifier = Modifier
+                        .padding(horizontal = gutter)
+                        .fillMaxWidth()
+                        .testTag("home_contact_card")
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconTile(Icons.Outlined.Phone, tone = Tone.Brand, size = 40.dp)
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Need bespoke production?", style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
+                            Text("Call or email our studio desk in Bandra West", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                        }
+                        Icon(Icons.Filled.ChevronRight, contentDescription = "Contact studio", tint = c.textTertiary)
+                    }
+                }
+            }
         }
     }
 }
@@ -195,7 +219,7 @@ private fun FeaturedProjectCard(project: Project, state: ClientHomeUiState, onOp
         Spacer(Modifier.height(16.dp))
         Text(project.title, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
         Spacer(Modifier.height(4.dp))
-        project.dueLocalDate?.let {
+        project.dueDate.let {
             Text(formatDue(it, state.today), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         }
         Spacer(Modifier.height(20.dp))

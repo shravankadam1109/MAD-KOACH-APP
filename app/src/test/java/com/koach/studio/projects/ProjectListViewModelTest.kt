@@ -19,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProjectListViewModelTest {
@@ -36,7 +37,7 @@ class ProjectListViewModelTest {
             clientName = "Warner Music",
             serviceType = ServiceType.SHOOTING,
             status = ProjectStatus.IN_PROGRESS,
-            dueDate = "2026-11-20",
+            dueDate = LocalDate.of(2026, 11, 20),
             description = "Shooting video"
         ),
         Project(
@@ -45,7 +46,7 @@ class ProjectListViewModelTest {
             clientName = "Spotify Studios",
             serviceType = ServiceType.RECORDING,
             status = ProjectStatus.IN_REVIEW,
-            dueDate = "2026-11-10",
+            dueDate = LocalDate.of(2026, 11, 10),
             description = "Studio podcast record"
         ),
         Project(
@@ -54,7 +55,7 @@ class ProjectListViewModelTest {
             clientName = "Nike",
             serviceType = ServiceType.EDITING,
             status = ProjectStatus.COMPLETED,
-            dueDate = "2026-10-15",
+            dueDate = LocalDate.of(2026, 10, 15),
             description = "Edit commercial reel"
         )
     )

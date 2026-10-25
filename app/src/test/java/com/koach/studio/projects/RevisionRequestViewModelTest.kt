@@ -17,6 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RevisionRequestViewModelTest {
@@ -31,7 +32,7 @@ class RevisionRequestViewModelTest {
         clientName = "Client C",
         serviceType = ServiceType.SHOOTING,
         status = ProjectStatus.IN_REVIEW,
-        dueDate = "2026-11-30",
+        dueDate = LocalDate.of(2026, 11, 30),
         description = "Description"
     )
 

@@ -20,6 +20,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProjectDetailViewModelTest {
@@ -34,7 +35,7 @@ class ProjectDetailViewModelTest {
         clientName = "Client A",
         serviceType = ServiceType.EDITING,
         status = ProjectStatus.IN_PROGRESS,
-        dueDate = "2026-11-25",
+        dueDate = LocalDate.of(2026, 11, 25),
         description = "Testing details",
         deliverables = listOf(
             Deliverable(
@@ -94,8 +95,7 @@ class ProjectDetailViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        val deliverable = state.project?.deliverables?.find { it.id == "del-test-1" }
-        assertEquals(DownloadState.DONE, deliverable?.downloadState)
+        assertEquals(DownloadState.DONE, state.downloads["del-test-1"]?.state)
 
         collectJob.cancel()
     }

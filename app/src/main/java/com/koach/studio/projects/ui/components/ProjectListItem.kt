@@ -41,8 +41,8 @@ fun ProjectListItem(
     today: LocalDate = LocalDate.now()
 ) {
     val c = KoachTheme.colors
-    val due = project.dueLocalDate
-    val overdue = due != null && due.isBefore(today) && project.status != ProjectStatus.COMPLETED
+    val due = project.dueDate
+    val overdue = due.isBefore(today) && project.status != ProjectStatus.COMPLETED
 
     KoachCard(
         onClick = onClick,

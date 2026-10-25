@@ -25,7 +25,6 @@ interface ProjectRepository {
 
     /** Agency shares a new version: bumps the version, puts it in review and resolves its open revisions. */
     suspend fun publishNewVersion(projectId: String, deliverableId: String, notes: String): Result<Unit>
-    suspend fun startDeliverableDownload(projectId: String, deliverableId: String, simulateFailure: Boolean = false)
     suspend fun updateProjectStatus(projectId: String, status: ProjectStatus): Result<Unit>
     suspend fun setMilestoneCompleted(projectId: String, milestoneId: String, completed: Boolean): Result<Unit>
 }

@@ -62,7 +62,6 @@ import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Milestone
 import com.koach.studio.projects.model.ProjectStatus
-import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.components.DeliverableRow
 import com.koach.studio.projects.ui.components.AnimatedStatusPill
 import com.koach.studio.projects.ui.components.ProjectDetailShimmer
@@ -79,7 +78,7 @@ fun ProjectDetailScreen(
     modifier: Modifier = Modifier,
     onOpenDocuments: (() -> Unit)? = null,
     viewModel: ProjectDetailViewModel = koachViewModel(key = "project-$projectId") {
-        ProjectDetailViewModel(projectId, it.projectRepository, it.authRepository.currentUser.value, it.people)
+        ProjectDetailViewModel(projectId, it.projectRepository, it.authRepository.currentUser.value, it.people, it.deliverableDownloader)
     }
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -127,7 +126,7 @@ fun ProjectDetailScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(project.clientName, style = MaterialTheme.typography.bodyLarge, color = c.brand)
-                        project.dueLocalDate?.let { due ->
+                        project.dueDate.let { due ->
                             Spacer(Modifier.height(10.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(15.dp))
@@ -264,7 +263,8 @@ fun ProjectDetailScreen(
                         onEditClick = if (uiState.canEditDeliverables) ({ onDeliverableClick(deliverable.id) }) else null,
                         onDownloadClick = { viewModel.downloadDeliverable(deliverable.id) },
                         onApprove = if (uiState.canReviewDeliverables) ({ viewModel.approveDeliverable(deliverable.id) }) else null,
-                        onRequestChanges = if (uiState.canRequestRevision) ({ onRequestRevisionClick(deliverable.id) }) else null
+                        onRequestChanges = if (uiState.canRequestRevision) ({ onRequestRevisionClick(deliverable.id) }) else null,
+                        download = uiState.downloads[deliverable.id]
                     )
                 }
 

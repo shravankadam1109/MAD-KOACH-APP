@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.koach.studio.projects.data.DownloadProgress
 import com.koach.studio.projects.model.Deliverable
 import com.koach.studio.projects.model.DownloadState
 
@@ -53,12 +54,15 @@ import com.koach.studio.projects.model.DownloadState
 fun DeliverableDownloadButton(
     deliverable: Deliverable,
     onDownloadClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    download: DownloadProgress? = null
 ) {
+    val state = download?.state ?: DownloadState.IDLE
+    val progress = download?.progress ?: 0f
     val brandGreen = KoachTheme.colors.brand
     val errorColor = KoachTheme.colors.danger
 
-    when (deliverable.downloadState) {
+    when (state) {
         DownloadState.IDLE -> {
             Box(
                 contentAlignment = Alignment.Center,
