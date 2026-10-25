@@ -17,13 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.VideoCall
@@ -31,6 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +54,7 @@ import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSecondaryButton
+import com.koach.studio.core.designsystem.components.KoachTextField
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.SectionHeader
 import com.koach.studio.core.designsystem.components.StatusPill
@@ -266,6 +272,93 @@ fun ContactScreen(
                                 viewModel.onInfoCopied("Production email")
                             }
                         )
+                    }
+                }
+
+                item {
+                    SectionHeader("Direct Inquiry", eyebrow = "Get In Touch")
+                    Spacer(Modifier.height(8.dp))
+                    KoachCard(modifier = Modifier.fillMaxWidth().testTag("contact_inquiry_card")) {
+                        if (state.isInquirySuccess) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("inquiry_success_state"),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                IconTile(Icons.Filled.CheckCircle, tone = Tone.Success, size = 48.dp)
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    "Inquiry Received!",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = c.textPrimary
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Thank you, ${state.inquiryName}. Our production desk will review your note and respond within 24 hours.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = c.textSecondary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                KoachSecondaryButton(
+                                    text = "Send another inquiry",
+                                    onClick = { viewModel.resetInquiry() },
+                                    modifier = Modifier.testTag("inquiry_reset_button")
+                                )
+                            }
+                        } else {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxWidth().testTag("inquiry_form")
+                            ) {
+                                Text(
+                                    "Have a project or custom question?",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = c.textPrimary
+                                )
+                                Text(
+                                    "Drop your details and production brief below. We typically reply within the same business day.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = c.textSecondary
+                                )
+                                KoachTextField(
+                                    value = state.inquiryName,
+                                    onValueChange = viewModel::onInquiryNameChanged,
+                                    label = "Your Name",
+                                    placeholder = "e.g., Ananya Sharma",
+                                    error = state.inquiryNameError,
+                                    leadingIcon = Icons.Outlined.Person,
+                                    modifier = Modifier.fillMaxWidth().testTag("inquiry_input_name")
+                                )
+                                KoachTextField(
+                                    value = state.inquiryEmail,
+                                    onValueChange = viewModel::onInquiryEmailChanged,
+                                    label = "Email Address",
+                                    placeholder = "name@company.com",
+                                    error = state.inquiryEmailError,
+                                    leadingIcon = Icons.Outlined.Email,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                    modifier = Modifier.fillMaxWidth().testTag("inquiry_input_email")
+                                )
+                                KoachTextField(
+                                    value = state.inquiryMessage,
+                                    onValueChange = viewModel::onInquiryMessageChanged,
+                                    label = "Project Note / Question",
+                                    placeholder = "Describe your vision, timeline, or requirements...",
+                                    error = state.inquiryMessageError,
+                                    singleLine = false,
+                                    minLines = 3,
+                                    maxLength = 500,
+                                    modifier = Modifier.fillMaxWidth().testTag("inquiry_input_message")
+                                )
+                                KoachPrimaryButton(
+                                    text = if (state.isInquirySubmitting) "Sending inquiry..." else "Send inquiry",
+                                    leadingIcon = Icons.AutoMirrored.Outlined.Chat,
+                                    enabled = !state.isInquirySubmitting,
+                                    onClick = { viewModel.submitInquiry() },
+                                    modifier = Modifier.fillMaxWidth().testTag("inquiry_submit_button")
+                                )
+                            }
+                        }
                     }
                 }
 
