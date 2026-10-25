@@ -63,8 +63,11 @@ object Routes {
     fun documents(projectId: String? = null) = "documents?projectId=${projectId.orEmpty()}"
     fun addDocument(projectId: String? = null) = "documents/new?projectId=${projectId.orEmpty()}"
 
+    /** Task detail (read-only view). Separate from the form. */
+    const val TASK_DETAIL = "task/{taskId}"
     const val TASK_FORM = "task-form?taskId={taskId}&projectId={projectId}"
 
+    fun taskDetail(taskId: String) = "task/$taskId"
     fun taskForm(taskId: String? = null, projectId: String? = null) =
         "task-form?taskId=${taskId.orEmpty()}&projectId=${projectId.orEmpty()}"
     fun clientDetail(clientId: String) = "clients/$clientId"

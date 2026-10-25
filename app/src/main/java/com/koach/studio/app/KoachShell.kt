@@ -88,6 +88,8 @@ import com.koach.studio.portfolio.PortfolioDetailScreen
 import com.koach.studio.portfolio.PortfolioDetailViewModel
 import com.koach.studio.portfolio.PortfolioViewModel
 import com.koach.studio.services.ExploreScreen
+import com.koach.studio.tasks.ui.TaskDetailScreen
+import com.koach.studio.tasks.ui.TaskDetailViewModel
 import com.koach.studio.tasks.ui.TaskFormScreen
 import com.koach.studio.tasks.ui.TaskFormViewModel
 import com.koach.studio.tasks.ui.TaskListScreen
@@ -298,7 +300,7 @@ private fun KoachNavHost(
                 actions = AgencyHomeActions(
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
-                    onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                    onOpenTask = { id -> navController.navigate(Routes.taskDetail(id)) },
                     onAllTasks = { navController.navigateToTopLevel(Routes.TASKS) },
                     onNewTask = { navController.navigate(Routes.taskForm()) },
                     onBookings = { navController.navigate(Routes.BOOKINGS) },
@@ -309,8 +311,21 @@ private fun KoachNavHost(
         composable(Routes.TASKS) {
             TaskListScreen(
                 viewModel = koachViewModel { TaskListViewModel(user, it.taskRepository, it.projectRepository, it.people, it.clock) },
-                onOpenTask = { id -> navController.navigate(Routes.taskForm(id)) },
+                onOpenTask = { id -> navController.navigate(Routes.taskDetail(id)) },
                 onNewTask = { navController.navigate(Routes.taskForm()) }
+            )
+        }
+        composable(
+            Routes.TASK_DETAIL,
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { entry ->
+            val taskId = entry.arguments?.getString("taskId").orEmpty()
+            TaskDetailScreen(
+                viewModel = koachViewModel(key = "task-detail-$taskId") {
+                    TaskDetailViewModel(taskId, user, it.taskRepository, it.projectRepository, it.people, it.clock)
+                },
+                onBack = back,
+                onEdit = { navController.navigate(Routes.taskForm(taskId)) }
             )
         }
         composable(

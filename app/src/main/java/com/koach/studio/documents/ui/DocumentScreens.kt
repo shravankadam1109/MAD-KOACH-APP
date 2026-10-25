@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +41,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +57,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.EmptyState
@@ -73,7 +78,9 @@ import com.koach.studio.core.designsystem.components.KoachSecondaryButton
 import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTextField
 import com.koach.studio.core.designsystem.components.KoachTopBar
+import com.koach.studio.core.designsystem.components.KoachSnackbarHost
 import com.koach.studio.core.designsystem.components.LoadingState
+import com.koach.studio.documents.data.DocumentValidator
 import com.koach.studio.core.designsystem.components.StatusPill
 import com.koach.studio.core.designsystem.components.Tone
 import com.koach.studio.core.designsystem.theme.KoachTheme
@@ -114,6 +121,7 @@ fun DocumentsScreen(
     val gutter = KoachTheme.spacing.gutter
     val snackbar = remember { SnackbarHostState() }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmRemove by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -137,7 +145,7 @@ fun DocumentsScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { KoachSnackbarHost(snackbar, isError = state.messageIsError) },
         modifier = modifier
     ) { padding ->
         if (state.isLoading) {
@@ -170,10 +178,15 @@ fun DocumentsScreen(
             }
             if (state.rows.isEmpty()) {
                 item {
+                    val filtering = state.query.isNotBlank() || state.category != null
                     EmptyState(
                         icon = Icons.Outlined.FolderOpen,
-                        title = "No documents",
-                        message = if (state.isAgency) "Nothing matches these filters." else "Documents your studio shares with you will appear here.",
+                        title = if (filtering) "No matching documents" else "No documents yet",
+                        message = when {
+                            filtering -> "Try a different search or category."
+                            state.isAgency -> "Add the first document to keep project files in one place."
+                            else -> "Documents your studio shares with you will appear here."
+                        },
                         actionLabel = if (state.canUpload) "Add document" else null,
                         onAction = if (state.canUpload) onAddDocument else null
                     )
@@ -190,19 +203,44 @@ fun DocumentsScreen(
         DocumentDetailsDialog(
             row = selected,
             isAgency = state.isAgency,
-            onDismiss = { selectedId = null },
+            onDismiss = {
+                selectedId = null
+                confirmRemove = false
+            },
             onToggleVisibility = {
                 val next = if (selected.document.visibility == DocumentVisibility.SHARED) DocumentVisibility.INTERNAL else DocumentVisibility.SHARED
                 viewModel.setVisibility(selected.document.id, next)
             },
-            onDelete = {
-                viewModel.delete(selected.document.id)
-                selectedId = null
-            }
+            onDelete = { confirmRemove = true }
         )
+        if (confirmRemove) {
+            AlertDialog(
+                onDismissRequest = { confirmRemove = false },
+                containerColor = c.surfaceRaised,
+                title = { Text("Remove this document?", color = c.textPrimary) },
+                text = {
+                    Text(
+                        "\"${selected.document.name}\" will be removed from the list. This can't be undone.",
+                        color = c.textSecondary
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.delete(selected.document.id)
+                            confirmRemove = false
+                            selectedId = null
+                        },
+                        modifier = Modifier.testTag("confirm_delete_document")
+                    ) { Text("Remove", color = c.danger) }
+                },
+                dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel", color = c.textSecondary) } }
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DocumentCard(row: DocumentRow, showVisibility: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
@@ -212,28 +250,38 @@ private fun DocumentCard(row: DocumentRow, showVisibility: Boolean, onClick: () 
             IconTile(doc.icon, tone = doc.category.tone, size = 44.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(doc.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(doc.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
                     listOfNotNull(row.projectTitle, formatFileSize(doc.sizeBytes).takeIf { doc.sizeBytes > 0 }).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
         }
         Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             StatusPill(doc.category.displayName, doc.category.tone, showDot = false)
             if (showVisibility) {
-                Spacer(Modifier.width(8.dp))
                 StatusPill(
                     if (doc.visibility == DocumentVisibility.SHARED) "Shared" else "Internal",
                     if (doc.visibility == DocumentVisibility.SHARED) Tone.Brand else Tone.Neutral
                 )
             }
             Spacer(Modifier.weight(1f))
-            Text("${row.uploaderName.substringBefore(" ")} · ${formatRelative(doc.uploadedAt)}", style = MaterialTheme.typography.labelMedium, color = c.textTertiary)
+            Text(
+                "${row.uploaderName.substringBefore(" ")} · ${formatRelative(doc.uploadedAt)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = c.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
         }
     }
 }
@@ -254,7 +302,7 @@ private fun DocumentDetailsDialog(
         icon = { IconTile(doc.icon, tone = doc.category.tone) },
         title = { Text(doc.name, color = c.textPrimary, style = MaterialTheme.typography.titleMedium) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 InfoRow("Category", doc.category.displayName)
                 KoachDivider()
                 InfoRow("Project", row.projectTitle ?: "None")
@@ -268,12 +316,14 @@ private fun DocumentDetailsDialog(
                     KoachDivider()
                     InfoRow("Visibility", doc.visibility.displayName)
                 }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    if (doc.storagePath == null) "This file isn't stored in the demo build, so it can't be opened." else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textTertiary
-                )
+                if (doc.storagePath == null) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "This file isn't stored in the demo build, so it can't be opened.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textTertiary
+                    )
+                }
                 if (isAgency) {
                     Spacer(Modifier.height(12.dp))
                     KoachSecondaryButton(
@@ -322,12 +372,25 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
                 .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
                 .testTag("add_document_form")
         ) {
-            KoachCard(highlighted = state.picked != null, onClick = { picker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth().testTag("pick_file")) {
+            KoachCard(
+                highlighted = state.picked != null,
+                onClick = { picker.launch(arrayOf("*/*")) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = if (state.picked == null) {
+                            "Choose a file"
+                        } else {
+                            "Selected file ${state.picked!!.name}, tap to change"
+                        }
+                    }
+                    .testTag("pick_file")
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconTile(Icons.Outlined.AttachFile, size = 44.dp)
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(state.picked?.name ?: "Choose a file", style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(state.picked?.name ?: "Choose a file", style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(
                             state.picked?.let { listOf(it.mimeType, formatFileSize(it.sizeBytes)).joinToString(" · ") } ?: "Optional: fills in the name, type and size",
                             style = MaterialTheme.typography.bodySmall,
@@ -344,7 +407,7 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
             )
             Spacer(Modifier.height(18.dp))
             FormSection {
-                KoachTextField(state.name, viewModel::onName, "Document name", error = state.nameError, modifier = Modifier.testTag("document_name"))
+                KoachTextField(state.name, viewModel::onName, "Document name", error = state.nameError, maxLength = DocumentValidator.NAME_MAX, modifier = Modifier.testTag("document_name"))
                 KoachDropdownField("Category", DocumentCategory.entries, state.category, viewModel::onCategory, { it.displayName })
                 KoachDropdownField(
                     label = "Project",
@@ -365,7 +428,12 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
             }
             state.errorMessage?.let {
                 Spacer(Modifier.height(12.dp))
-                Text(it, color = c.danger, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    it,
+                    color = c.danger,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                )
             }
             Spacer(Modifier.height(24.dp))
             KoachPrimaryButton(

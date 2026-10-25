@@ -11,6 +11,7 @@ import com.koach.studio.core.model.User
 import com.koach.studio.projects.data.ProjectRepository
 import com.koach.studio.projects.model.Project
 import com.koach.studio.tasks.data.TaskDraft
+import com.koach.studio.tasks.data.TaskEvent
 import com.koach.studio.tasks.data.TaskRepository
 import com.koach.studio.tasks.data.TaskValidator
 import com.koach.studio.tasks.data.TaskValidator.Field
@@ -42,6 +43,7 @@ data class TaskRow(
 data class TaskListUiState(
     val isLoading: Boolean = true,
     val rows: List<TaskRow> = emptyList(),
+    val query: String = "",
     val statusFilter: TaskStatus? = null,
     val onlyMine: Boolean = false,
     val sort: TaskSort = TaskSort.DUE_DATE,
@@ -49,15 +51,30 @@ data class TaskListUiState(
     val overdueCount: Int = 0,
     val canManage: Boolean = false,
     val today: LocalDate = LocalDate.now(),
-    val message: String? = null
+    val message: String? = null,
+    val messageIsError: Boolean = false
 )
 
-private data class TaskFilters(val status: TaskStatus?, val onlyMine: Boolean, val sort: TaskSort)
+private data class TaskFeedback(val text: String, val isError: Boolean = false)
+
+private data class TaskFilters(val query: String, val status: TaskStatus?, val onlyMine: Boolean, val sort: TaskSort)
 
 /** Sorts and filters tasks; pure so it can be unit-tested directly. */
-fun List<TaskRow>.arranged(status: TaskStatus?, onlyMineId: String?, sort: TaskSort): List<TaskRow> =
+fun List<TaskRow>.arranged(
+    query: String,
+    status: TaskStatus?,
+    onlyMineId: String?,
+    sort: TaskSort
+): List<TaskRow> =
     filter { status == null || it.task.status == status }
         .filter { onlyMineId == null || it.task.assigneeId == onlyMineId }
+        .filter { row ->
+            query.isBlank() ||
+                row.task.title.contains(query, ignoreCase = true) ||
+                row.task.description.contains(query, ignoreCase = true) ||
+                row.projectTitle?.contains(query, ignoreCase = true) == true ||
+                row.assignee?.name?.contains(query, ignoreCase = true) == true
+        }
         .let { rows ->
             when (sort) {
                 // Done tasks sink to the bottom in every sort.
@@ -75,8 +92,20 @@ class TaskListViewModel(
     private val clock: Clock
 ) : ViewModel() {
 
-    private val filters = MutableStateFlow(TaskFilters(null, false, TaskSort.DUE_DATE))
-    private val message = MutableStateFlow<String?>(null)
+    private val filters = MutableStateFlow(TaskFilters("", null, false, TaskSort.DUE_DATE))
+    private val message = MutableStateFlow<TaskFeedback?>(null)
+
+    init {
+        viewModelScope.launch {
+            tasks.events.collect { event ->
+                message.value = when (event) {
+                    is TaskEvent.Created -> TaskFeedback("Task \"${event.title}\" created")
+                    is TaskEvent.Updated -> TaskFeedback("Task \"${event.title}\" saved")
+                    is TaskEvent.Deleted -> TaskFeedback("Task \"${event.title}\" deleted")
+                }
+            }
+        }
+    }
 
     val uiState: StateFlow<TaskListUiState> =
         combine(tasks.observeTasks(), projects.getProjects(), filters, message) { all, projectList, f, msg ->
@@ -84,7 +113,8 @@ class TaskListViewModel(
             val rows = all.map { it.toRow(projectList, today) }
             TaskListUiState(
                 isLoading = false,
-                rows = rows.arranged(f.status, if (f.onlyMine) user.id else null, f.sort),
+                rows = rows.arranged(f.query, f.status, if (f.onlyMine) user.id else null, f.sort),
+                query = f.query,
                 statusFilter = f.status,
                 onlyMine = f.onlyMine,
                 sort = f.sort,
@@ -92,10 +122,12 @@ class TaskListViewModel(
                 overdueCount = all.count { it.isOverdue(today) },
                 canManage = user.can(Permission.MANAGE_TASKS),
                 today = today,
-                message = msg
+                message = msg?.text,
+                messageIsError = msg?.isError == true
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskListUiState())
 
+    fun onQuery(query: String) = filters.update { it.copy(query = query) }
     fun setStatusFilter(status: TaskStatus?) = filters.update { it.copy(status = status) }
     fun setOnlyMine(onlyMine: Boolean) = filters.update { it.copy(onlyMine = onlyMine) }
     fun setSort(sort: TaskSort) = filters.update { it.copy(sort = sort) }
@@ -103,7 +135,10 @@ class TaskListViewModel(
     fun toggleDone(task: TaskItem) {
         viewModelScope.launch {
             val next = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
-            tasks.setStatus(task.id, next).onFailure { message.value = it.message ?: "Couldn't update task" }
+            message.value = tasks.setStatus(task.id, next).fold(
+                { TaskFeedback(if (next == TaskStatus.DONE) "Marked \"${task.title}\" as done" else "Reopened \"${task.title}\"") },
+                { TaskFeedback(it.message ?: "Couldn't update task", isError = true) }
+            )
         }
     }
 
@@ -116,6 +151,86 @@ class TaskListViewModel(
         isOverdue = isOverdue(today)
     )
 }
+
+// ---------------------------------------------------------------------------
+// Task detail ViewModel — read-only summary of a single task
+// ---------------------------------------------------------------------------
+
+data class TaskDetailUiState(
+    val isLoading: Boolean = true,
+    val task: TaskItem? = null,
+    val projectTitle: String? = null,
+    val assignee: User? = null,
+    val isOverdue: Boolean = false,
+    val canManage: Boolean = false,
+    val today: LocalDate = LocalDate.now(),
+    val message: String? = null,
+    val messageIsError: Boolean = false,
+    val isDeleted: Boolean = false
+)
+
+class TaskDetailViewModel(
+    private val taskId: String,
+    private val user: User,
+    private val tasks: TaskRepository,
+    projects: ProjectRepository,
+    private val people: List<User>,
+    private val clock: Clock
+) : ViewModel() {
+
+    private val message = MutableStateFlow<TaskFeedback?>(null)
+    private val deleted = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            tasks.events.collect { event ->
+                when (event) {
+                    is TaskEvent.Updated -> if (event.taskId == taskId) {
+                        message.value = TaskFeedback("Task \"${event.title}\" saved")
+                    }
+                    is TaskEvent.Deleted -> if (event.taskId == taskId) {
+                        deleted.value = true
+                    }
+                    is TaskEvent.Created -> Unit
+                }
+            }
+        }
+    }
+
+    val uiState: StateFlow<TaskDetailUiState> =
+        combine(tasks.observeTask(taskId), projects.getProjects(), message, deleted) { task, projectList, msg, isDeleted ->
+            val today = LocalDate.now(clock)
+            TaskDetailUiState(
+                isLoading = false,
+                task = task,
+                projectTitle = task?.projectId?.let { id -> projectList.find { it.id == id }?.title },
+                assignee = task?.assigneeId?.let { id -> people.find { it.id == id } },
+                isOverdue = task?.isOverdue(today) == true,
+                canManage = user.can(Permission.MANAGE_TASKS),
+                today = today,
+                message = msg?.text,
+                messageIsError = msg?.isError == true,
+                isDeleted = isDeleted
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskDetailUiState())
+
+    fun toggleDone() {
+        val task = uiState.value.task ?: return
+        viewModelScope.launch {
+            val next = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
+            message.value = tasks.setStatus(task.id, next).fold(
+                { TaskFeedback(if (next == TaskStatus.DONE) "Marked \"${task.title}\" as done" else "Reopened \"${task.title}\"") },
+                { TaskFeedback(it.message ?: "Couldn't update task", isError = true) }
+            )
+        }
+    }
+
+    fun messageShown() = message.update { null }
+}
+
+// ---------------------------------------------------------------------------
+// Task form ViewModel
+// ---------------------------------------------------------------------------
 
 data class TaskFormUiState(
     val isEditing: Boolean = false,
@@ -204,9 +319,13 @@ class TaskFormViewModel(
 
     fun delete() {
         val id = taskId ?: return
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             val result = tasks.deleteTask(id)
-            _uiState.update { it.copy(done = result.isSuccess, errorMessage = result.exceptionOrNull()?.message) }
+            _uiState.update {
+                it.copy(isSaving = false, done = result.isSuccess, errorMessage = result.exceptionOrNull()?.message)
+            }
         }
     }
 }

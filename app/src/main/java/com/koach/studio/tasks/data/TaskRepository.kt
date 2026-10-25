@@ -7,9 +7,12 @@ import com.koach.studio.core.model.TaskPriority
 import com.koach.studio.core.model.TaskStatus
 import com.koach.studio.core.model.User
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.Clock
@@ -43,8 +46,18 @@ object TaskValidator {
     }
 }
 
+/** One-off outcomes of successful task writes, so screens further back in the stack can confirm them. */
+sealed interface TaskEvent {
+    data class Created(val title: String) : TaskEvent
+    data class Updated(val taskId: String, val title: String) : TaskEvent
+    data class Deleted(val taskId: String, val title: String) : TaskEvent
+}
+
 /** Agency-internal task board. Clients never see tasks. */
 interface TaskRepository {
+    /** Emits after a task is created, updated or deleted. Not replayed: only active listeners see it. */
+    val events: Flow<TaskEvent> get() = emptyFlow()
+
     fun observeTasks(): Flow<List<TaskItem>>
     fun observeTask(taskId: String): Flow<TaskItem?>
     suspend fun createTask(draft: TaskDraft): Result<TaskItem>
@@ -61,6 +74,8 @@ class InMemoryTaskRepository(
 ) : TaskRepository {
 
     private val store = MutableStateFlow(initial)
+    private val _events = MutableSharedFlow<TaskEvent>(extraBufferCapacity = 8)
+    override val events: Flow<TaskEvent> = _events.asSharedFlow()
 
     override fun observeTasks(): Flow<List<TaskItem>> =
         combine(store, currentUser) { all, _ -> if (access.can(Permission.VIEW_TASKS)) all else emptyList() }
@@ -83,6 +98,7 @@ class InMemoryTaskRepository(
             createdOn = LocalDate.now(clock)
         )
         store.update { listOf(task) + it }
+        _events.tryEmit(TaskEvent.Created(task.title))
         task
     }
 
@@ -100,6 +116,7 @@ class InMemoryTaskRepository(
             dueDate = draft.dueDate!!
         )
         store.update { list -> list.map { if (it.id == taskId) updated else it } }
+        _events.tryEmit(TaskEvent.Updated(updated.id, updated.title))
         updated
     }
 
@@ -111,8 +128,9 @@ class InMemoryTaskRepository(
 
     override suspend fun deleteTask(taskId: String): Result<Unit> = runCatching {
         access.require(Permission.MANAGE_TASKS)
-        if (store.value.none { it.id == taskId }) throw IllegalArgumentException("Task not found")
+        val existing = store.value.find { it.id == taskId } ?: throw IllegalArgumentException("Task not found")
         store.update { list -> list.filterNot { it.id == taskId } }
+        _events.tryEmit(TaskEvent.Deleted(existing.id, existing.title))
     }
 
     private fun validate(draft: TaskDraft) {
