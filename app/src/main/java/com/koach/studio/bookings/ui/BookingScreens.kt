@@ -3,6 +3,7 @@ package com.koach.studio.bookings.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -237,7 +238,9 @@ fun NewBookingScreen(
                                     borderColor = if (isSelected) c.brand else c.outline,
                                     selectedBorderColor = c.brand
                                 ),
-                                modifier = Modifier.testTag("budget_tier_$amount")
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .testTag("budget_tier_$amount")
                             )
                         }
                     }

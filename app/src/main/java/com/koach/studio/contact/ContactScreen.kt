@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -36,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -102,6 +106,8 @@ fun ContactScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .fillMaxSize()
+                    .navigationBarsPadding()
+                    .imePadding()
                     .testTag("contact_screen")
             ) {
                 item {
@@ -187,7 +193,8 @@ fun ContactScreen(
                                     val fullAddress = "${state.contactInfo.addressLine1}, ${state.contactInfo.addressLine2}, ${state.contactInfo.cityAndPin}"
                                     clipboardManager.setText(AnnotatedString(fullAddress))
                                     viewModel.onInfoCopied("Studio address")
-                                }
+                                },
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy address", tint = c.textTertiary)
                             }
@@ -431,17 +438,17 @@ private fun ContactChannelRow(
             IconTile(icon, tone = tone, size = 38.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-                Text(value, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+                Text(title, style = MaterialTheme.typography.labelSmall, color = c.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(value, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            IconButton(onClick = onCopy, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = onCopy, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy $title", tint = c.textTertiary)
             }
             Spacer(Modifier.width(4.dp))
             KoachSecondaryButton(
                 text = actionLabel,
                 onClick = onAction,
-                modifier = Modifier.height(40.dp)
+                modifier = Modifier.defaultMinSize(minWidth = 72.dp, minHeight = 48.dp)
             )
         }
     }
