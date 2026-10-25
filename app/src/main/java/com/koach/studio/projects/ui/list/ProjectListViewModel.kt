@@ -7,7 +7,6 @@ import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectSortOrder
 import com.koach.studio.projects.model.ProjectStatus
 import com.koach.studio.projects.model.ServiceType
-import com.koach.studio.projects.model.dueLocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,7 +64,7 @@ class ProjectListViewModel(
         }
         val sorted = when (params.sort) {
             ProjectSortOrder.NEWEST -> filtered.sortedByDescending { it.id }
-            ProjectSortOrder.DUE_DATE -> filtered.sortedWith(compareBy(nullsLast()) { it.dueLocalDate })
+            ProjectSortOrder.DUE_DATE -> filtered.sortedBy { it.dueDate }
             ProjectSortOrder.STATUS -> filtered.sortedBy { it.status.ordinal }
         }
         ProjectListUiState(
