@@ -43,6 +43,9 @@ import java.time.LocalDate
  * Firebase-backed ones without touching any screen.
  */
 interface AppContainer {
+    /** Shown in the app when part of the backend is still sample data; null when everything is real or all demo. */
+    val dataNotice: String? get() = null
+
     val clock: Clock
     val authRepository: AuthRepository
     val accessControl: AccessControl
@@ -64,7 +67,7 @@ interface AppContainer {
 }
 
 /** Demo wiring: every repository is in-memory and resets when the process dies. */
-class DemoAppContainer(
+open class DemoAppContainer(
     override val clock: Clock = Clock.systemDefaultZone(),
     /** In-memory by default (tests); the app passes a persistent store. */
     private val sessionStore: SessionStore = InMemorySessionStore()

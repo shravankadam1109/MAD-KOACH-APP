@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// KOACH Studio Storage rules. Roles and client membership are read from the
+// trusted users/{uid} profile in Firestore.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function profile() { return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile() { return request.auth != null && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)); }
+    function isAgency() { return hasProfile() && profile().role in ['team', 'admin']; }
+    function ownsClient(clientId) { return hasProfile() && profile().role == 'client' && profile().clientId == clientId; }
+    function underLimit(mb) { return request.resource.size < mb * 1024 * 1024; }
+
+    // Project documents: documents/{clientId}/{documentId}/{fileName}
+    // Clients may read and upload within their own organisation; the agency
+    // manages everything. Internal-only visibility is enforced on the Firestore
+    // metadata, which clients cannot list for internal files.
+    match /documents/{clientId}/{documentId}/{fileName} {
+      allow read: if isAgency() || ownsClient(clientId);
+      allow create: if (isAgency() || ownsClient(clientId)) && underLimit(100);
+      allow update, delete: if isAgency();
+    }
+
+    // Deliverable files: deliverables/{clientId}/{projectId}/{deliverableId}/{version}/{fileName}
+    // Only the agency uploads; clients of that organisation can download.
+    match /deliverables/{clientId}/{projectId}/{deliverableId}/{version}/{fileName} {
+      allow read: if isAgency() || ownsClient(clientId);
+      allow create: if isAgency() && underLimit(2048);
+      allow update, delete: if isAgency();
+    }
+
+    // Everything else is denied.
+  }
+}

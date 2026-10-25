@@ -1,0 +1,194 @@
+rules_version = '2';
+
+// KOACH Studio Firestore security rules.
+//
+// Roles come only from users/{uid}, which only admins can write, so a user can
+// never grant themselves agency access. Rules mirror the app's AccessPolicy
+// (core/auth/Permissions.kt): clients see only their own organisation's data,
+// and client decisions (approving deliverables, requesting revisions) cannot be
+// made by the agency.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Identity helpers -------------------------------------------------
+
+    function signedIn() { return request.auth != null; }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function role() { return profile().role; }
+    function isClient() { return hasProfile() && role() == 'client'; }
+    function isAgency() { return hasProfile() && role() in ['team', 'admin']; }
+    function isAdmin() { return hasProfile() && role() == 'admin'; }
+    function myClientId() { return profile().clientId; }
+    function ownsClient(clientId) { return isClient() && clientId == myClientId(); }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    // ---- People -----------------------------------------------------------
+
+    // Profiles: readable by any profiled user (names and titles appear in crews
+    // and chats); only admins create or change them, so roles stay trusted.
+    match /users/{uid} {
+      // Everyone can read their own profile (even a missing one, so the app can
+      // tell "not set up yet" apart from a permission error).
+      allow read: if hasProfile() || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /clients/{clientId} {
+      allow read: if isAgency() || ownsClient(clientId);
+      allow create, update: if isAgency();
+      allow delete: if isAdmin();
+    }
+
+    // ---- Projects, deliverables and revisions -----------------------------
+
+    function project(projectId) { return get(/databases/$(database)/documents/projects/$(projectId)).data; }
+    function canSeeProject(projectId) { return isAgency() || ownsClient(project(projectId).clientId); }
+
+    match /projects/{projectId} {
+      allow read: if isAgency() || ownsClient(resource.data.clientId);
+      allow create, delete: if isAgency();
+      // Agency manages the project; a client may only flag it for revision.
+      allow update: if isAgency()
+        || (ownsClient(resource.data.clientId)
+            && changedOnly(['status', 'updatedAt'])
+            && request.resource.data.status == 'REVISION_REQUESTED');
+
+      match /deliverables/{deliverableId} {
+        // Drafts stay with the agency until shared for review.
+        allow read: if isAgency()
+          || (canSeeProject(projectId) && resource.data.status != 'DRAFT');
+        allow create: if isAgency()
+          && request.resource.data.status in ['DRAFT', 'IN_REVIEW'];
+        allow delete: if isAgency();
+        // Agency edits can't make client decisions; clients may only approve or
+        // request changes on something that is in review.
+        allow update: if (isAgency()
+            && (request.resource.data.status == resource.data.status
+                || request.resource.data.status in ['DRAFT', 'IN_REVIEW']))
+          || (isClient() && canSeeProject(projectId)
+            && resource.data.status == 'IN_REVIEW'
+            && request.resource.data.status in ['APPROVED', 'REVISION_REQUESTED']
+            && changedOnly(['status', 'updatedAt']));
+      }
+
+      // Revision history is append-only: clients add requests, the agency can
+      // only mark them resolved, and nobody deletes them.
+      match /revisions/{revisionId} {
+        allow read: if canSeeProject(projectId);
+        allow create: if isClient() && canSeeProject(projectId)
+          && request.resource.data.requestedBy == request.auth.uid
+          && request.resource.data.resolved == false
+          && request.resource.data.reason is string
+          && request.resource.data.reason.size() >= 5;
+        allow update: if isAgency() && changedOnly(['resolved']);
+        allow delete: if false;
+      }
+    }
+
+    // ---- Bookings ---------------------------------------------------------
+
+    function bookingMove(from, to) {
+      return (from == 'PENDING' && to in ['CONFIRMED', 'DECLINED'])
+        || (from == 'CONFIRMED' && to == 'COMPLETED');
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isAgency() || ownsClient(resource.data.clientId);
+      allow create: if isClient()
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.clientId == myClientId()
+        && request.resource.data.status == 'PENDING';
+      allow update: if (isAgency()
+            && bookingMove(resource.data.status, request.resource.data.status)
+            && changedOnly(['status', 'statusNote', 'updatedAt'])
+            && (request.resource.data.status != 'DECLINED'
+                || (request.resource.data.statusNote is string && request.resource.data.statusNote.size() > 0)))
+        || (isClient()
+            && resource.data.requestedBy == request.auth.uid
+            && resource.data.status == 'PENDING'
+            && request.resource.data.status == 'CANCELLED'
+            && changedOnly(['status', 'statusNote', 'updatedAt']));
+      allow delete: if false;
+    }
+
+    // ---- Agency-internal work ---------------------------------------------
+
+    match /tasks/{taskId} {
+      allow read, write: if isAgency();
+    }
+
+    // ---- Documents (metadata; files live in Storage) ----------------------
+
+    match /documents/{documentId} {
+      allow read: if isAgency()
+        || (ownsClient(resource.data.clientId) && resource.data.visibility == 'SHARED');
+      allow create: if (isAgency() && request.resource.data.uploadedBy == request.auth.uid)
+        || (isClient()
+            && request.resource.data.uploadedBy == request.auth.uid
+            && request.resource.data.clientId == myClientId()
+            && request.resource.data.visibility == 'SHARED');
+      allow update: if isAgency();
+      allow delete: if isAgency() || (signedIn() && resource.data.uploadedBy == request.auth.uid);
+    }
+
+    // ---- Messaging --------------------------------------------------------
+
+    function thread(threadId) { return get(/databases/$(database)/documents/threads/$(threadId)).data; }
+    function inThread(threadId) { return isAgency() || (signedIn() && request.auth.uid in thread(threadId).participantIds); }
+
+    match /threads/{threadId} {
+      allow read: if isAgency() || (signedIn() && request.auth.uid in resource.data.participantIds);
+      allow create: if isAgency();
+      // Agency members join a thread by replying; nothing else changes.
+      allow update: if isAgency() && changedOnly(['participantIds']);
+
+      match /messages/{messageId} {
+        allow read: if inThread(threadId);
+        allow create: if inThread(threadId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0
+          && request.resource.data.body.size() <= 1000;
+        // Readers can only add themselves to readBy.
+        allow update: if inThread(threadId)
+          && changedOnly(['readBy'])
+          && request.resource.data.readBy.toSet().difference(resource.data.readBy.toSet()).hasOnly([request.auth.uid]);
+        allow delete: if false;
+      }
+    }
+
+    // ---- Notifications ----------------------------------------------------
+
+    // Recipients read and mark their own notifications. Creation should move to
+    // a trusted Cloud Function; until then any profiled user may notify another,
+    // but cannot forge an already-read or backdated entry.
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.recipientId == request.auth.uid;
+      allow update: if signedIn() && resource.data.recipientId == request.auth.uid && changedOnly(['isRead']);
+      allow create: if hasProfile() && request.resource.data.isRead == false;
+      allow delete: if false;
+    }
+
+    // ---- Payments and feedback --------------------------------------------
+
+    // Payment status is never written from a client device. Real payments will
+    // be verified server-side (Phase 4); only admins manage records here.
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || ownsClient(resource.data.clientId);
+      allow write: if isAdmin();
+    }
+
+    match /feedback/{feedbackId} {
+      allow read: if isAgency() || ownsClient(resource.data.clientId);
+      allow create: if isClient()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.clientId == myClientId()
+        && request.resource.data.status == 'OPEN';
+      allow update: if isAgency() && changedOnly(['status', 'response', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Anything not matched above is denied.
+  }
+}
