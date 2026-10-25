@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.koach.studio.FreshDemoData
 import com.koach.studio.MainActivity
+import com.koach.studio.awaitTag
 import com.koach.studio.signInAs
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Rule
@@ -69,11 +70,14 @@ class ClientProjectJourneyTest {
         // Submit revision request
         composeTestRule.onNodeWithTag("submit_revision_button").assertIsDisplayed().performClick()
 
-        // Verify navigated back to Project Details screen and project status is updated
+        // Verify navigated back to Project Details screen and project status is updated.
+        // The screen returns after the "Undo" snackbar closes (a few seconds).
+        composeTestRule.awaitTag("project_detail_content", timeoutMillis = 15_000)
         composeTestRule.onNodeWithTag("project_detail_content").performScrollToNode(hasTestTag("project_status"))
         composeTestRule.onNodeWithTag("project_detail_title").assertIsDisplayed()
         composeTestRule.onNode(
-            hasTestTag("project_status") and hasAnyDescendant(hasText("Revision Requested", ignoreCase = true))
+            hasTestTag("project_status") and hasAnyDescendant(hasText("Revision Requested", ignoreCase = true)),
+            useUnmergedTree = true
         ).assertExists()
     }
 }
