@@ -94,42 +94,66 @@ fun ContactScreen(
                     .testTag("contact_screen")
             ) {
                 item {
-                    KoachCard(highlighted = true, modifier = Modifier.fillMaxWidth().testTag("contact_hero_card")) {
+                    KoachCard(highlighted = true, modifier = Modifier.fillMaxWidth().testTag("agency_info_card")) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             StatusPill("Mumbai HQ", tone = Tone.Brand)
                             Spacer(Modifier.weight(1f))
                             Text("Full-Service Agency", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
                         }
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(12.dp))
                         Text(
-                            "Let's create something bold.",
+                            state.contactInfo.studioName,
                             style = MaterialTheme.typography.headlineMedium,
                             color = c.textPrimary
                         )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            state.contactInfo.tagline,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = c.brand
+                        )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "From commercial shoots and music videos to social batching and motion graphics, talk directly with our studio directors.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            "${state.contactInfo.addressLine1}, ${state.contactInfo.addressLine2}, ${state.contactInfo.cityAndPin}",
+                            style = MaterialTheme.typography.bodySmall,
                             color = c.textSecondary
                         )
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(16.dp))
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            KoachPrimaryButton(
-                                text = "Book service",
-                                leadingIcon = Icons.Outlined.VideoCall,
-                                onClick = onBookService,
-                                modifier = Modifier.weight(1f).testTag("contact_book_button")
-                            )
                             KoachSecondaryButton(
-                                text = "Call studio",
+                                text = "Call",
                                 leadingIcon = Icons.Outlined.Phone,
                                 onClick = { dialPhone(context, state.contactInfo.deskPhone) },
-                                modifier = Modifier.weight(1f).testTag("contact_call_hero_button")
+                                modifier = Modifier.weight(1f).testTag("contact_action_call")
+                            )
+                            KoachSecondaryButton(
+                                text = "Email",
+                                leadingIcon = Icons.Outlined.Email,
+                                onClick = { sendEmail(context, state.contactInfo.generalEmail, "KOACH Studio — Project Inquiry") },
+                                modifier = Modifier.weight(1f).testTag("contact_action_email")
+                            )
+                            KoachSecondaryButton(
+                                text = "Map",
+                                leadingIcon = Icons.Outlined.LocationOn,
+                                onClick = {
+                                    openMap(
+                                        context,
+                                        "${state.contactInfo.addressLine1}, ${state.contactInfo.addressLine2}, ${state.contactInfo.cityAndPin}"
+                                    )
+                                },
+                                modifier = Modifier.weight(1f).testTag("contact_action_map")
                             )
                         }
+                        Spacer(Modifier.height(10.dp))
+                        KoachPrimaryButton(
+                            text = "Book service",
+                            leadingIcon = Icons.Outlined.VideoCall,
+                            onClick = onBookService,
+                            modifier = Modifier.fillMaxWidth().testTag("contact_book_button")
+                        )
                     }
                 }
 
