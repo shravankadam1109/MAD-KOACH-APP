@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.koach.studio.catalog.ui.icon
 import com.koach.studio.catalog.ui.tone
+import com.koach.studio.core.designsystem.components.EmptyState
 import com.koach.studio.core.designsystem.components.ErrorState
 import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.IconTile
@@ -97,13 +98,26 @@ fun LazyListScope.servicesCatalog(
             modifier = Modifier.testTag("service_filters")
         )
     }
-    itemsIndexed(state.services, key = { _, service -> service.id }) { index, service ->
-        ServiceCard(
-            service = service,
-            index = index,
-            onClick = { onOpenService(service.id) },
-            modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter)
-        )
+    if (state.services.isEmpty()) {
+        item {
+            EmptyState(
+                icon = Icons.Outlined.Schedule,
+                title = "No services found",
+                message = "No creative services match the selected category.",
+                actionLabel = "Clear filter",
+                onAction = { onSelectCategory(null) },
+                modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter).testTag("services_empty_state")
+            )
+        }
+    } else {
+        itemsIndexed(state.services, key = { _, service -> service.id }) { index, service ->
+            ServiceCard(
+                service = service,
+                index = index,
+                onClick = { onOpenService(service.id) },
+                modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter)
+            )
+        }
     }
 }
 

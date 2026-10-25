@@ -100,7 +100,16 @@ fun LazyListScope.portfolioGrid(
         }
     }
     if (state.items.isEmpty()) {
-        item { EmptyState(Icons.Outlined.Info, "Nothing here yet", "No sample work in this category.") }
+        item {
+            EmptyState(
+                icon = Icons.Outlined.Info,
+                title = "Nothing here yet",
+                message = "No sample work in this category.",
+                actionLabel = "Clear filter",
+                onAction = { onSelectCategory(null) },
+                modifier = Modifier.padding(horizontal = KoachTheme.spacing.gutter).testTag("portfolio_empty_state")
+            )
+        }
     }
     items(state.items.chunked(2), key = { row -> row.first().id }) { row ->
         Row(
