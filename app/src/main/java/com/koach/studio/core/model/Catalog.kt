@@ -55,7 +55,8 @@ enum class BookingStatus(val displayName: String) {
     PENDING("Pending"),
     CONFIRMED("Confirmed"),
     DECLINED("Declined"),
-    COMPLETED("Completed")
+    COMPLETED("Completed"),
+    CANCELLED("Cancelled")
 }
 
 data class Booking(
@@ -70,5 +71,7 @@ data class Booking(
     val budgetInr: Long?,
     val details: String,
     val status: BookingStatus,
-    val createdOn: LocalDate
+    val createdOn: LocalDate,
+    /** Note shared with the client about the latest status change, e.g. why it was declined. */
+    val statusNote: String? = null
 )

@@ -2,6 +2,7 @@ package com.koach.studio.bookings.data
 
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.Permission
+import com.koach.studio.core.auth.PermissionDeniedException
 import com.koach.studio.core.model.AppNotification
 import com.koach.studio.core.model.Booking
 import com.koach.studio.core.model.BookingStatus
@@ -35,7 +36,22 @@ interface BookingRepository {
     fun observeBookings(): Flow<List<Booking>>
     fun observeBooking(bookingId: String): Flow<Booking?>
     suspend fun createBooking(request: BookingRequest): Result<Booking>
-    suspend fun updateStatus(bookingId: String, status: BookingStatus): Result<Unit>
+    /** Agency status change. Only moves allowed by [BookingRules] succeed; declining needs a note. */
+    suspend fun updateStatus(bookingId: String, status: BookingStatus, note: String? = null): Result<Unit>
+
+    /** The requesting client withdraws a booking that hasn't been confirmed yet. */
+    suspend fun cancelBooking(bookingId: String): Result<Unit>
+}
+
+object BookingRules {
+    /** Statuses the agency may move a booking to from its current status. */
+    fun agencyTransitions(from: BookingStatus): Set<BookingStatus> = when (from) {
+        BookingStatus.PENDING -> setOf(BookingStatus.CONFIRMED, BookingStatus.DECLINED)
+        BookingStatus.CONFIRMED -> setOf(BookingStatus.COMPLETED)
+        BookingStatus.DECLINED, BookingStatus.COMPLETED, BookingStatus.CANCELLED -> emptySet()
+    }
+
+    fun clientCanCancel(status: BookingStatus): Boolean = status == BookingStatus.PENDING
 }
 
 class InMemoryBookingRepository(
@@ -97,23 +113,46 @@ class InMemoryBookingRepository(
         booking
     }
 
-    override suspend fun updateStatus(bookingId: String, status: BookingStatus): Result<Unit> = runCatching {
+    override suspend fun updateStatus(bookingId: String, status: BookingStatus, note: String?): Result<Unit> = runCatching {
         access.require(Permission.MANAGE_BOOKINGS)
         val booking = store.value.find { it.id == bookingId } ?: throw IllegalArgumentException("Booking not found")
-        store.update { list -> list.map { if (it.id == bookingId) it.copy(status = status) else it } }
+        require(status in BookingRules.agencyTransitions(booking.status)) {
+            "A ${booking.status.displayName.lowercase()} booking can't be marked ${status.displayName.lowercase()}"
+        }
+        val trimmedNote = note?.trim()?.ifBlank { null }
+        require(status != BookingStatus.DECLINED || trimmedNote != null) { "Add a short reason for the client" }
+        store.update { list -> list.map { if (it.id == bookingId) it.copy(status = status, statusNote = trimmedNote) else it } }
         booking.requestedBy.takeIf { requester -> users.any { it.id == requester && it.role == Role.CLIENT } }?.let { clientUserId ->
-            notifications.push(
-                AppNotification(
-                    id = "n-" + UUID.randomUUID().toString().take(8),
-                    recipientId = clientUserId,
-                    type = NotificationType.BOOKING,
-                    title = "Booking ${status.displayName.lowercase()}",
-                    body = "Your booking for ${booking.preferredDate} is now ${status.displayName.lowercase()}.",
-                    createdAt = LocalDateTime.now(clock),
-                    isRead = false,
-                    targetId = booking.id
-                )
+            notify(
+                clientUserId,
+                "Booking ${status.displayName.lowercase()}",
+                trimmedNote ?: "Your booking for ${booking.preferredDate} is now ${status.displayName.lowercase()}.",
+                booking.id
             )
         }
+    }
+
+    override suspend fun cancelBooking(bookingId: String): Result<Unit> = runCatching {
+        val user = access.require(Permission.CREATE_BOOKINGS)
+        val booking = store.value.find { it.id == bookingId } ?: throw IllegalArgumentException("Booking not found")
+        if (booking.requestedBy != user.id) throw PermissionDeniedException("Only the person who made the request can cancel it")
+        check(BookingRules.clientCanCancel(booking.status)) { "Only pending requests can be cancelled. Message the studio instead." }
+        store.update { list -> list.map { if (it.id == bookingId) it.copy(status = BookingStatus.CANCELLED, statusNote = null) else it } }
+        users.filter { it.role == Role.ADMIN }.forEach { notify(it.id, "Booking cancelled", "${booking.contactName} cancelled a pending request.", booking.id) }
+    }
+
+    private suspend fun notify(recipientId: String, title: String, body: String, targetId: String) {
+        notifications.push(
+            AppNotification(
+                id = "n-" + UUID.randomUUID().toString().take(8),
+                recipientId = recipientId,
+                type = NotificationType.BOOKING,
+                title = title,
+                body = body,
+                createdAt = LocalDateTime.now(clock),
+                isRead = false,
+                targetId = targetId
+            )
+        )
     }
 }
