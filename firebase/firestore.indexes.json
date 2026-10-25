@@ -1,14 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "projects",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "clientId", "order": "ASCENDING" },
-        { "fieldPath": "dueDate", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
@@ -34,11 +26,19 @@
       ]
     },
     {
-      "collectionGroup": "threads",
+      "collectionGroup": "payments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
+        { "fieldPath": "clientId", "order": "ASCENDING" },
+        { "fieldPath": "issuedOn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feedback",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clientId", "order": "ASCENDING" },
+        { "fieldPath": "createdOn", "order": "DESCENDING" }
       ]
     }
   ],
