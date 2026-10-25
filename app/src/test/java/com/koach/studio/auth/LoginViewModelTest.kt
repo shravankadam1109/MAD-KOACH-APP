@@ -75,4 +75,44 @@ class LoginViewModelTest {
         assertTrue(vm.uiState.value.passwordVisible)
         assertNotNull(vm.uiState.value.demoAccounts.firstOrNull { it.id == "u-zoya" })
     }
+
+    @Test
+    fun emailAndPassword_signInThroughMatchingPortal() = runTest {
+        val vm = LoginViewModel(AuthPortal.AGENCY, auth)
+        vm.onEmailChange("zoya@koach.example")
+        vm.onPasswordChange(DemoAuthRepository.DEMO_PASSWORD)
+        vm.signIn()
+        assertTrue(vm.uiState.value.signedIn)
+        assertEquals("u-zoya", auth.currentUser.value?.id)
+    }
+
+    @Test
+    fun agencyCredentials_onClientPortal_areRejectedAndSignedOut() = runTest {
+        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
+        vm.onEmailChange("arjun@koach.example")
+        vm.onPasswordChange(DemoAuthRepository.DEMO_PASSWORD)
+        vm.signIn()
+        assertNull(auth.currentUser.value)
+        assertTrue(vm.uiState.value.errorMessage.orEmpty().contains("Agency team"))
+    }
+
+    @Test
+    fun wrongPassword_showsGenericError() = runTest {
+        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
+        vm.onEmailChange("maya@aetheria.example")
+        vm.onPasswordChange("wrongpass")
+        vm.signIn()
+        assertEquals("Email or password is incorrect", vm.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun forgotPassword_needsValidEmail_thenExplainsDemoLimit() = runTest {
+        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
+        vm.requestPasswordReset()
+        assertTrue(LoginValidator.Field.EMAIL in vm.uiState.value.errors)
+        vm.onEmailChange("maya@aetheria.example")
+        vm.requestPasswordReset()
+        assertTrue(vm.uiState.value.infoMessage.orEmpty().contains("Firebase"))
+        assertEquals(DemoAuthRepository.DEMO_PASSWORD, vm.uiState.value.demoPassword)
+    }
 }
