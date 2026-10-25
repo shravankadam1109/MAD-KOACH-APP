@@ -48,6 +48,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -280,13 +286,19 @@ fun NewBookingScreen(
                 Spacer(Modifier.height(16.dp))
                 KoachCard(
                     highlighted = true,
-                    modifier = Modifier.fillMaxWidth().testTag("booking_error_card")
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("booking_error_card")
+                        .semantics {
+                            liveRegion = LiveRegionMode.Polite
+                            error(errorText)
+                        }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.ErrorOutline, contentDescription = null, tint = c.danger, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Filled.ErrorOutline, contentDescription = "Error", tint = c.danger, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Submission error", style = MaterialTheme.typography.titleSmall, color = c.danger)
+                            Text("Submission error", style = MaterialTheme.typography.titleSmall, color = c.danger, modifier = Modifier.semantics { heading() })
                             Text(errorText, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                         }
                     }
@@ -342,13 +354,22 @@ private fun BookingConfirmation(
             .verticalScroll(rememberScrollState())
             .padding(KoachTheme.spacing.gutter)
             .testTag("booking_confirmation")
+            .semantics {
+                liveRegion = LiveRegionMode.Assertive
+                contentDescription = "Booking request received. Reference $reference for $serviceName."
+            }
     ) {
         Spacer(Modifier.height(20.dp))
         Box(Modifier.koachGlow(c.brand, 0.35f).padding(20.dp)) {
             IconTile(Icons.Filled.CheckCircle, size = 80.dp)
         }
         Spacer(Modifier.height(16.dp))
-        Text("Request Received", style = MaterialTheme.typography.headlineLarge, color = c.textPrimary)
+        Text(
+            "Request Received",
+            style = MaterialTheme.typography.headlineLarge,
+            color = c.textPrimary,
+            modifier = Modifier.semantics { heading() }
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             "The studio has received your booking request. Our team will review your scope and confirm availability.",

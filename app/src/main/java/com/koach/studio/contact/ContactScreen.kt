@@ -45,6 +45,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.components.Eyebrow
@@ -281,7 +286,14 @@ fun ContactScreen(
                     KoachCard(modifier = Modifier.fillMaxWidth().testTag("contact_inquiry_card")) {
                         if (state.isInquirySuccess) {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("inquiry_success_state"),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .testTag("inquiry_success_state")
+                                    .semantics {
+                                        liveRegion = LiveRegionMode.Assertive
+                                        contentDescription = "Inquiry sent successfully. Thank you, ${state.inquiryName}."
+                                    },
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 IconTile(Icons.Filled.CheckCircle, tone = Tone.Success, size = 48.dp)
@@ -289,7 +301,8 @@ fun ContactScreen(
                                 Text(
                                     "Inquiry Received!",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = c.textPrimary
+                                    color = c.textPrimary,
+                                    modifier = Modifier.semantics { heading() }
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
