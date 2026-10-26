@@ -40,8 +40,9 @@ object KoachPalette {
 
     val Amber = Color(0xFFF5B83D)
     val Red = Color(0xFFF26B6B)
-    val Blue = Color(0xFF5AA9F2)
-    val Violet = Color(0xFFA48CF7)
+    /** Status accents kept inside the green family so they never compete with the brand. */
+    val Blue = Color(0xFF7CC9A8)
+    val Violet = Color(0xFFC8E86B)
 }
 
 /** Semantic colours that Material's ColorScheme has no slot for. */

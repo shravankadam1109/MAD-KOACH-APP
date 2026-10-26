@@ -77,8 +77,8 @@ fun KoachTopBar(
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = if (transparent) Color.Transparent else c.background,
-            scrolledContainerColor = if (transparent) Color.Transparent else c.background
+            containerColor = Color.Transparent,
+            scrolledContainerColor = if (transparent) Color.Transparent else c.background.copy(alpha = 0.92f)
         ),
         modifier = modifier
     )

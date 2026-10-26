@@ -1,5 +1,6 @@
 package com.koach.studio.projects.ui.revision
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -94,7 +95,7 @@ fun RevisionRequestScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = darkBackground,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -118,7 +119,7 @@ fun RevisionRequestScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = darkBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { innerPadding ->

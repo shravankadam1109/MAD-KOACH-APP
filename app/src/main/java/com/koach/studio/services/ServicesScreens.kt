@@ -1,5 +1,6 @@
 package com.koach.studio.services
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -144,7 +145,7 @@ fun ServiceDetailScreen(
     val service = state.service
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = service?.name.orEmpty(), onBack = onBack) },
         bottomBar = {
             if (service != null) {

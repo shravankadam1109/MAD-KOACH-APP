@@ -1,5 +1,11 @@
 package com.koach.studio.core.designsystem.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Brush
+import com.koach.studio.core.designsystem.theme.KoachMotion
+import com.koach.studio.core.designsystem.theme.rememberReducedMotion
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -129,7 +135,10 @@ fun KoachAvatar(
     }
 }
 
-/** Animated solid brand-green progress track. [progress] is clamped to 0..1. */
+/**
+ * Brand-green progress track that fills from empty when it first appears and
+ * glides to new values after that. [progress] is clamped to 0..1.
+ */
 @Composable
 fun KoachProgressBar(
     progress: Float,
@@ -137,7 +146,11 @@ fun KoachProgressBar(
     height: Dp = 6.dp
 ) {
     val colors = KoachTheme.colors
-    val animated by animateFloatAsState(progress.coerceIn(0f, 1f), label = "progress")
+    val target = progress.coerceIn(0f, 1f)
+    val reduced = rememberReducedMotion()
+    val fill = remember { Animatable(if (reduced) target else 0f) }
+    LaunchedEffect(target) { fill.animateTo(target, KoachMotion.enter(900)) }
+    val animated = fill.value
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -151,7 +164,7 @@ fun KoachProgressBar(
                 .fillMaxHeight()
                 .fillMaxWidth(animated)
                 .clip(RoundedCornerShape(50))
-                .background(colors.brand)
+                .background(Brush.horizontalGradient(listOf(colors.brandDeep, colors.brand, colors.brandBright)))
         )
     }
 }

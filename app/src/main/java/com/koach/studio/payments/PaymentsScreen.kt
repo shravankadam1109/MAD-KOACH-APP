@@ -1,5 +1,6 @@
 package com.koach.studio.payments
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -147,7 +148,7 @@ fun PaymentsScreen(viewModel: PaymentsViewModel, onBack: () -> Unit, modifier: M
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = if (state.isClient) "Invoices & payments" else "Payments", onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         modifier = modifier

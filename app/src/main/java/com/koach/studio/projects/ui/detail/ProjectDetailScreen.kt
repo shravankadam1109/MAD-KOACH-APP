@@ -96,7 +96,7 @@ fun ProjectDetailScreen(
 
     val project = uiState.project
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Project", subtitle = project?.clientName, onBack = onNavigateBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         modifier = modifier

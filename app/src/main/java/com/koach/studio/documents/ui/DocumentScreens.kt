@@ -1,5 +1,6 @@
 package com.koach.studio.documents.ui
 
+import androidx.compose.ui.graphics.Color
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -131,7 +132,7 @@ fun DocumentsScreen(
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Documents", subtitle = state.projectFilterTitle, onBack = onBack) },
         floatingActionButton = {
             if (state.canUpload) {
@@ -360,7 +361,7 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
     LaunchedEffect(state.saved) { if (state.saved) onBack() }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Add document", onBack = onBack) },
         modifier = modifier
     ) { padding ->

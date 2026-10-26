@@ -1,5 +1,6 @@
 package com.koach.studio.notifications.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -122,7 +123,7 @@ fun NotificationsScreen(
     val gutter = KoachTheme.spacing.gutter
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             KoachTopBar(
                 title = "Notifications",

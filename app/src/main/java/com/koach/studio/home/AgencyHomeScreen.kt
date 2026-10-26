@@ -1,5 +1,6 @@
 package com.koach.studio.home
 
+import com.koach.studio.core.designsystem.theme.entrance
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +109,7 @@ fun AgencyHomeScreen(
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = gutter, end = gutter, top = 16.dp)
+                    modifier = Modifier.padding(start = gutter, end = gutter, top = 16.dp).entrance(0)
                 ) {
                     Column(Modifier.weight(1f)) {
                         Row(
@@ -120,10 +121,10 @@ fun AgencyHomeScreen(
                                 DemoTag(text = "Demo data")
                             }
                         }
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = state.firstName,
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.displaySmall,
                             color = c.textPrimary
                         )
                     }
@@ -137,13 +138,13 @@ fun AgencyHomeScreen(
             }
 
             item {
-                StudioSummary(state, actions, Modifier.padding(horizontal = gutter))
+                StudioSummary(state, actions, Modifier.padding(horizontal = gutter).entrance(1))
             }
 
             // Studio workflow shortcuts (2 rows of 3 compact tiles)
             item {
                 Column(
-                    modifier = Modifier.padding(horizontal = gutter),
+                    modifier = Modifier.padding(horizontal = gutter).entrance(2),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

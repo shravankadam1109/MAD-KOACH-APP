@@ -1,5 +1,7 @@
 package com.koach.studio.home
 
+import com.koach.studio.core.designsystem.theme.entrance
+import com.koach.studio.portfolio.PortfolioCover
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -107,18 +109,18 @@ fun ClientHomeScreen(viewModel: ClientHomeViewModel, actions: ClientHomeActions,
                 .testTag("client_home")
         ) {
             // 1. Compact welcome & header area
-            item { Header(state, actions.onNotifications) }
+            item { Box(Modifier.entrance(0)) { Header(state, actions.onNotifications) } }
 
             // 2. Key project statistics cards (Section 3.1)
             item {
-                ClientStatisticsRow(state, modifier = Modifier.padding(horizontal = gutter))
+                ClientStatisticsRow(state, modifier = Modifier.padding(horizontal = gutter).entrance(1))
             }
 
             // 3. Current or active work (Featured project card)
             item {
                 val featured = state.featuredProject
                 if (featured != null) {
-                    FeaturedProjectCard(featured, state, actions, modifier = Modifier.padding(horizontal = gutter))
+                    FeaturedProjectCard(featured, state, actions, modifier = Modifier.padding(horizontal = gutter).entrance(2))
                 } else {
                     KoachCard(highlighted = true, modifier = Modifier.padding(horizontal = gutter).fillMaxWidth()) {
                         EmptyState(
@@ -417,10 +419,13 @@ private fun FeaturedPortfolioCard(item: PortfolioItem, onClick: () -> Unit) {
     val c = KoachTheme.colors
     KoachCard(
         onClick = onClick,
+        contentPadding = PaddingValues(10.dp),
         modifier = Modifier.width(220.dp).testTag("portfolio_${item.id}")
     ) {
+        PortfolioCover(item, aspect = 1.2f, iconSize = 40.dp)
+        Spacer(Modifier.height(12.dp))
         StatusPill(item.category.displayName.uppercase(), Tone.Brand)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Text(item.title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         Text(item.summary, style = MaterialTheme.typography.bodySmall, color = c.textTertiary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.height(36.dp))
@@ -438,8 +443,8 @@ private fun Header(state: ClientHomeUiState, onNotifications: () -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Eyebrow(state.greeting)
-            Spacer(Modifier.height(4.dp))
-            Text(state.firstName, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
+            Spacer(Modifier.height(6.dp))
+            Text(state.firstName, style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
         }
         BadgedIconButton(
             icon = Icons.Outlined.Notifications,

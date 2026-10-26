@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -177,6 +178,10 @@ fun KoachBackground(
     glow: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    if (LocalInsideKoachBackground.current) {
+        Box(modifier) { content() }
+        return
+    }
     val colors = KoachTheme.colors
     val strength = if (KoachTheme.isDark) 1f else 0.45f
     val reduced = rememberReducedMotion()
@@ -212,6 +217,9 @@ fun KoachBackground(
                 }
             )
     ) {
-        content()
+        CompositionLocalProvider(LocalInsideKoachBackground provides true) { content() }
     }
 }
+
+/** Set inside a [KoachBackground] so nested ones stay transparent instead of stacking light. */
+private val LocalInsideKoachBackground = staticCompositionLocalOf { false }

@@ -1,5 +1,6 @@
 package com.koach.studio.messaging.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -233,7 +234,7 @@ fun ConversationScreen(viewModel: ConversationViewModel, onBack: () -> Unit, mod
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             val isDm = state.thread?.type == com.koach.studio.core.model.ThreadType.DM
             val other = state.participants.find { it.id != state.currentUserId } ?: state.participants.firstOrNull()

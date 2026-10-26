@@ -1,5 +1,6 @@
 package com.koach.studio.app
 
+import com.koach.studio.core.designsystem.components.KoachBackground
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandHorizontally
@@ -145,8 +146,9 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
     val unreadFlow = remember(messageRepository) { messageRepository.observeUnreadCount() }
     val unreadMessages by unreadFlow.collectAsState(initial = 0)
 
+    KoachBackground(Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = KoachTheme.colors.background,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             AnimatedVisibility(
@@ -171,6 +173,7 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding)
         )
+    }
     }
 }
 
