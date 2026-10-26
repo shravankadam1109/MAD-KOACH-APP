@@ -3,7 +3,7 @@
 import { after, before, beforeEach, describe, test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, addDoc, arrayUnion, query, where } from 'firebase/firestore';
 
 let env;
 
@@ -42,8 +42,11 @@ beforeEach(async () => {
     await setDoc(doc(s, 'tasks/t-1'), { title: 'Grade', status: 'TODO' });
     await setDoc(doc(s, 'documents/doc-shared'), { clientId: 'cl-a', visibility: 'SHARED', uploadedBy: 'team' });
     await setDoc(doc(s, 'documents/doc-internal'), { clientId: 'cl-a', visibility: 'INTERNAL', uploadedBy: 'team' });
-    await setDoc(doc(s, 'threads/th-a'), { projectId: 'p-a', participantIds: ['maya', 'team'] });
+    await setDoc(doc(s, 'threads/th-a'), { projectId: 'p-a', type: 'PROJECT', participantIds: ['maya', 'team'] });
+    await setDoc(doc(s, 'threads/th-legacy'), { projectId: 'p-a', participantIds: ['maya', 'team'] });
     await setDoc(doc(s, 'threads/th-a/messages/m-1'), { senderId: 'team', body: 'Hi', readBy: ['team'] });
+    await setDoc(doc(s, 'threads/dm-maya-team'), { projectId: '', type: 'DM', title: 'DM', participantIds: ['maya', 'team'] });
+    await setDoc(doc(s, 'threads/dm-maya-team/messages/m-1'), { senderId: 'maya', body: 'Private', readBy: ['maya'] });
     await setDoc(doc(s, 'notifications/n-maya'), { recipientId: 'maya', isRead: false, title: 'x' });
     await setDoc(doc(s, 'payments/pay-a'), { clientId: 'cl-a', status: 'DUE', amountInr: 1000 });
     await setDoc(doc(s, 'feedback/fb-a'), { clientId: 'cl-a', authorId: 'maya', status: 'OPEN' });
@@ -64,6 +67,29 @@ describe('identity and roles', () => {
 
   test('only admins write profiles', async () => {
     await assertSucceeds(setDoc(doc(db('admin'), 'users/new'), { role: 'client', name: 'N', email: 'n@x.y', clientId: 'cl-a' }));
+  });
+
+  test('a new account can provision itself only as a client of its own organisation', async () => {
+    const own = { role: 'client', name: 'New Client', email: 'new@x.y', clientId: 'cl-stranger', title: 'Client Partner', phone: '' };
+    await assertFails(setDoc(doc(db('stranger'), 'users/stranger'), { ...own, role: 'team' }));
+    await assertFails(setDoc(doc(db('stranger'), 'users/stranger'), { ...own, clientId: 'cl-a' }));
+    await assertFails(setDoc(doc(db('stranger'), 'users/stranger'), { ...own, isAdmin: true }));
+    await assertFails(setDoc(doc(db('stranger'), 'users/someone-else'), { ...own, clientId: 'cl-someone-else' }));
+    await assertSucceeds(setDoc(doc(db('stranger'), 'users/stranger'), own));
+    // Once provisioned, the role and organisation are fixed.
+    await assertFails(updateDoc(doc(db('stranger'), 'users/stranger'), { role: 'admin' }));
+    await assertFails(updateDoc(doc(db('stranger'), 'users/stranger'), { clientId: 'cl-a' }));
+  });
+
+  test('a self-provisioned client creates only its own organisation record, once', async () => {
+    await assertFails(setDoc(doc(db('stranger'), 'clients/cl-stranger'), { name: 'Org', status: 'ACTIVE' }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/stranger'), { role: 'client', name: 'S', email: 's@x.y', clientId: 'cl-stranger' });
+    });
+    await assertFails(setDoc(doc(db('stranger'), 'clients/cl-a'), { name: 'Hijack', status: 'ACTIVE' }));
+    await assertFails(setDoc(doc(db('stranger'), 'clients/cl-stranger'), { name: 'Org', status: 'ACTIVE', credit: 1 }));
+    await assertSucceeds(setDoc(doc(db('stranger'), 'clients/cl-stranger'), { name: 'Org', contactName: 'S', email: 's@x.y', phone: '', status: 'ACTIVE', since: '2026-10-27' }));
+    await assertFails(updateDoc(doc(db('stranger'), 'clients/cl-stranger'), { status: 'VIP' }));
   });
 
   test('anyone signed in can read their own profile (even if missing), but not others without a profile', async () => {
@@ -101,6 +127,12 @@ describe('client isolation', () => {
   test('clients cannot see agency tasks', async () => {
     await assertFails(getDoc(doc(db('maya'), 'tasks/t-1')));
     await assertSucceeds(getDoc(doc(db('team'), 'tasks/t-1')));
+  });
+
+  test('threads written before DM support (no type) still open as project threads', async () => {
+    await assertSucceeds(getDoc(doc(db('admin'), 'threads/th-legacy')));
+    await assertSucceeds(getDoc(doc(db('maya'), 'threads/th-legacy')));
+    await assertFails(getDoc(doc(db('dev'), 'threads/th-legacy')));
   });
 
   test("clients can't read other people's messages or notifications", async () => {
@@ -141,6 +173,25 @@ describe('projects and deliverables', () => {
     await assertFails(deleteDoc(doc(db('maya'), 'projects/p-a/revisions/r-1')));
     await assertFails(updateDoc(doc(db('team'), 'projects/p-a/revisions/r-1'), { reason: 'Edited' }));
     await assertSucceeds(updateDoc(doc(db('team'), 'projects/p-a/revisions/r-1'), { resolved: true }));
+  });
+});
+
+describe('direct messages', () => {
+  test('DMs are readable only by their two participants, even for admins', async () => {
+    await assertSucceeds(getDoc(doc(db('maya'), 'threads/dm-maya-team')));
+    await assertSucceeds(getDoc(doc(db('team'), 'threads/dm-maya-team/messages/m-1')));
+    await assertFails(getDoc(doc(db('admin'), 'threads/dm-maya-team')));
+    await assertFails(getDoc(doc(db('admin'), 'threads/dm-maya-team/messages/m-1')));
+    await assertFails(getDoc(doc(db('dev'), 'threads/dm-maya-team')));
+  });
+
+  test("the agency lists project threads and its own threads, never everyone's", async () => {
+    // An unfiltered list could include other people's DMs, so it's refused outright.
+    await assertFails(getDocs(collection(db('admin'), 'threads')));
+    const own = await getDocs(query(collection(db('maya'), 'threads'), where('participantIds', 'array-contains', 'maya')));
+    if (!own.docs.some((d) => d.id === 'dm-maya-team')) throw new Error('participant should see their own DM');
+    await assertSucceeds(getDocs(query(collection(db('admin'), 'threads'), where('type', '==', 'PROJECT'))));
+    await assertSucceeds(getDocs(query(collection(db('admin'), 'threads'), where('participantIds', 'array-contains', 'admin'))));
   });
 });
 
