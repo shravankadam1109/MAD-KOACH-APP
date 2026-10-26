@@ -115,4 +115,54 @@ class LoginViewModelTest {
         assertTrue(vm.uiState.value.infoMessage.orEmpty().contains("Firebase"))
         assertEquals(DemoAuthRepository.DEMO_PASSWORD, vm.uiState.value.demoPassword)
     }
+
+    @Test
+    fun signUpValidator_checksNamePhoneAndEmail() {
+        val errors = LoginValidator.validateSignUp("", "bad-email", "123", "short")
+        assertTrue(LoginValidator.Field.NAME in errors)
+        assertTrue(LoginValidator.Field.EMAIL in errors)
+        assertTrue(LoginValidator.Field.PHONE in errors)
+        assertTrue(LoginValidator.Field.PASSWORD in errors)
+
+        val valid = LoginValidator.validateSignUp("Aarav Roy", "aarav@example.com", "+91 9876543210", "securepass123")
+        assertTrue(valid.isEmpty())
+    }
+
+    @Test
+    fun signUpViewModel_registersNewClientAccount() = runTest {
+        val vm = SignUpViewModel(auth)
+        vm.onNameChange("Priya Sharma")
+        vm.onEmailChange("priya@creative.example")
+        vm.onPhoneChange("+91 98765 11111")
+        vm.onPasswordChange("password123")
+        vm.signUp()
+
+        assertTrue(vm.uiState.value.signedUp)
+        assertEquals("Priya Sharma", auth.currentUser.value?.name)
+        assertEquals(Role.CLIENT, auth.currentUser.value?.role)
+    }
+
+    @Test
+    fun googleSignIn_signsInClient() = runTest {
+        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
+        vm.signInWithGoogle("mock-token")
+        assertTrue(vm.uiState.value.signedIn)
+        assertEquals(Role.CLIENT, auth.currentUser.value?.role)
+    }
+
+    @Test
+    fun otpViewModel_sendAndVerifyFlow() = runTest {
+        val vm = OtpViewModel(auth)
+        vm.onPhoneChange("+91 98765 22222")
+        vm.sendOtp()
+
+        assertEquals(OtpStep.CODE_ENTRY, vm.uiState.value.step)
+        assertNotNull(vm.uiState.value.verificationId)
+
+        vm.onOtpChange("123456")
+        vm.verifyOtp()
+
+        assertTrue(vm.uiState.value.signedIn)
+        assertEquals(Role.CLIENT, auth.currentUser.value?.role)
+    }
 }

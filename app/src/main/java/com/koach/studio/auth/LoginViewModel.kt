@@ -80,6 +80,15 @@ class LoginViewModel(
         }
     }
 
+    fun signInWithGoogle(idToken: String = "") {
+        if (_uiState.value.isLoading) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val result = auth.signInWithGoogle(idToken)
+            finish(result)
+        }
+    }
+
     /** Signs in with a sample account; only accounts belonging to this portal are offered. */
     fun signInWithDemo(userId: String) {
         val state = _uiState.value
