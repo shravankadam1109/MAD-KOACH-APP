@@ -16,6 +16,7 @@ import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Source
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.InvalidCredentialsException
@@ -89,7 +90,12 @@ class FirebaseAuthRepository(
             _currentUser.value = null
             return
         }
-        profileListener = firestore.collection(USERS).document(uid).addSnapshotListener { snapshot, error ->
+        profileListener = firestore.collection(USERS).document(uid).addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+            // A profile this device has written but the server hasn't saved yet doesn't
+            // count: letting the user in on it makes the first screens query before the
+            // rules can see the profile, and those listeners stop on the refusal.
+            // (Cached profiles from earlier sessions still count, so offline launch works.)
+            if (error == null && snapshot?.metadata?.hasPendingWrites() == true) return@addSnapshotListener
             _currentUser.value = if (error != null) null else UserProfileMapper.fromMap(uid, snapshot?.data)
             // A sign-up on this device that never saved its profile: finish it now.
             if (error == null && snapshot != null && !snapshot.exists()) {

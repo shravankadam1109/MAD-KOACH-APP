@@ -11,12 +11,15 @@ import com.koach.studio.core.FirebaseEmulator.writeProfile
 import com.koach.studio.core.auth.InvalidCredentialsException
 import com.koach.studio.core.firebase.AccountNotProvisionedException
 import com.koach.studio.core.firebase.FirebaseAuthRepository
-import com.koach.studio.core.firebase.ProvisioningIncompleteException
-import com.koach.studio.core.firebase.PendingSignUp
 import com.koach.studio.core.firebase.InMemoryPendingSignUpStore
+import com.koach.studio.core.firebase.PendingSignUp
+import com.koach.studio.core.firebase.ProvisioningIncompleteException
 import com.koach.studio.core.model.Role
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -117,6 +120,26 @@ class FirebaseAuthEmulatorTest {
         val user = FirebaseAuthRepository(auth, firestore, normalStore).signInWithEmail(slowEmail, PASSWORD).getOrThrow()
         assertEquals(Role.CLIENT, user.role)
         assertEquals("Kabir Rao", firestore.collection("users").document(user.id).get().await().getString("name"))
+    }
+
+    @Test
+    fun profileNotYetSavedByTheServer_doesNotSignTheUserIn() = runBlocking {
+        val pendingEmail = email("pending")
+        val uid = createAccount(pendingEmail, PASSWORD)
+        auth.signInWithEmailAndPassword(pendingEmail, PASSWORD).await()
+        withTimeout(10_000) { while (auth.currentUser?.uid != uid) delay(50) }
+
+        // Written on the device only: Firestore shows it locally with pending writes.
+        firestore.disableNetwork().await()
+        firestore.collection("users").document(uid)
+            .set(mapOf("role" to "client", "name" to "Pending", "email" to pendingEmail, "clientId" to "cl-$uid", "title" to "", "phone" to ""))
+        delay(1_500)
+        assertNull("must not sign in on a profile the server hasn't saved", repository.currentUser.value)
+
+        // Once the server has it, the user is let in.
+        firestore.enableNetwork().await()
+        val user = withTimeout(15_000) { repository.currentUser.first { it != null } }
+        assertEquals(uid, user?.id)
     }
 
     @Test
