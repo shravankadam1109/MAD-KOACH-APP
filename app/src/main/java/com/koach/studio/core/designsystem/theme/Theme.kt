@@ -105,7 +105,13 @@ private val KoachColorsLight = KoachColors(
     warning = Color(0xFFA87000),
     danger = Color(0xFFB82020),
     info = Color(0xFF1C6EA8),
-    review = Color(0xFF6B46E0)
+    review = Color(0xFF6B46E0),
+    glass = Color(0xD9FFFFFF),
+    glassRaised = Color(0xF2FFFFFF),
+    glassBorder = Color.Black.copy(alpha = 0.07f),
+    glassHighlight = Color.White.copy(alpha = 0.6f),
+    scrim = KoachPalette.Ink,
+    glow = KoachPalette.Green
 )
 
 private val KoachLightColorScheme = lightColorScheme(

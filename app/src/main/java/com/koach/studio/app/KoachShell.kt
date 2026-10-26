@@ -1,6 +1,15 @@
 package com.koach.studio.app
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.koach.studio.core.designsystem.theme.KoachMotion
+import com.koach.studio.core.designsystem.theme.pressScale
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -190,45 +199,54 @@ private fun KoachBottomBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(16.dp, barShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
+                .shadow(20.dp, barShape, ambientColor = Color.Black.copy(alpha = 0.6f), spotColor = Color.Black.copy(alpha = 0.6f))
                 .clip(barShape)
-                .background(c.surfaceRaised)
-                .border(1.dp, c.outline, barShape)
+                .background(Brush.verticalGradient(listOf(c.glassRaised, c.glass)))
+                .background(c.surface.copy(alpha = 0.55f))
+                .border(1.dp, Brush.verticalGradient(listOf(c.glassHighlight.copy(alpha = 0.16f), c.glassBorder)), barShape)
                 .padding(horizontal = 4.dp, vertical = 4.dp)
                 .selectableGroup()
         ) {
             tabs.forEach { tab ->
                 val selected = isSelected(tab)
                 val count = badges[tab] ?: 0
+                val pill by animateColorAsState(if (selected) c.brand else Color.Transparent, KoachMotion.enter(KoachMotion.Medium), label = "tab-pill")
+                val tint by animateColorAsState(if (selected) c.onBrand else c.textSecondary, KoachMotion.enter(KoachMotion.Medium), label = "tab-tint")
+                val tabInteraction = remember { MutableInteractionSource() }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(KoachRadius.md))
-                        .background(if (selected) c.brand else Color.Transparent)
-                        .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(tab) })
+                        .height(46.dp)
+                        .pressScale(tabInteraction, 0.94f)
+                        .clip(RoundedCornerShape(50))
+                        .background(pill)
+                        .selectable(selected = selected, interactionSource = tabInteraction, indication = androidx.compose.material3.ripple(), role = Role.Tab, onClick = { onSelect(tab) })
                         .semantics(mergeDescendants = true) {
                             contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
                         }
-                        .padding(horizontal = if (selected) 10.dp else 8.dp)
-                        .animateContentSize()
+                        .padding(horizontal = if (selected) 14.dp else 10.dp)
+                        .animateContentSize(KoachMotion.press())
                         .testTag("tab_${tab.route}")
                 ) {
                     BadgedBox(badge = { if (count > 0 && !selected) CountBadge(count) }) {
                         Icon(
                             if (selected) tab.selectedIcon else tab.icon,
                             contentDescription = null,
-                            tint = if (selected) c.onBrand else c.textSecondary,
-                            modifier = Modifier.size(20.dp)
+                            tint = tint,
+                            modifier = Modifier.size(21.dp)
                         )
                     }
-                    if (selected) {
-                        Spacer(Modifier.width(6.dp))
+                    AnimatedVisibility(
+                        visible = selected,
+                        enter = fadeIn(KoachMotion.enter(KoachMotion.Medium, delayMillis = 60)) + expandHorizontally(KoachMotion.press()),
+                        exit = fadeOut(KoachMotion.exit()) + shrinkHorizontally(KoachMotion.press())
+                    ) {
                         Text(
                             tab.label,
                             style = MaterialTheme.typography.labelLarge,
-                            color = c.onBrand,
+                            color = tint,
+                            modifier = Modifier.padding(start = 7.dp),
                             maxLines = 1,
                             softWrap = false,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -256,10 +274,22 @@ private fun KoachNavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier.fillMaxSize(),
-        enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 10 } },
-        exitTransition = { fadeOut(tween(160)) },
-        popEnterTransition = { fadeIn(tween(220)) },
-        popExitTransition = { fadeOut(tween(160)) + slideOutHorizontally(tween(220)) { it / 10 } }
+        // One choreography everywhere: the new screen drifts in and settles from
+        // slightly smaller while the old one recedes; going back reverses it.
+        enterTransition = {
+            fadeIn(KoachMotion.enter(KoachMotion.Medium, delayMillis = 40)) +
+                scaleIn(KoachMotion.enter(), initialScale = 0.96f) +
+                slideInHorizontally(KoachMotion.enter()) { it / 14 }
+        },
+        exitTransition = { fadeOut(KoachMotion.exit()) + scaleOut(KoachMotion.exit(KoachMotion.Medium), targetScale = 0.98f) },
+        popEnterTransition = {
+            fadeIn(KoachMotion.enter(KoachMotion.Medium, delayMillis = 40)) + scaleIn(KoachMotion.enter(), initialScale = 0.98f)
+        },
+        popExitTransition = {
+            fadeOut(KoachMotion.exit()) +
+                scaleOut(KoachMotion.exit(KoachMotion.Medium), targetScale = 0.96f) +
+                slideOutHorizontally(KoachMotion.exit(KoachMotion.Medium)) { it / 14 }
+        }
     ) {
         projectsGraph(navController, onOpenDocuments = { id -> navController.navigate(Routes.documents(id)) })
 
