@@ -183,7 +183,7 @@ private fun KoachBottomBar(
         Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -194,7 +194,7 @@ private fun KoachBottomBar(
                 .clip(barShape)
                 .background(c.surfaceRaised)
                 .border(1.dp, c.outline, barShape)
-                .padding(horizontal = 6.dp, vertical = 6.dp)
+                .padding(horizontal = 4.dp, vertical = 4.dp)
                 .selectableGroup()
         ) {
             tabs.forEach { tab ->
@@ -211,7 +211,7 @@ private fun KoachBottomBar(
                         .semantics(mergeDescendants = true) {
                             contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
                         }
-                        .padding(horizontal = if (selected) 14.dp else 12.dp)
+                        .padding(horizontal = if (selected) 10.dp else 8.dp)
                         .animateContentSize()
                         .testTag("tab_${tab.route}")
                 ) {
@@ -225,7 +225,14 @@ private fun KoachBottomBar(
                     }
                     if (selected) {
                         Spacer(Modifier.width(6.dp))
-                        Text(tab.label, style = MaterialTheme.typography.labelLarge, color = c.onBrand, maxLines = 1)
+                        Text(
+                            tab.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = c.onBrand,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
@@ -259,7 +266,7 @@ private fun KoachNavHost(
         composable(Routes.HOME) {
             ClientHomeScreen(
                 viewModel = koachViewModel {
-                    ClientHomeViewModel(user, it.projectRepository, it.notificationRepository, it.clock)
+                    ClientHomeViewModel(user, it.projectRepository, it.notificationRepository, it.clock, it.catalogRepository)
                 },
                 actions = ClientHomeActions(
                     onOpenProject = { id -> navController.navigate(ProjectsDestinations.projectDetail(id)) },
@@ -268,7 +275,9 @@ private fun KoachNavHost(
                     onMessages = { navController.navigateToTopLevel(Routes.MESSAGES) },
                     onPayments = { navController.navigate(Routes.PAYMENTS) },
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                    onContact = { navController.navigate(Routes.CONTACT) }
+                    onContact = { navController.navigate(Routes.CONTACT) },
+                    onOpenService = { id -> navController.navigate(Routes.serviceDetail(id)) },
+                    onOpenPortfolioItem = { id -> navController.navigate(Routes.portfolioDetail(id)) }
                 )
             )
         }
@@ -429,9 +438,9 @@ private fun KoachNavHost(
         }
         composable(Routes.MESSAGES) {
             ThreadListScreen(
-                viewModel = koachViewModel { ThreadListViewModel(it.messageRepository, it.people, it.clock) },
+                viewModel = koachViewModel { ThreadListViewModel(it.messageRepository, it.people, it.clock, user) },
                 onOpenThread = { id -> navController.navigate(Routes.conversation(id)) },
-                onBack = if (user.role.isAgency) back else null
+                onBack = null
             )
         }
         composable(

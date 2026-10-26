@@ -20,25 +20,60 @@ import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDateTime
 
+enum class MessageTab(val label: String) {
+    DM("DM"),
+    PROJECT("Team / Project")
+}
+
 data class ThreadListUiState(
     val isLoading: Boolean = true,
+    val selectedTab: MessageTab = MessageTab.DM,
     val threads: List<ThreadSummary> = emptyList(),
     val senderNames: Map<String, String> = emptyMap(),
+    val currentUserId: String = "",
     val errorMessage: String? = null,
     val now: LocalDateTime = LocalDateTime.now()
-)
+) {
+    val filteredThreads: List<ThreadSummary>
+        get() = threads.filter { summary ->
+            if (selectedTab == MessageTab.DM) summary.thread.type == com.koach.studio.core.model.ThreadType.DM
+            else summary.thread.type == com.koach.studio.core.model.ThreadType.PROJECT
+        }
+    val dmUnreadCount: Int
+        get() = threads.filter { it.thread.type == com.koach.studio.core.model.ThreadType.DM }.sumOf { it.unreadCount }
+    val projectUnreadCount: Int
+        get() = threads.filter { it.thread.type == com.koach.studio.core.model.ThreadType.PROJECT }.sumOf { it.unreadCount }
+}
 
 class ThreadListViewModel(
     messages: MessageRepository,
-    people: List<User>,
-    private val clock: Clock
+    val people: List<User>,
+    private val clock: Clock,
+    currentUser: User? = null
 ) : ViewModel() {
     private val names = people.associate { it.id to it.firstName }
+    private val currentUid = currentUser?.id.orEmpty()
+    private val _selectedTab = MutableStateFlow(MessageTab.DM)
 
-    val uiState: StateFlow<ThreadListUiState> = messages.observeThreads()
-        .map { ThreadListUiState(isLoading = false, threads = it, senderNames = names, now = LocalDateTime.now(clock)) }
-        .catch { emit(ThreadListUiState(isLoading = false, errorMessage = it.message ?: "Couldn't load conversations")) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThreadListUiState())
+    val uiState: StateFlow<ThreadListUiState> = combine(
+        messages.observeThreads(),
+        _selectedTab
+    ) { threads, tab ->
+        ThreadListUiState(
+            isLoading = false,
+            selectedTab = tab,
+            threads = threads,
+            senderNames = names,
+            currentUserId = currentUid,
+            now = LocalDateTime.now(clock)
+        )
+    }.catch {
+        emit(ThreadListUiState(isLoading = false, errorMessage = it.message ?: "Couldn't load conversations"))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThreadListUiState())
+
+    fun selectTab(tab: MessageTab) {
+        _selectedTab.value = tab
+    }
 }
 
 data class ConversationUiState(

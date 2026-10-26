@@ -135,13 +135,26 @@ service cloud.firestore {
     // ---- Messaging --------------------------------------------------------
 
     function thread(threadId) { return get(/databases/$(database)/documents/threads/$(threadId)).data; }
-    function inThread(threadId) { return isAgency() || (signedIn() && request.auth.uid in thread(threadId).participantIds); }
+    function inThread(threadId) {
+      return signedIn() && (
+        (thread(threadId).type == 'DM' && request.auth.uid in thread(threadId).participantIds) ||
+        (thread(threadId).type != 'DM' && (isAgency() || request.auth.uid in thread(threadId).participantIds))
+      );
+    }
 
     match /threads/{threadId} {
-      allow read: if isAgency() || (signedIn() && request.auth.uid in resource.data.participantIds);
-      allow create: if isAgency();
-      // Agency members join a thread by replying; nothing else changes.
-      allow update: if isAgency() && changedOnly(['participantIds']);
+      allow read: if signedIn() && (
+        (resource.data.type == 'DM' && request.auth.uid in resource.data.participantIds) ||
+        (resource.data.type != 'DM' && (isAgency() || request.auth.uid in resource.data.participantIds))
+      );
+      allow create: if signedIn() && (
+        (request.resource.data.type == 'DM' && request.auth.uid in request.resource.data.participantIds && request.resource.data.participantIds.size() == 2) ||
+        (request.resource.data.type != 'DM' && isAgency())
+      );
+      allow update: if signedIn() && (
+        (resource.data.type == 'DM' && request.auth.uid in resource.data.participantIds) ||
+        (resource.data.type != 'DM' && isAgency() && changedOnly(['participantIds']))
+      );
 
       match /messages/{messageId} {
         allow read: if inThread(threadId);

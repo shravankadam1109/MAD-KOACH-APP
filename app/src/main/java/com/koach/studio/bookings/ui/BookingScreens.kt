@@ -109,8 +109,8 @@ fun NewBookingScreen(
         Column(
             Modifier
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = gutter, vertical = 8.dp)
                 .testTag("new_booking_form")
         ) {

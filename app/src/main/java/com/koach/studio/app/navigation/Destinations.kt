@@ -99,7 +99,7 @@ enum class TopLevelDestination(
         /** Bottom-bar tabs for a role. Clients get a service-led app; the agency a work-led one. */
         fun forRole(role: Role): List<TopLevelDestination> = when (role) {
             Role.CLIENT -> listOf(HOME, PROJECTS, EXPLORE, MESSAGES, ACCOUNT)
-            Role.TEAM, Role.ADMIN -> listOf(AGENCY_HOME, PROJECTS, CLIENTS, TASKS, MORE)
+            Role.TEAM, Role.ADMIN -> listOf(AGENCY_HOME, MESSAGES, ACCOUNT)
         }
     }
 }

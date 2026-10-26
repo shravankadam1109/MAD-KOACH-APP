@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.AddTask
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Description
@@ -148,7 +149,7 @@ fun AgencyHomeScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         QuickActionTile(Icons.Outlined.AddTask, "New task", actions.onNewTask, Modifier.weight(1f))
                         QuickActionTile(Icons.AutoMirrored.Outlined.EventNote, "Bookings", actions.onBookings, Modifier.weight(1f), Tone.Warning)
-                        QuickActionTile(Icons.Outlined.ChatBubbleOutline, "Messages", actions.onMessages, Modifier.weight(1f), Tone.Info)
+                        QuickActionTile(Icons.Outlined.Checklist, "Tasks", actions.onAllTasks, Modifier.weight(1f), Tone.Info)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         QuickActionTile(Icons.Outlined.Folder, "Projects", actions.onAllProjects, Modifier.weight(1f), Tone.Neutral)

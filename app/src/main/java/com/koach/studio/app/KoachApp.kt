@@ -28,7 +28,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.koach.studio.auth.AuthPortal
 import com.koach.studio.auth.ClientLoginScreen
+import com.koach.studio.auth.ClientSignUpScreen
+import com.koach.studio.auth.ClientOtpScreen
 import com.koach.studio.auth.LoginViewModel
+import com.koach.studio.auth.SignUpViewModel
+import com.koach.studio.auth.OtpViewModel
 import com.koach.studio.auth.TeamLoginScreen
 import com.koach.studio.auth.WelcomeScreen
 import com.koach.studio.core.di.appContainer
@@ -37,6 +41,8 @@ import com.koach.studio.core.di.koachViewModel
 private object AuthRoutes {
     const val WELCOME = "welcome"
     const val CLIENT_LOGIN = "login/client"
+    const val CLIENT_SIGN_UP = "signup/client"
+    const val CLIENT_OTP = "login/otp"
     const val TEAM_LOGIN = "login/team"
 }
 
@@ -86,6 +92,25 @@ private fun SignedOutFlow(isDemo: Boolean) {
         composable(AuthRoutes.CLIENT_LOGIN) {
             ClientLoginScreen(
                 viewModel = koachViewModel(key = "login-client") { LoginViewModel(AuthPortal.CLIENT, it.authRepository) },
+                onBack = { nav.popBackStack() },
+                onNavigateToSignUp = { nav.navigate(AuthRoutes.CLIENT_SIGN_UP) },
+                onNavigateToOtp = { nav.navigate(AuthRoutes.CLIENT_OTP) }
+            )
+        }
+        composable(AuthRoutes.CLIENT_SIGN_UP) {
+            ClientSignUpScreen(
+                viewModel = koachViewModel(key = "signup-client") { SignUpViewModel(it.authRepository) },
+                onBack = { nav.popBackStack() },
+                onNavigateToSignIn = {
+                    nav.navigate(AuthRoutes.CLIENT_LOGIN) {
+                        popUpTo(AuthRoutes.WELCOME)
+                    }
+                }
+            )
+        }
+        composable(AuthRoutes.CLIENT_OTP) {
+            ClientOtpScreen(
+                viewModel = koachViewModel(key = "otp-client") { OtpViewModel(it.authRepository) },
                 onBack = { nav.popBackStack() }
             )
         }

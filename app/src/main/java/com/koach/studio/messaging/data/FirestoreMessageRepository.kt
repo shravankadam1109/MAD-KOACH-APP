@@ -46,7 +46,16 @@ class FirestoreMessageRepository(
     private fun visibleThreads(): Flow<List<MessageThread>> =
         currentUser.whenSignedIn(emptyList()) { user ->
             val query = if (user.role.isAgency) threads else threads.whereArrayContains("participantIds", user.id)
-            query.observe { snap -> snap.documents.mapNotNull { FirestoreMappers.thread(it.id, it.data.orEmpty()) } }
+            query.observe { snap ->
+                snap.documents.mapNotNull { FirestoreMappers.thread(it.id, it.data.orEmpty()) }
+                    .filter { thread ->
+                        if (thread.type == com.koach.studio.core.model.ThreadType.DM) {
+                            user.id in thread.participantIds
+                        } else {
+                            user.role.isAgency || user.id in thread.participantIds
+                        }
+                    }
+            }
         }
 
     override fun observeThreads(): Flow<List<ThreadSummary>> =
@@ -78,7 +87,9 @@ class FirestoreMessageRepository(
         val user = access.require(Permission.SEND_MESSAGES)
         val snap = threads.document(threadId).get().await()
         val thread = FirestoreMappers.thread(snap.id, snap.data.orEmpty()) ?: throw IllegalArgumentException("Conversation not found")
-        if (!user.role.isAgency && user.id !in thread.participantIds) throw PermissionDeniedException("You're not part of this conversation")
+        val isParticipant = user.id in thread.participantIds
+        val canAccess = if (thread.type == com.koach.studio.core.model.ThreadType.DM) isParticipant else (user.role.isAgency || isParticipant)
+        if (!canAccess) throw PermissionDeniedException("You're not part of this conversation")
         val text = body.trim()
         require(text.isNotEmpty()) { "Write a message first" }
         require(text.length <= MessageRules.MAX_LENGTH) { "Messages can be up to ${MessageRules.MAX_LENGTH} characters" }
@@ -86,8 +97,8 @@ class FirestoreMessageRepository(
         val ref = messagesOf(threadId).document()
         val message = Message(ref.id, threadId, user.id, text, LocalDateTime.now(clock), setOf(user.id))
         ref.set(FirestoreMappers.messageFields(message)).await()
-        // Agency members who reply join the thread so they hear about future messages.
-        if (user.id !in thread.participantIds) {
+        // Agency members who reply join project threads so they hear about future messages.
+        if (thread.type != com.koach.studio.core.model.ThreadType.DM && user.id !in thread.participantIds) {
             threads.document(threadId).update("participantIds", FieldValue.arrayUnion(user.id)).await()
         }
         thread.participantIds.filter { it != user.id }.forEach { recipient ->

@@ -58,7 +58,6 @@ data class MenuEntry(val route: String, val title: String, val subtitle: String,
 
 /** Menu entries a user can reach from the Account (client) or More (agency) tab. */
 fun menuEntriesFor(user: User): List<MenuEntry> = buildList {
-    if (user.role.isAgency) add(MenuEntry(Routes.MESSAGES, "Messages", "Project conversations", Icons.Outlined.ChatBubbleOutline))
     add(MenuEntry(Routes.NOTIFICATIONS, "Notifications", "Updates across your projects", Icons.Outlined.Notifications))
     add(
         MenuEntry(
@@ -80,14 +79,21 @@ fun menuEntriesFor(user: User): List<MenuEntry> = buildList {
             Icons.Outlined.RateReview
         )
     )
-    add(
-        MenuEntry(
-            Routes.CONTACT,
-            "Contact studio",
-            "Studio address, hotline & direct inquiries",
-            Icons.Outlined.Phone
+    if (user.role.isAgency) {
+        add(MenuEntry(com.koach.studio.projects.navigation.ProjectsDestinations.PROJECT_LIST, "Projects", "Active and completed projects", Icons.Outlined.FolderOpen))
+        add(MenuEntry(Routes.CLIENTS, "Clients", "Client directory and records", Icons.Outlined.Person))
+        add(MenuEntry(Routes.TASKS, "Tasks", "Manage studio deliverables and tasks", Icons.Outlined.RateReview))
+    }
+    if (!user.role.isAgency) {
+        add(
+            MenuEntry(
+                Routes.CONTACT,
+                "Contact studio",
+                "Studio address, hotline & direct inquiries",
+                Icons.Outlined.Phone
+            )
         )
-    )
+    }
     add(
         MenuEntry(
             Routes.SETTINGS,
@@ -124,7 +130,7 @@ fun MenuScreen(
                 Eyebrow(if (user.role.isAgency) "Studio" else "Your account")
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (user.role.isAgency) "More" else "Account",
+                    "Account",
                     style = MaterialTheme.typography.displaySmall,
                     color = c.textPrimary
                 )

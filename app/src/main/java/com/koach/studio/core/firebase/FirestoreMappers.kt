@@ -193,11 +193,20 @@ object FirestoreMappers {
     // ---- messaging, notifications, payments, feedback --------------------
 
     fun thread(id: String, data: Map<String, Any?>): MessageThread? = lenient {
-        MessageThread(id, data.req("projectId"), data.req("title"), data.strings("participantIds"))
+        val projId = data.str("projectId").orEmpty()
+        val typeStr = data.str("type")
+        val threadType = if (typeStr != null) {
+            runCatching { com.koach.studio.core.model.ThreadType.valueOf(typeStr) }.getOrDefault(
+                if (projId.isBlank() || projId.startsWith("dm-")) com.koach.studio.core.model.ThreadType.DM else com.koach.studio.core.model.ThreadType.PROJECT
+            )
+        } else {
+            if (projId.isBlank() || projId.startsWith("dm-")) com.koach.studio.core.model.ThreadType.DM else com.koach.studio.core.model.ThreadType.PROJECT
+        }
+        MessageThread(id, projId, data.req("title"), data.strings("participantIds"), threadType)
     }
 
     fun threadFields(t: MessageThread, lastMessageAt: LocalDateTime? = null): Map<String, Any?> = mapOf(
-        "projectId" to t.projectId, "title" to t.title, "participantIds" to t.participantIds, "lastMessageAt" to lastMessageAt?.toString()
+        "projectId" to t.projectId, "title" to t.title, "participantIds" to t.participantIds, "type" to t.type.name, "lastMessageAt" to lastMessageAt?.toString()
     )
 
     fun message(id: String, threadId: String, data: Map<String, Any?>): Message? = lenient {

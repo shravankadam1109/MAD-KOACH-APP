@@ -69,4 +69,27 @@ class DemoAuthRepositoryTest {
         assertFalse(result.isSuccess)
         assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("Firebase"))
     }
+
+    @Test
+    fun signUpClient_createsAccount_andPreventsDuplicateEmail() = runTest {
+        val auth = DemoAuthRepository(users)
+        val created = auth.signUpClient("New Client", "newclient@example.com", "+91 99999 88888", "secretpass").getOrThrow()
+        assertEquals("New Client", created.name)
+        assertEquals("newclient@example.com", created.email)
+        assertEquals(com.koach.studio.core.model.Role.CLIENT, created.role)
+
+        val duplicate = auth.signUpClient("Duplicate", "newclient@example.com", "+91 99999 88888", "secretpass")
+        assertTrue(duplicate.isFailure)
+    }
+
+    @Test
+    fun googleAndOtp_signInFlows() = runTest {
+        val auth = DemoAuthRepository(users)
+        val googleUser = auth.signInWithGoogle("token").getOrThrow()
+        assertEquals(com.koach.studio.core.model.Role.CLIENT, googleUser.role)
+
+        val otpToken = auth.requestPhoneOtp("+91 9876543210").getOrThrow()
+        val phoneUser = auth.verifyPhoneOtp(otpToken, "123456", phone = "+91 9876543210").getOrThrow()
+        assertEquals(com.koach.studio.core.model.Role.CLIENT, phoneUser.role)
+    }
 }

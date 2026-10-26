@@ -57,9 +57,15 @@ class InMemoryMessageRepository(
     private val threadStore = MutableStateFlow(threads)
     private val messageStore = MutableStateFlow(messages)
 
-    /** Agency users can open any project thread; clients only threads they belong to. */
-    private fun canSee(thread: MessageThread, user: User?): Boolean =
-        user != null && (user.role.isAgency || user.id in thread.participantIds)
+    /** Agency users can open project threads; clients only threads they belong to. Direct messages are strictly private to their participants. */
+    private fun canSee(thread: MessageThread, user: User?): Boolean {
+        if (user == null) return false
+        return if (thread.type == com.koach.studio.core.model.ThreadType.DM) {
+            user.id in thread.participantIds
+        } else {
+            user.role.isAgency || user.id in thread.participantIds
+        }
+    }
 
     override fun observeThreads(): Flow<List<ThreadSummary>> =
         combine(threadStore, messageStore, currentUser) { threads, messages, user ->
@@ -102,8 +108,8 @@ class InMemoryMessageRepository(
             readBy = setOf(user.id)
         )
         messageStore.update { it + message }
-        // Agency members who reply join the thread so they hear about future messages.
-        if (user.id !in thread.participantIds) {
+        // Agency members who reply join project threads so they hear about future messages.
+        if (thread.type != com.koach.studio.core.model.ThreadType.DM && user.id !in thread.participantIds) {
             threadStore.update { list -> list.map { if (it.id == threadId) it.copy(participantIds = it.participantIds + user.id) else it } }
         }
         thread.participantIds.filter { it != user.id }.forEach { recipient ->

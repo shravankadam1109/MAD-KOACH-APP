@@ -217,9 +217,13 @@ class DemoData(private val today: LocalDate) {
     )
 
     val threads: List<MessageThread> = listOf(
-        MessageThread("th-1", "proj-1", "Cyberpunk Indie Music Video", listOf("u-maya", "u-zoya", "u-isha", "u-arjun")),
-        MessageThread("th-2", "proj-3", "Velocity Sprint Brand Commercial", listOf("u-dev", "u-zoya", "u-arjun")),
-        MessageThread("th-3", "proj-2", "Acoustic Horizon EP Session", listOf("u-isha", "u-zoya", "u-arjun"))
+        MessageThread("th-1", "proj-1", "Cyberpunk Indie Music Video", listOf("u-maya", "u-zoya", "u-isha", "u-arjun"), com.koach.studio.core.model.ThreadType.PROJECT),
+        MessageThread("th-2", "proj-3", "Velocity Sprint Brand Commercial", listOf("u-dev", "u-zoya", "u-arjun"), com.koach.studio.core.model.ThreadType.PROJECT),
+        MessageThread("th-3", "proj-2", "Acoustic Horizon EP Session", listOf("u-isha", "u-zoya", "u-arjun"), com.koach.studio.core.model.ThreadType.PROJECT),
+        MessageThread("th-dm-1", "", "Zoya Patel", listOf("u-maya", "u-zoya"), com.koach.studio.core.model.ThreadType.DM),
+        MessageThread("th-dm-2", "", "Arjun Mehta", listOf("u-maya", "u-arjun"), com.koach.studio.core.model.ThreadType.DM),
+        MessageThread("th-dm-3", "", "Zoya Patel", listOf("u-dev", "u-zoya"), com.koach.studio.core.model.ThreadType.DM),
+        MessageThread("th-dm-4", "", "Arjun Mehta", listOf("u-zoya", "u-arjun"), com.koach.studio.core.model.ThreadType.DM)
     )
 
     val messages: List<Message> = listOf(
@@ -231,7 +235,12 @@ class DemoData(private val today: LocalDate) {
         msg("m-6", "th-2", "u-arjun", "Got them, Dev. Zoya is on it; expect v3 within 48 hours.", at(daysAgo(3), 16, 30), "u-arjun", "u-dev", "u-zoya"),
         msg("m-7", "th-2", "u-zoya", "v3 is close. Quick question: keep the slow-mo on the starting blocks?", at(daysAgo(0), 12, 10), "u-zoya", "u-arjun"),
         msg("m-8", "th-3", "u-isha", "Mastering slot is pencilled for next Tuesday.", at(daysAgo(1), 15, 0), "u-isha", "u-arjun"),
-        msg("m-9", "th-3", "u-zoya", "Perfect, I'll print the stems tonight.", at(daysAgo(1), 15, 12), "u-zoya", "u-isha")
+        msg("m-9", "th-3", "u-zoya", "Perfect, I'll print the stems tonight.", at(daysAgo(1), 15, 12), "u-zoya", "u-isha"),
+        msg("m-dm-1", "th-dm-1", "u-zoya", "Hey Maya! Sent the updated frame exports for the grade session.", at(daysAgo(0), 10, 0), "u-zoya", "u-maya"),
+        msg("m-dm-2", "th-dm-1", "u-maya", "Got them Zoya! Looking great, let's proceed.", at(daysAgo(0), 10, 15), "u-maya", "u-zoya"),
+        msg("m-dm-3", "th-dm-2", "u-arjun", "Hi Maya, schedule for next week confirmed with the crew.", at(daysAgo(1), 14, 20), "u-arjun", "u-maya"),
+        msg("m-dm-4", "th-dm-3", "u-dev", "Hi Zoya, cuts on the teaser look fantastic!", at(daysAgo(0), 11, 30), "u-dev", "u-zoya"),
+        msg("m-dm-5", "th-dm-4", "u-zoya", "Rental lenses confirmed for Thursday shoot.", at(daysAgo(0), 9, 10), "u-zoya", "u-arjun")
     )
 
     val notifications: List<AppNotification> = listOf(

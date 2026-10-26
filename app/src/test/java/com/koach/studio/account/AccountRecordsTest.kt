@@ -113,4 +113,18 @@ class AccountRecordsTest {
         assertTrue(notifications.observeNotifications().first().any { it.targetId == sent.id })
         assertTrue(feedback.observeFeedback().first().all { it.clientId == "cl-aetheria" })
     }
+
+    @Test
+    fun menuEntries_removeContactStudioFromAgency_andRetainForClient() {
+        val client = data.users.first { it.role == com.koach.studio.core.model.Role.CLIENT }
+        val agency = data.users.first { it.role.isAgency }
+
+        val clientMenu = com.koach.studio.app.menu.menuEntriesFor(client)
+        val agencyMenu = com.koach.studio.app.menu.menuEntriesFor(agency)
+
+        assertTrue(clientMenu.any { it.route == com.koach.studio.app.navigation.Routes.CONTACT })
+        assertTrue(agencyMenu.none { it.route == com.koach.studio.app.navigation.Routes.CONTACT })
+        assertTrue(agencyMenu.any { it.route == com.koach.studio.app.navigation.Routes.CLIENTS })
+        assertTrue(agencyMenu.any { it.route == com.koach.studio.app.navigation.Routes.TASKS })
+    }
 }
