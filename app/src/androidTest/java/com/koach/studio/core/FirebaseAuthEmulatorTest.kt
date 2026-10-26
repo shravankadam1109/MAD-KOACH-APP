@@ -11,6 +11,9 @@ import com.koach.studio.core.FirebaseEmulator.writeProfile
 import com.koach.studio.core.auth.InvalidCredentialsException
 import com.koach.studio.core.firebase.AccountNotProvisionedException
 import com.koach.studio.core.firebase.FirebaseAuthRepository
+import com.koach.studio.core.firebase.ProvisioningIncompleteException
+import com.koach.studio.core.firebase.PendingSignUp
+import com.koach.studio.core.firebase.InMemoryPendingSignUpStore
 import com.koach.studio.core.model.Role
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -79,6 +82,44 @@ class FirebaseAuthEmulatorTest {
     }
 
     @Test
+    fun interruptedSignUp_isFinishedOnTheNextSignIn() = runBlocking {
+        // An account whose profile was never saved, with the sign-up remembered on this device.
+        val pendingStore = InMemoryPendingSignUpStore()
+        val interruptedEmail = email("interrupted")
+        val uid = createAccount(interruptedEmail, PASSWORD)
+        pendingStore.save(PendingSignUp(uid, "Ria Shah", interruptedEmail, "+91 98200 44444", "Monsoon Films"))
+        val recovering = FirebaseAuthRepository(auth, firestore, pendingStore)
+
+        val user = recovering.signInWithEmail(interruptedEmail, PASSWORD).getOrThrow()
+        assertEquals(Role.CLIENT, user.role)
+        assertEquals("cl-$uid", user.clientId)
+        assertEquals("client", firestore.collection("users").document(uid).get().await().getString("role"))
+        assertEquals("Monsoon Films", firestore.collection("clients").document("cl-$uid").get().await().getString("name"))
+        assertNull("the pending sign-up is cleared once finished", pendingStore.load(uid))
+    }
+
+    @Test
+    fun stuckSetup_reportsAnError_keepsTheAccount_andFinishesOnSignIn() = runBlocking {
+        val slowStore = InMemoryPendingSignUpStore()
+        val slowEmail = email("slow")
+        // A 1 ms limit makes the profile write "too slow" every time.
+        val impatient = FirebaseAuthRepository(auth, firestore, slowStore, provisioningTimeoutMillis = 1)
+        val error = impatient.signUpClient("Kabir Rao", slowEmail, "+91 98200 55555", PASSWORD).exceptionOrNull()
+        assertTrue("got $error", error is ProvisioningIncompleteException)
+        assertNull("not left signed in half-way", auth.currentUser)
+
+        // The account and the remembered sign-up were kept. Hand the record to a normal
+        // repository (the app has exactly one; this test briefly has two on one sign-in).
+        val uid = createdUid(slowEmail)
+        val record = slowStore.load(uid)!!
+        slowStore.clear(uid)
+        val normalStore = InMemoryPendingSignUpStore().apply { save(record) }
+        val user = FirebaseAuthRepository(auth, firestore, normalStore).signInWithEmail(slowEmail, PASSWORD).getOrThrow()
+        assertEquals(Role.CLIENT, user.role)
+        assertEquals("Kabir Rao", firestore.collection("users").document(user.id).get().await().getString("name"))
+    }
+
+    @Test
     fun accountWithoutProfile_isRefusedAndSignedOut() = runBlocking {
         val noprofileEmail = email("noprofile")
         createAccount(noprofileEmail, PASSWORD)
@@ -108,6 +149,13 @@ class FirebaseAuthEmulatorTest {
         val denied = runCatching { firestore.collection("users").document(uid).update("role", "admin").await() }
         assertTrue("profile self-update must be rejected by firestore.rules", denied.isFailure)
         assertEquals(Role.CLIENT, repository.signInWithEmail(sneakyEmail, PASSWORD).getOrThrow().role)
+    }
+
+    /** The uid of an existing emulator account, via a plain sign-in that doesn't touch Firestore. */
+    private suspend fun createdUid(email: String): String {
+        val uid = auth.signInWithEmailAndPassword(email, PASSWORD).await().user!!.uid
+        auth.signOut()
+        return uid
     }
 
     companion object {

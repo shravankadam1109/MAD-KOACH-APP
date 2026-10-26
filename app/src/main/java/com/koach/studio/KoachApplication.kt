@@ -1,5 +1,6 @@
 package com.koach.studio
 
+import com.koach.studio.core.firebase.SharedPreferencesPendingSignUpStore
 import com.koach.studio.core.firebase.CurrentActivity
 import android.app.Application
 import com.google.firebase.FirebaseApp
@@ -26,7 +27,8 @@ class KoachApplication : Application() {
             container = if (BuildConfig.FIREBASE_BACKEND && firebaseConfigured) {
                 FirebaseAppContainer(
                     emulatorHost = if (BuildConfig.FIREBASE_EMULATOR) "10.0.2.2" else null,
-                    themePreferencesStore = themeStore
+                    themePreferencesStore = themeStore,
+                    pendingSignUps = SharedPreferencesPendingSignUpStore(this)
                 )
             } else {
                 DemoAppContainer(
