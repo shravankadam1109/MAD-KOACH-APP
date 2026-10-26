@@ -92,7 +92,7 @@ fun DeliverableDownloadButton(
         }
         DownloadState.DOWNLOADING -> {
             val animatedProgress by animateFloatAsState(
-                targetValue = deliverable.downloadProgress,
+                targetValue = progress,
                 animationSpec = tween(durationMillis = 300),
                 label = "download_progress_${deliverable.id}"
             )

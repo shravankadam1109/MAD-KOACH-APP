@@ -28,7 +28,6 @@ import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
 import com.koach.studio.projects.model.ProjectStatus
-import com.koach.studio.projects.model.dueLocalDate
 import com.koach.studio.projects.ui.icon
 import com.koach.studio.projects.ui.tone
 import java.time.LocalDate
@@ -78,20 +77,16 @@ fun ProjectListItem(
         ) {
             Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
             Spacer(Modifier.width(10.dp))
-            if (due != null) {
-                Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (overdue) Tone.Danger.color() else c.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
+            Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (overdue) Tone.Danger.color() else c.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
             Spacer(Modifier.width(8.dp))
             Icon(Icons.Outlined.FolderOpen, contentDescription = "Deliverable files", tint = c.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
