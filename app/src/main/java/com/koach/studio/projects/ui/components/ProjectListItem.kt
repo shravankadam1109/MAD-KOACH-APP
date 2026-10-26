@@ -1,5 +1,13 @@
 package com.koach.studio.projects.ui.components
 
+import com.koach.studio.core.designsystem.components.KoachDivider
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,86 +52,65 @@ fun ProjectListItem(
     val due = project.dueDate
     val overdue = due.isBefore(today) && project.status != ProjectStatus.COMPLETED
 
-    KoachCard(
-        onClick = onClick,
-        contentPadding = PaddingValues(16.dp),
+    // Open editorial row: title leads, everything else is quiet and secondary.
+    Column(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .testTag("project_item_${project.id}")
             .semantics(mergeDescendants = true) {
                 contentDescription = "${project.title}, ${project.clientName}, Status: ${project.status.displayName}, ${(project.progress * 100).toInt()}% complete"
             }
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon)
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = project.serviceType.displayName.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = c.textTertiary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 18.dp)) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(project.status.tone.color()))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "${project.status.displayName} · ${project.serviceType.displayName}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = project.status.tone.color(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = project.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = c.textPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "${project.clientName} · ${project.deliverables.size} files",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${(project.progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (project.status == ProjectStatus.COMPLETED) c.textSecondary else c.brand
+                )
+                Text(
+                    text = if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (overdue) Tone.Danger.color() else c.textTertiary,
+                    maxLines = 1
+                )
+            }
         }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = project.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = c.textPrimary,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = project.clientName,
-            style = MaterialTheme.typography.bodySmall,
-            color = c.textSecondary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(12.dp))
-        KoachProgressBar(project.progress, height = 4.dp)
-        Spacer(Modifier.height(10.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "${(project.progress * 100).toInt()}%",
-                style = MaterialTheme.typography.labelLarge,
-                color = c.brand
-            )
-            Spacer(Modifier.width(10.dp))
-            Icon(
-                imageVector = Icons.Outlined.CalendarToday,
-                contentDescription = "Due date",
-                tint = c.textTertiary,
-                modifier = Modifier.size(13.dp)
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (overdue) Tone.Danger.color() else c.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Outlined.FolderOpen,
-                contentDescription = "Deliverable files",
-                tint = c.textTertiary,
-                modifier = Modifier.size(13.dp)
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = "${project.deliverables.size} files",
-                style = MaterialTheme.typography.labelMedium,
-                color = c.textSecondary,
-                maxLines = 1
-            )
-        }
+        Spacer(Modifier.height(14.dp))
+        KoachProgressBar(project.progress, height = 2.dp)
+        Spacer(Modifier.height(18.dp))
+        KoachDivider()
     }
 }
 

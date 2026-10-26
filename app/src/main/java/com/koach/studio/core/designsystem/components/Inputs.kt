@@ -1,5 +1,12 @@
 package com.koach.studio.core.designsystem.components
 
+import com.koach.studio.core.designsystem.theme.KoachMotion
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -258,8 +265,8 @@ fun <T> KoachFilterChips(
     val chipColors = FilterChipDefaults.filterChipColors(
         containerColor = c.surface,
         labelColor = c.textSecondary,
-        selectedContainerColor = c.brand,
-        selectedLabelColor = c.onBrand
+        selectedContainerColor = c.brandContainer,
+        selectedLabelColor = c.brandBright
     )
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -278,8 +285,8 @@ fun <T> KoachFilterChips(
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = selected == null,
-                    borderColor = c.outline,
-                    selectedBorderColor = c.brand
+                    borderColor = c.glassBorder,
+                    selectedBorderColor = c.brand.copy(alpha = 0.4f)
                 )
             )
         }
@@ -295,8 +302,8 @@ fun <T> KoachFilterChips(
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = isSelected,
-                    borderColor = c.outline,
-                    selectedBorderColor = c.brand
+                    borderColor = c.glassBorder,
+                    selectedBorderColor = c.brand.copy(alpha = 0.4f)
                 )
             )
         }
@@ -321,36 +328,49 @@ fun KoachSegmentedControl(
     modifier: Modifier = Modifier
 ) {
     val c = KoachTheme.colors
-    val outerShape = RoundedCornerShape(KoachRadius.md)
-    val innerShape = RoundedCornerShape(KoachRadius.sm)
-    Row(
+    val outerShape = RoundedCornerShape(50)
+    // A quiet tinted pill slides to the selected option instead of a solid green block.
+    BoxWithConstraints(
         modifier = modifier
             .clip(outerShape)
-            .background(c.surface)
-            .border(1.dp, c.outlineSubtle, outerShape)
+            .background(c.glass)
+            .border(1.dp, c.glassBorder, outerShape)
             .padding(4.dp)
     ) {
+        val segment = maxWidth / options.size.coerceAtLeast(1)
+        val indicatorX by animateDpAsState(segment * selectedIndex, KoachMotion.press(), label = "segment-indicator")
+        Box(
+            Modifier
+                .offset(x = indicatorX)
+                .width(segment)
+                .height(40.dp)
+                .clip(outerShape)
+                .background(c.brandContainer)
+                .border(1.dp, c.brand.copy(alpha = 0.35f), outerShape)
+        )
+    Row(Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
+            val tint by animateColorAsState(if (selected) c.brandBright else c.textSecondary, KoachMotion.enter(KoachMotion.Medium), label = "segment-tint")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
-                    .defaultMinSize(minHeight = 40.dp)
-                    .clip(innerShape)
-                    .background(if (selected) c.brand else Color.Transparent)
+                    .height(40.dp)
+                    .clip(outerShape)
                     .selectable(selected = selected, onClick = { onSelect(index) }, role = Role.Tab)
-                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .padding(horizontal = 8.dp)
                     .testTag("segment_$index")
             ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) c.onBrand else c.textSecondary,
+                    color = tint,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
         }
+    }
     }
 }
