@@ -145,9 +145,18 @@ class LoginViewModelTest {
     @Test
     fun googleSignIn_signsInClient() = runTest {
         val vm = LoginViewModel(AuthPortal.CLIENT, auth)
-        vm.signInWithGoogle("mock-token")
+        vm.signInWithGoogle { Result.success("mock-token") }
         assertTrue(vm.uiState.value.signedIn)
         assertEquals(Role.CLIENT, auth.currentUser.value?.role)
+    }
+
+    @Test
+    fun demoGoogleSignIn_neverAsksTheDeviceForAnAccount() = runTest {
+        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
+        var asked = false
+        vm.signInWithGoogle { asked = true; Result.failure(IllegalStateException("not configured")) }
+        assertTrue("demo mode must not open the Google account picker", !asked)
+        assertTrue(vm.uiState.value.signedIn)
     }
 
     @Test

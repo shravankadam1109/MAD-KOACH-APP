@@ -80,12 +80,16 @@ class LoginViewModel(
         }
     }
 
-    fun signInWithGoogle(idToken: String = "") {
+    /**
+     * [googleToken] asks the device for a Google account (Credential Manager);
+     * the demo backend doesn't need one, so it's skipped there.
+     */
+    fun signInWithGoogle(googleToken: suspend () -> Result<String> = { Result.success("") }) {
         if (_uiState.value.isLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = auth.signInWithGoogle(idToken)
-            finish(result)
+            val token = if (auth.isDemo) Result.success("") else googleToken()
+            finish(token.fold(onSuccess = { auth.signInWithGoogle(it) }, onFailure = { Result.failure(it) }))
         }
     }
 

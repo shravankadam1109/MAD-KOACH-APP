@@ -60,6 +60,25 @@ class FirebaseAuthEmulatorTest {
     }
 
     @Test
+    fun newClientSignUp_provisionsItsOwnClientProfile_underTheRules() = runBlocking {
+        val newEmail = email("signup")
+        val user = repository.signUpClient("Ria Shah", newEmail, "+91 98200 33333", PASSWORD, company = "Monsoon Films").getOrThrow()
+        assertEquals(Role.CLIENT, user.role)
+        assertEquals("cl-${user.id}", user.clientId)
+
+        val profile = firestore.collection("users").document(user.id).get().await()
+        assertEquals("client", profile.getString("role"))
+        val org = firestore.collection("clients").document("cl-${user.id}").get().await()
+        assertEquals("Monsoon Films", org.getString("name"))
+
+        // Signing out and back in finds the same profile; the role can't be raised from the device.
+        repository.signOut()
+        assertEquals(Role.CLIENT, repository.signInWithEmail(newEmail, PASSWORD).getOrThrow().role)
+        val raised = runCatching { firestore.collection("users").document(user.id).update("role", "admin").await() }
+        assertTrue("self-provisioned clients must not raise their role", raised.isFailure)
+    }
+
+    @Test
     fun accountWithoutProfile_isRefusedAndSignedOut() = runBlocking {
         val noprofileEmail = email("noprofile")
         createAccount(noprofileEmail, PASSWORD)

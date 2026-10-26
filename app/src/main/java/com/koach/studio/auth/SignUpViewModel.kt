@@ -59,11 +59,12 @@ class SignUpViewModel(
         }
     }
 
-    fun signUpWithGoogle(idToken: String = "") {
+    fun signUpWithGoogle(googleToken: suspend () -> Result<String> = { Result.success("") }) {
         if (_uiState.value.isLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = auth.signInWithGoogle(idToken)
+            val token = if (auth.isDemo) Result.success("") else googleToken()
+            val result = token.fold(onSuccess = { auth.signInWithGoogle(it) }, onFailure = { Result.failure(it) })
             result.fold(
                 onSuccess = {
                     _uiState.update { it.copy(isLoading = false, signedUp = true) }

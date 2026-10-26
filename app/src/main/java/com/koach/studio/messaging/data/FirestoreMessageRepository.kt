@@ -14,6 +14,7 @@ import com.koach.studio.core.model.AppNotification
 import com.koach.studio.core.model.Message
 import com.koach.studio.core.model.MessageThread
 import com.koach.studio.core.model.NotificationType
+import com.koach.studio.core.model.ThreadType
 import com.koach.studio.core.model.User
 import com.koach.studio.notifications.data.NotificationRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,19 +44,19 @@ class FirestoreMessageRepository(
     private val threads get() = firestore.collection(COLLECTION)
     private fun messagesOf(threadId: String) = threads.document(threadId).collection(MESSAGES)
 
+    /**
+     * Only queries the security rules can prove safe: threads the user takes part
+     * in, plus (for the agency) project threads. Never an unfiltered list, which
+     * could include other people's DMs.
+     */
     private fun visibleThreads(): Flow<List<MessageThread>> =
         currentUser.whenSignedIn(emptyList()) { user ->
-            val query = if (user.role.isAgency) threads else threads.whereArrayContains("participantIds", user.id)
-            query.observe { snap ->
-                snap.documents.mapNotNull { FirestoreMappers.thread(it.id, it.data.orEmpty()) }
-                    .filter { thread ->
-                        if (thread.type == com.koach.studio.core.model.ThreadType.DM) {
-                            user.id in thread.participantIds
-                        } else {
-                            user.role.isAgency || user.id in thread.participantIds
-                        }
-                    }
-            }
+            val mine = threads.whereArrayContains("participantIds", user.id)
+                .observe { snap -> snap.documents.mapNotNull { FirestoreMappers.thread(it.id, it.data.orEmpty()) } }
+            if (!user.role.isAgency) return@whenSignedIn mine
+            val projectThreads = threads.whereEqualTo("type", ThreadType.PROJECT.name)
+                .observe { snap -> snap.documents.mapNotNull { FirestoreMappers.thread(it.id, it.data.orEmpty()) } }
+            combine(mine, projectThreads) { a, b -> (a + b).distinctBy { it.id } }
         }
 
     override fun observeThreads(): Flow<List<ThreadSummary>> =
@@ -87,8 +88,10 @@ class FirestoreMessageRepository(
         val user = access.require(Permission.SEND_MESSAGES)
         val snap = threads.document(threadId).get().await()
         val thread = FirestoreMappers.thread(snap.id, snap.data.orEmpty()) ?: throw IllegalArgumentException("Conversation not found")
-        val isParticipant = user.id in thread.participantIds
-        val canAccess = if (thread.type == com.koach.studio.core.model.ThreadType.DM) isParticipant else (user.role.isAgency || isParticipant)
+        val isParticipant = user.id in thread.participantIds
+
+        val canAccess = if (thread.type == ThreadType.DM) isParticipant else (user.role.isAgency || isParticipant)
+
         if (!canAccess) throw PermissionDeniedException("You're not part of this conversation")
         val text = body.trim()
         require(text.isNotEmpty()) { "Write a message first" }
@@ -98,7 +101,7 @@ class FirestoreMessageRepository(
         val message = Message(ref.id, threadId, user.id, text, LocalDateTime.now(clock), setOf(user.id))
         ref.set(FirestoreMappers.messageFields(message)).await()
         // Agency members who reply join project threads so they hear about future messages.
-        if (thread.type != com.koach.studio.core.model.ThreadType.DM && user.id !in thread.participantIds) {
+        if (thread.type != ThreadType.DM && user.id !in thread.participantIds) {
             threads.document(threadId).update("participantIds", FieldValue.arrayUnion(user.id)).await()
         }
         thread.participantIds.filter { it != user.id }.forEach { recipient ->
