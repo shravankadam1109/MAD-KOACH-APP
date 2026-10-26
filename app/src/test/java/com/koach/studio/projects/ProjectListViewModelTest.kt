@@ -231,7 +231,9 @@ class ProjectListViewModelTest {
         viewModel.onSearchQueryChanged("music")
         viewModel.onFilterSelected(ServiceType.SHOOTING)
         viewModel.onStatusFilterSelected(ProjectStatus.IN_PROGRESS)
+        viewModel.onSortOrderSelected(ProjectSortOrder.DUE_DATE)
         assertEquals(1, viewModel.uiState.value.projects.size)
+        assertEquals(3, viewModel.uiState.value.activeFilterCount)
 
         viewModel.clearFilters()
         val clearedState = viewModel.uiState.value
@@ -239,6 +241,8 @@ class ProjectListViewModelTest {
         assertTrue(clearedState.searchQuery.isBlank())
         assertEquals(null, clearedState.selectedServiceFilter)
         assertEquals(null, clearedState.selectedStatusFilter)
+        assertEquals(ProjectSortOrder.NEWEST, clearedState.sortOrder)
+        assertEquals(0, clearedState.activeFilterCount)
 
         collectJob.cancel()
     }
