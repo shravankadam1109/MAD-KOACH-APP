@@ -1,5 +1,14 @@
 package com.koach.studio.auth
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import com.koach.studio.core.designsystem.components.PortfolioMosaic
+import com.koach.studio.core.designsystem.theme.KoachMotion
+import com.koach.studio.core.designsystem.theme.entrance
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -121,6 +130,7 @@ fun ClientSignUpScreen(
     val focus = LocalFocusManager.current
 
     KoachBackground(modifier.fillMaxSize()) {
+        AuthBackdrop()
         Scaffold(
             containerColor = Color.Transparent,
             topBar = { KoachTopBar(title = "", onBack = onBack, transparent = true) }
@@ -131,22 +141,14 @@ fun ClientSignUpScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
+                    .padding(horizontal = KoachTheme.spacing.xl, vertical = 8.dp)
                     .testTag("client_signup_screen")
             ) {
-                Column(Modifier.fillMaxWidth()) {
-                    IconTile(Icons.Outlined.Movie, tone = Tone.Brand, size = 52.dp)
-                    Spacer(Modifier.height(20.dp))
-                    Eyebrow("Client registration")
-                    Spacer(Modifier.height(6.dp))
-                    Text("Create account.", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Register for KOACH Studio to manage project briefs, reviews, deliverables, and team chat.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = c.textSecondary
-                    )
-                }
+                AuthHeader(
+                    eyebrow = "Client registration",
+                    headline = "Create account.",
+                    body = "Register for KOACH Studio to manage project briefs, reviews, deliverables, and team chat."
+                )
                 Spacer(Modifier.height(24.dp))
 
                 KoachTextField(
@@ -268,6 +270,7 @@ fun ClientOtpScreen(
     val focus = LocalFocusManager.current
 
     KoachBackground(modifier.fillMaxSize()) {
+        AuthBackdrop()
         Scaffold(
             containerColor = Color.Transparent,
             topBar = { KoachTopBar(title = "", onBack = onBack, transparent = true) }
@@ -278,27 +281,15 @@ fun ClientOtpScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
+                    .padding(horizontal = KoachTheme.spacing.xl, vertical = 8.dp)
                     .testTag("client_otp_screen")
             ) {
-                Column(Modifier.fillMaxWidth()) {
-                    IconTile(Icons.Outlined.Phone, tone = Tone.Brand, size = 52.dp)
-                    Spacer(Modifier.height(20.dp))
-                    Eyebrow("Phone Verification")
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        if (state.step == OtpStep.PHONE_ENTRY) "OTP Verification" else "Enter code",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = c.textPrimary
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        if (state.step == OtpStep.PHONE_ENTRY) "Sign in or register quickly using your phone number."
-                        else "Enter the 6-digit verification code sent to ${state.phone}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = c.textSecondary
-                    )
-                }
+                AuthHeader(
+                    eyebrow = "Phone Verification",
+                    headline = if (state.step == OtpStep.PHONE_ENTRY) "OTP Verification" else "Enter code",
+                    body = if (state.step == OtpStep.PHONE_ENTRY) "Sign in or register quickly using your phone number."
+                    else "Enter the 6-digit verification code sent to ${state.phone}"
+                )
                 Spacer(Modifier.height(24.dp))
 
                 if (state.step == OtpStep.PHONE_ENTRY) {
@@ -416,6 +407,7 @@ private fun LoginScreen(
     var showRequestAccess by rememberSaveable { mutableStateOf(false) }
 
     KoachBackground(modifier.fillMaxSize()) {
+        AuthBackdrop()
         Scaffold(
             containerColor = Color.Transparent,
             topBar = { KoachTopBar(title = "", onBack = onBack, transparent = true) }
@@ -426,18 +418,10 @@ private fun LoginScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
+                    .padding(horizontal = KoachTheme.spacing.xl, vertical = 8.dp)
                     .testTag(copy.screenTag)
             ) {
-                Column(Modifier.fillMaxWidth()) {
-                    IconTile(copy.icon, tone = copy.tone, size = 52.dp)
-                    Spacer(Modifier.height(20.dp))
-                    Eyebrow(copy.eyebrow)
-                    Spacer(Modifier.height(6.dp))
-                    Text(copy.headline, style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(8.dp))
-                    Text(copy.body, style = MaterialTheme.typography.bodyLarge, color = c.textSecondary)
-                }
+                AuthHeader(eyebrow = copy.eyebrow, headline = copy.headline, body = copy.body)
                 Spacer(Modifier.height(28.dp))
 
                 KoachTextField(
@@ -705,4 +689,32 @@ private fun RequestAccessDialog(onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) { Text("OK") }
         }
     )
+}
+
+/** Short band of KOACH artwork across the top of every auth screen, fading into the page. */
+@Composable
+private fun AuthBackdrop() {
+    PortfolioMosaic(Modifier.fillMaxWidth().height(300.dp), dim = 0.6f)
+}
+
+/** Shared auth heading: brand, eyebrow, headline and supporting line, arriving in sequence. */
+@Composable
+private fun AuthHeader(eyebrow: String, headline: String, body: String) {
+    val c = KoachTheme.colors
+    Column(Modifier.fillMaxWidth()) {
+        Wordmark(Modifier.entrance(0))
+        Spacer(Modifier.height(96.dp))
+        Eyebrow(eyebrow, modifier = Modifier.entrance(1))
+        Spacer(Modifier.height(10.dp))
+        AnimatedContent(
+            targetState = headline,
+            transitionSpec = { (fadeIn(KoachMotion.enter()) + slideInVertically(KoachMotion.enter()) { it / 3 }) togetherWith fadeOut(KoachMotion.exit()) },
+            label = "auth-headline",
+            modifier = Modifier.entrance(2)
+        ) { text ->
+            Text(text, style = MaterialTheme.typography.displayMedium, color = c.textPrimary)
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(body, style = MaterialTheme.typography.bodyLarge, color = c.textSecondary, modifier = Modifier.entrance(3).animateContentSize())
+    }
 }
