@@ -187,8 +187,7 @@ fun ShortcutButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .pressScale(interaction, 0.92f)
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(interactionSource = interaction, indication = ripple(), role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(vertical = 6.dp)
             .semantics(mergeDescendants = true) { contentDescription = if (badge > 0) "$label, $badge new" else label }
     ) {
@@ -206,7 +205,8 @@ fun ShortcutButton(
             if (badge > 0) CountBadge(badge, Modifier.align(Alignment.TopEnd))
         }
         Spacer(Modifier.height(8.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Short labels may draw a little past a narrow slot at large font sizes rather than truncate.
+        Text(label, style = MaterialTheme.typography.labelMedium, color = c.textSecondary, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
     }
 }
 
