@@ -483,17 +483,16 @@ fun TaskDetailScreen(
                 ) {
                     // Header card
                     item {
-                        KoachCard(contentPadding = PaddingValues(20.dp), modifier = Modifier.fillMaxWidth()) {
+                        KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth()) {
                             Row(verticalAlignment = Alignment.Top) {
                                 TaskDoneToggle(
                                     done = done,
                                     enabled = state.canManage,
                                     taskTitle = task.title,
                                     onToggle = viewModel::toggleDone,
-                                    circleSize = 28.dp,
+                                    circleSize = 26.dp,
                                     modifier = Modifier.testTag("task_detail_done")
                                 )
-                                Spacer(Modifier.width(4.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         task.title,
@@ -526,8 +525,10 @@ fun TaskDetailScreen(
                     }
                     // Details card
                     item {
-                        KoachCard(contentPadding = PaddingValues(0.dp), modifier = Modifier.fillMaxWidth()) {
+                        KoachCard(contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth()) {
                             Column {
+                                Eyebrow("Assignment & schedule", color = c.textTertiary)
+                                Spacer(Modifier.height(6.dp))
                                 InfoRow("Project", state.projectTitle ?: "Studio (no project)")
                                 KoachDivider()
                                 InfoRow(
@@ -598,8 +599,9 @@ fun TaskFormScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete this task?") },
-            text = { Text("\"${state.title}\" will be removed for the whole team. This can't be undone.") },
+            containerColor = c.surfaceRaised,
+            title = { Text("Delete this task?", color = c.textPrimary) },
+            text = { Text("\"${state.title}\" will be removed for the whole team. This can't be undone.", color = c.textSecondary) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -609,7 +611,7 @@ fun TaskFormScreen(
                     modifier = Modifier.testTag("confirm_delete_task")
                 ) { Text("Delete", color = c.danger) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel", color = c.textSecondary) } }
         )
     }
 
