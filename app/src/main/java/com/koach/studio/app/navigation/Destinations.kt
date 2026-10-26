@@ -2,8 +2,8 @@ package com.koach.studio.app.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Groups
@@ -40,6 +40,7 @@ object Routes {
     const val NOTIFICATIONS = "notifications"
     const val PROFILE = "profile"
     const val CONTACT = "contact"
+    const val SETTINGS = "settings"
     const val SERVICE_DETAIL = "services/{serviceId}"
     const val NEW_BOOKING = "bookings/new?serviceId={serviceId}&packageId={packageId}"
 

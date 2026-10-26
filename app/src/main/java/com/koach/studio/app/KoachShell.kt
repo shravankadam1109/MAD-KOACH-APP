@@ -1,28 +1,7 @@
 package com.koach.studio.app
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,35 +10,61 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.koach.studio.app.menu.MenuScreen
+import com.koach.studio.app.navigation.Routes
+import com.koach.studio.app.navigation.TopLevelDestination
 import com.koach.studio.bookings.ui.BookingDetailScreen
 import com.koach.studio.bookings.ui.BookingDetailViewModel
 import com.koach.studio.bookings.ui.BookingsScreen
+import com.koach.studio.bookings.ui.BookingsViewModel
+import com.koach.studio.bookings.ui.NewBookingScreen
+import com.koach.studio.bookings.ui.NewBookingViewModel
 import com.koach.studio.clients.ui.ClientDetailScreen
 import com.koach.studio.clients.ui.ClientDetailViewModel
 import com.koach.studio.clients.ui.ClientFormScreen
@@ -68,15 +73,12 @@ import com.koach.studio.clients.ui.ClientListScreen
 import com.koach.studio.clients.ui.ClientListViewModel
 import com.koach.studio.contact.ContactScreen
 import com.koach.studio.contact.ContactViewModel
-import com.koach.studio.bookings.ui.BookingsViewModel
-import com.koach.studio.bookings.ui.NewBookingScreen
-import com.koach.studio.bookings.ui.NewBookingViewModel
-import com.koach.studio.app.navigation.Routes
-import com.koach.studio.app.navigation.TopLevelDestination
-import com.koach.studio.core.designsystem.components.KoachDivider
+import com.koach.studio.core.designsystem.components.CountBadge
+import com.koach.studio.core.designsystem.theme.KoachRadius
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.di.appContainer
 import com.koach.studio.core.di.koachViewModel
+import com.koach.studio.core.model.AppNotification
 import com.koach.studio.core.model.User
 import com.koach.studio.documents.ui.AddDocumentScreen
 import com.koach.studio.documents.ui.AddDocumentViewModel
@@ -87,41 +89,37 @@ import com.koach.studio.feedback.FeedbackListViewModel
 import com.koach.studio.feedback.NewFeedbackScreen
 import com.koach.studio.feedback.NewFeedbackViewModel
 import com.koach.studio.home.AgencyHomeActions
-import com.koach.studio.payments.PaymentsScreen
-import com.koach.studio.payments.PaymentsViewModel
-import com.koach.studio.profile.ProfileScreen
+import com.koach.studio.home.AgencyHomeScreen
+import com.koach.studio.home.AgencyHomeViewModel
+import com.koach.studio.home.ClientHomeActions
+import com.koach.studio.home.ClientHomeScreen
+import com.koach.studio.home.ClientHomeViewModel
 import com.koach.studio.messaging.ui.ConversationScreen
 import com.koach.studio.messaging.ui.ConversationViewModel
 import com.koach.studio.messaging.ui.ThreadListScreen
 import com.koach.studio.messaging.ui.ThreadListViewModel
 import com.koach.studio.notifications.ui.NotificationsScreen
 import com.koach.studio.notifications.ui.NotificationsViewModel
-import com.koach.studio.core.model.AppNotification
-import com.koach.studio.core.designsystem.components.CountBadge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.runtime.collectAsState
-import com.koach.studio.home.AgencyHomeScreen
-import com.koach.studio.home.AgencyHomeViewModel
-import com.koach.studio.home.ClientHomeActions
-import com.koach.studio.home.ClientHomeScreen
-import com.koach.studio.home.ClientHomeViewModel
-import com.koach.studio.projects.navigation.ProjectsDestinations
+import com.koach.studio.payments.PaymentsScreen
+import com.koach.studio.payments.PaymentsViewModel
 import com.koach.studio.portfolio.PortfolioDetailScreen
 import com.koach.studio.portfolio.PortfolioDetailViewModel
 import com.koach.studio.portfolio.PortfolioViewModel
+import com.koach.studio.profile.ProfileScreen
+import com.koach.studio.projects.navigation.ProjectsDestinations
+import com.koach.studio.projects.navigation.projectsGraph
 import com.koach.studio.services.ExploreScreen
+import com.koach.studio.services.ServiceDetailScreen
+import com.koach.studio.services.ServiceDetailViewModel
+import com.koach.studio.services.ServicesViewModel
+import com.koach.studio.settings.SettingsScreen
+import com.koach.studio.settings.SettingsViewModel
 import com.koach.studio.tasks.ui.TaskDetailScreen
 import com.koach.studio.tasks.ui.TaskDetailViewModel
 import com.koach.studio.tasks.ui.TaskFormScreen
 import com.koach.studio.tasks.ui.TaskFormViewModel
 import com.koach.studio.tasks.ui.TaskListScreen
 import com.koach.studio.tasks.ui.TaskListViewModel
-import com.koach.studio.services.ServiceDetailScreen
-import com.koach.studio.services.ServiceDetailViewModel
-import com.koach.studio.services.ServicesViewModel
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import com.koach.studio.projects.navigation.projectsGraph
 import kotlinx.coroutines.launch
 
 /**
@@ -180,22 +178,23 @@ private fun KoachBottomBar(
     onSelect: (TopLevelDestination) -> Unit
 ) {
     val c = KoachTheme.colors
+    val barShape = RoundedCornerShape(KoachRadius.xl)
     Box(
         Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(24.dp, RoundedCornerShape(50), ambientColor = Color.Black, spotColor = Color.Black)
-                .clip(RoundedCornerShape(50))
+                .shadow(16.dp, barShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
+                .clip(barShape)
                 .background(c.surfaceRaised)
-                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(50))
-                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .border(1.dp, c.outline, barShape)
+                .padding(horizontal = 6.dp, vertical = 6.dp)
                 .selectableGroup()
         ) {
             tabs.forEach { tab ->
@@ -205,14 +204,14 @@ private fun KoachBottomBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(50))
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(KoachRadius.md))
                         .background(if (selected) c.brand else Color.Transparent)
                         .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(tab) })
                         .semantics(mergeDescendants = true) {
                             contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
                         }
-                        .padding(horizontal = if (selected) 16.dp else 14.dp)
+                        .padding(horizontal = if (selected) 14.dp else 12.dp)
                         .animateContentSize()
                         .testTag("tab_${tab.route}")
                 ) {
@@ -221,11 +220,11 @@ private fun KoachBottomBar(
                             if (selected) tab.selectedIcon else tab.icon,
                             contentDescription = null,
                             tint = if (selected) c.onBrand else c.textSecondary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     if (selected) {
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(tab.label, style = MaterialTheme.typography.labelLarge, color = c.onBrand, maxLines = 1)
                     }
                 }
@@ -241,7 +240,8 @@ private fun KoachNavHost(
     startDestination: String,
     modifier: Modifier = Modifier
 ) {
-    val auth = appContainer().authRepository
+    val container = appContainer()
+    val auth = container.authRepository
     val scope = rememberCoroutineScope()
     val back: () -> Unit = { navController.popBackStack() }
 
@@ -419,7 +419,6 @@ private fun KoachNavHost(
             ThreadListScreen(
                 viewModel = koachViewModel { ThreadListViewModel(it.messageRepository, it.people, it.clock) },
                 onOpenThread = { id -> navController.navigate(Routes.conversation(id)) },
-                // Agency users reach Messages from More, so they get a back arrow.
                 onBack = if (user.role.isAgency) back else null
             )
         }
@@ -479,10 +478,32 @@ private fun KoachNavHost(
         }
 
         composable(Routes.ACCOUNT) {
-            MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
+            MenuScreen(
+                user = user,
+                onNavigate = navController::navigate,
+                onSignOut = { scope.launch { auth.signOut() } },
+                themePreferencesStore = container.themePreferencesStore
+            )
         }
         composable(Routes.MORE) {
-            MenuScreen(user, onNavigate = navController::navigate, onSignOut = { scope.launch { auth.signOut() } })
+            MenuScreen(
+                user = user,
+                onNavigate = navController::navigate,
+                onSignOut = { scope.launch { auth.signOut() } },
+                themePreferencesStore = container.themePreferencesStore
+            )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                user = user,
+                isDemo = auth.isDemo,
+                viewModel = koachViewModel { SettingsViewModel(it.themePreferencesStore) },
+                onBack = back,
+                onOpenProfile = { navController.navigate(Routes.PROFILE) },
+                onOpenContact = { navController.navigate(Routes.CONTACT) },
+                onOpenFeedback = { navController.navigate(Routes.FEEDBACK) },
+                onSignOut = { scope.launch { auth.signOut() } }
+            )
         }
 
         composable(Routes.PAYMENTS) {
@@ -505,7 +526,6 @@ private fun KoachNavHost(
             )
         }
         composable(Routes.PROFILE) {
-            val container = appContainer()
             ProfileScreen(
                 user = user,
                 clients = container.clientRepository,
