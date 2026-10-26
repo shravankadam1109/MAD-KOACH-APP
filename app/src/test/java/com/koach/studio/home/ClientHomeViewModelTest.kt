@@ -68,6 +68,19 @@ class ClientHomeViewModelTest {
     }
 
     @Test
+    fun dashboard_computesStatisticsAndStatusBreakdown() = runTest {
+        val vm = viewModelFor("u-maya")
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val state = vm.uiState.first { !it.isLoading }
+
+        assertEquals(1, state.activeProjectsCount)
+        assertEquals(1, state.pendingApprovalsCount)
+        assertEquals(1, state.statusBreakdown.inProgressCount)
+        assertEquals(0, state.statusBreakdown.inReviewCount)
+        assertTrue(state.averageProgressPercent >= 0)
+    }
+
+    @Test
     fun greeting_followsTimeOfDay() {
         assertEquals("Good afternoon", ClientHomeViewModel.greetingFor(java.time.LocalTime.of(14, 0)))
         assertEquals("Good evening", ClientHomeViewModel.greetingFor(java.time.LocalTime.of(21, 0)))
