@@ -1,5 +1,8 @@
 package com.koach.studio.messaging.ui
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.clickable
 import com.koach.studio.core.designsystem.theme.koachItem
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
@@ -169,11 +172,15 @@ private fun ThreadCard(
     val displayTitle = if (isDm) (otherUser?.name ?: summary.thread.title) else summary.thread.title
     val initials = if (isDm && otherUser != null) otherUser.initials else summary.thread.title.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }
 
-    KoachCard(
-        onClick = onClick,
-        highlighted = unread,
-        contentPadding = PaddingValues(16.dp),
-        modifier = modifier.fillMaxWidth().testTag("thread_${summary.thread.id}")
+    // Open row with a hairline beneath; unread threads lead with weight, a green stamp and a count.
+    val hairline = c.outlineSubtle
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .drawBehind { drawLine(hairline, Offset(60.dp.toPx(), size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+            .padding(vertical = 14.dp)
+            .testTag("thread_${summary.thread.id}")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KoachAvatar(initials, size = 46.dp, highlighted = unread)

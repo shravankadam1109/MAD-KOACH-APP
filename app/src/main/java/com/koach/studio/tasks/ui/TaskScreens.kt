@@ -1,5 +1,6 @@
 package com.koach.studio.tasks.ui
 
+import androidx.compose.foundation.clickable
 import com.koach.studio.core.designsystem.theme.koachItem
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
@@ -330,12 +331,10 @@ private fun TaskCard(
     val c = KoachTheme.colors
     val task = row.task
     val done = task.status == TaskStatus.DONE
-    KoachCard(
-        onClick = onClick,
-        contentPadding = PaddingValues(16.dp),
-        modifier = modifier.fillMaxWidth().testTag("task_${task.id}")
-    ) {
-        Row(verticalAlignment = Alignment.Top) {
+    // Open row: the title and deadline lead; project, priority and status share one quiet line.
+    // Description and full metadata stay on the task's detail view.
+    Column(modifier.fillMaxWidth().clickable(onClick = onClick).testTag("task_${task.id}")) {
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 14.dp)) {
             TaskDoneToggle(
                 done = done,
                 enabled = canManage,
@@ -343,7 +342,7 @@ private fun TaskCard(
                 onToggle = onToggleDone,
                 modifier = Modifier.testTag("task_done_${task.id}")
             )
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).padding(top = 2.dp)) {
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -352,74 +351,39 @@ private fun TaskCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = row.projectTitle ?: "Studio",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = c.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (task.description.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(task.priority.tone.color()))
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        text = task.description,
+                        text = listOfNotNull(row.projectTitle ?: "Studio", task.priority.displayName, task.status.displayName.takeIf { !done }).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = c.textTertiary,
+                        color = c.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Spacer(Modifier.height(10.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    StatusPill(task.priority.displayName, task.priority.tone)
-                    if (!done) StatusPill(task.status.displayName, task.status.tone, showDot = false)
-                }
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (done) "Done" else formatDue(task.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (row.isOverdue) Tone.Danger.color() else c.textTertiary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .testTag("task_due_${task.id}")
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(top = 2.dp)) {
+                Text(
+                    text = if (done) "Done" else formatDue(task.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (row.isOverdue) Tone.Danger.color() else c.textTertiary,
+                    maxLines = 1,
+                    modifier = Modifier.testTag("task_due_${task.id}")
+                )
+                row.assignee?.let { assignee ->
+                    Spacer(Modifier.height(6.dp))
+                    KoachAvatar(
+                        initials = assignee.initials,
+                        size = 24.dp,
+                        modifier = Modifier.semantics { contentDescription = "Assigned to ${assignee.name}" }
                     )
-                    row.assignee?.let { assignee ->
-                        Spacer(Modifier.width(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.semantics(mergeDescendants = true) {
-                                contentDescription = "Assigned to ${assignee.name}"
-                            }
-                        ) {
-                            KoachAvatar(
-                                initials = assignee.initials,
-                                size = 24.dp
-                            )
-                            Text(
-                                text = assignee.name.substringBefore(" "),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = c.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
                 }
             }
         }
+        KoachDivider(Modifier.padding(start = 48.dp))
     }
 }
 

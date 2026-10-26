@@ -139,10 +139,12 @@ fun MenuScreen(
                     color = c.textPrimary
                 )
                 Spacer(Modifier.height(14.dp))
-                KoachCard(
-                    highlighted = true,
-                    onClick = { onNavigate(Routes.PROFILE) },
-                    modifier = Modifier.fillMaxWidth().entrance(0)
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .entrance(0)
+                        .clickable(onClickLabel = "Open profile") { onNavigate(Routes.PROFILE) }
+                        .padding(vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         KoachAvatar(user.initials, size = 52.dp, highlighted = true)
