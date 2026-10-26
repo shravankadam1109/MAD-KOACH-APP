@@ -367,8 +367,8 @@ fun AddDocumentScreen(viewModel: AddDocumentViewModel, onBack: () -> Unit, modif
         Column(
             Modifier
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
                 .testTag("add_document_form")
         ) {

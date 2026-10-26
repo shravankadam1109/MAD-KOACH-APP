@@ -626,8 +626,8 @@ fun TaskFormScreen(
             else -> Column(
                 Modifier
                     .padding(padding)
-                    .verticalScroll(rememberScrollState())
                     .imePadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = KoachTheme.spacing.gutter, vertical = 8.dp)
                     .testTag("task_form")
             ) {
