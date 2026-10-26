@@ -3,9 +3,9 @@ package com.koach.studio.core.di
 import com.koach.studio.bookings.data.BookingRepository
 import com.koach.studio.bookings.data.InMemoryBookingRepository
 import com.koach.studio.catalog.data.CatalogRepository
+import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.clients.data.ClientRepository
 import com.koach.studio.clients.data.InMemoryClientRepository
-import com.koach.studio.catalog.data.InMemoryCatalogRepository
 import com.koach.studio.core.auth.AccessControl
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.DemoAuthRepository
@@ -13,6 +13,8 @@ import com.koach.studio.core.auth.InMemorySessionStore
 import com.koach.studio.core.auth.SessionStore
 import com.koach.studio.core.data.DemoData
 import com.koach.studio.core.model.User
+import com.koach.studio.core.settings.InMemoryThemePreferencesStore
+import com.koach.studio.core.settings.ThemePreferencesStore
 import com.koach.studio.documents.data.DemoDocumentStorage
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.DocumentStorage
@@ -27,11 +29,11 @@ import com.koach.studio.payments.InMemoryPaymentRepository
 import com.koach.studio.payments.PaymentRepository
 import com.koach.studio.projects.data.DeliverableDownloader
 import com.koach.studio.projects.data.InMemoryProjectRepository
+import com.koach.studio.projects.data.ProjectRepository
+import com.koach.studio.projects.data.SecuredProjectRepository
 import com.koach.studio.projects.data.SimulatedDeliverableDownloader
 import com.koach.studio.tasks.data.InMemoryTaskRepository
 import com.koach.studio.tasks.data.TaskRepository
-import com.koach.studio.projects.data.ProjectRepository
-import com.koach.studio.projects.data.SecuredProjectRepository
 import kotlinx.coroutines.flow.first
 import java.time.Clock
 import java.time.LocalDate
@@ -47,6 +49,7 @@ interface AppContainer {
     val dataNotice: String? get() = null
 
     val clock: Clock
+    val themePreferencesStore: ThemePreferencesStore
     val authRepository: AuthRepository
     val accessControl: AccessControl
     /** People directory (staff and client contacts) used to show names and avatars. */
@@ -70,7 +73,8 @@ interface AppContainer {
 open class DemoAppContainer(
     override val clock: Clock = Clock.systemDefaultZone(),
     /** In-memory by default (tests); the app passes a persistent store. */
-    private val sessionStore: SessionStore = InMemorySessionStore()
+    private val sessionStore: SessionStore = InMemorySessionStore(),
+    override val themePreferencesStore: ThemePreferencesStore = InMemoryThemePreferencesStore()
 ) : AppContainer {
 
     private val demoData by lazy { DemoData(LocalDate.now(clock)) }

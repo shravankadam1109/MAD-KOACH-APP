@@ -9,6 +9,8 @@ import com.koach.studio.clients.data.ClientRepository
 import com.koach.studio.clients.data.FirestoreClientRepository
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.di.DemoAppContainer
+import com.koach.studio.core.settings.InMemoryThemePreferencesStore
+import com.koach.studio.core.settings.ThemePreferencesStore
 import com.koach.studio.documents.data.DocumentRepository
 import com.koach.studio.documents.data.FirestoreDocumentRepository
 import com.koach.studio.feedback.FeedbackRepository
@@ -38,8 +40,9 @@ class FirebaseAppContainer(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
     storage: FirebaseStorage = FirebaseStorage.getInstance(),
     /** Debug only: connect to the local Firebase emulators on this host (10.0.2.2 from an Android emulator). */
-    emulatorHost: String? = null
-) : DemoAppContainer(clock) {
+    emulatorHost: String? = null,
+    themePreferencesStore: ThemePreferencesStore = InMemoryThemePreferencesStore()
+) : DemoAppContainer(clock = clock, themePreferencesStore = themePreferencesStore) {
 
     init {
         if (emulatorHost != null) {
