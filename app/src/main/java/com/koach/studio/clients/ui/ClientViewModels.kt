@@ -32,7 +32,9 @@ data class ClientListUiState(
     val totalCount: Int = 0,
     val query: String = "",
     val statusFilter: ClientStatus? = null,
-    val canCreate: Boolean = false
+    val canCreate: Boolean = false,
+    val activeCount: Int = 0,
+    val leadCount: Int = 0
 )
 
 class ClientListViewModel(
@@ -57,7 +59,16 @@ class ClientListViewModel(
                     val linked = projectList.filter { it.clientId == client.id }
                     ClientRow(client, linked.size, linked.count { it.status != ProjectStatus.COMPLETED })
                 }
-            ClientListUiState(false, rows, all.size, q, s, canCreate)
+            ClientListUiState(
+                isLoading = false,
+                rows = rows,
+                totalCount = all.size,
+                query = q,
+                statusFilter = s,
+                canCreate = canCreate,
+                activeCount = all.count { it.status == ClientStatus.ACTIVE },
+                leadCount = all.count { it.status == ClientStatus.LEAD }
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ClientListUiState())
 
     fun onQueryChange(value: String) = query.update { value }
