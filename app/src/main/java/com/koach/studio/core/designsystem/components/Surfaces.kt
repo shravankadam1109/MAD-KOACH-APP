@@ -18,35 +18,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.koach.studio.core.designsystem.theme.KoachBrushes
 import com.koach.studio.core.designsystem.theme.KoachRadius
 import com.koach.studio.core.designsystem.theme.KoachTheme
 
 /**
- * The standard KOACH card: a layered charcoal surface with a large radius and a
- * barely-there edge, separated from the background by tone rather than lines.
- * [highlighted] adds a soft green wash from the top-right corner and a faint
- * green edge to draw the eye without shouting.
+ * Standard KOACH card: a solid charcoal (or light neutral) surface with a crisp 1dp border
+ * and subtle tonal separation. [highlighted] uses an elevated surface and restrained green border.
  */
 @Composable
 fun KoachCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     highlighted: Boolean = false,
-    contentPadding: PaddingValues = PaddingValues(20.dp),
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = KoachTheme.colors
     val shape = RoundedCornerShape(KoachRadius.lg)
-    val edge = if (highlighted) colors.brand.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.05f)
+    val bg = if (highlighted) colors.surfaceRaised else colors.surface
+    val edge = if (highlighted) colors.brand.copy(alpha = 0.45f) else colors.outlineSubtle
     Column(
         modifier = modifier
             .clip(shape)
-            .background(colors.surface)
-            .then(if (highlighted) Modifier.cornerGlow(colors.brand, 0.22f) else Modifier)
+            .background(bg)
             .border(BorderStroke(1.dp, edge), shape)
             .then(
                 if (onClick != null) {
@@ -63,30 +59,32 @@ fun KoachCard(
 }
 
 /**
- * Bright KOACH-green feature card for the single most important item on a
- * screen. Content is dark for contrast; use [KoachTheme.colors.onBrand] for text.
+ * Elevated feature card for the primary summary on a screen.
+ * Uses a solid raised charcoal surface with a restrained #41BA00 accent border and top bar,
+ * avoiding harsh full-card green gradients.
  */
 @Composable
 fun KoachHeroCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(22.dp),
+    contentPadding: PaddingValues = PaddingValues(18.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val colors = KoachTheme.colors
     val shape = RoundedCornerShape(KoachRadius.xl)
-    CompositionLocalProvider(LocalContentColor provides KoachTheme.colors.onBrand) {
+    val brandAccent = colors.brand
+    CompositionLocalProvider(LocalContentColor provides colors.textPrimary) {
         Column(
             modifier = modifier
                 .clip(shape)
-                .background(KoachBrushes.hero)
+                .background(colors.surfaceRaised)
+                .border(BorderStroke(1.dp, colors.brand.copy(alpha = 0.4f)), shape)
                 .drawBehind {
-                    // A soft highlight in the top-right gives the fill some depth.
-                    val center = Offset(size.width * 0.9f, size.height * 0.05f)
-                    val radius = size.minDimension * 0.9f
-                    drawCircle(
-                        brush = Brush.radialGradient(listOf(Color.White.copy(alpha = 0.22f), Color.Transparent), center = center, radius = radius),
-                        radius = radius,
-                        center = center
+                    // Subtle 3dp brand accent line along the top edge.
+                    drawRect(
+                        color = brandAccent,
+                        topLeft = Offset.Zero,
+                        size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx())
                     )
                 }
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
@@ -96,89 +94,48 @@ fun KoachHeroCard(
     }
 }
 
-/** Translucent panel for use on top of [KoachHeroCard] or glow backgrounds. */
+/** Solid nested sub-panel for use inside [KoachHeroCard] or dashboard summaries. */
 @Composable
 fun KoachGlassPanel(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     dark: Boolean = true,
-    contentPadding: PaddingValues = PaddingValues(14.dp),
+    contentPadding: PaddingValues = PaddingValues(12.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val colors = KoachTheme.colors
     val shape = RoundedCornerShape(KoachRadius.md)
     Column(
         modifier = modifier
             .clip(shape)
-            .background(if (dark) Color.Black.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.07f))
+            .background(if (dark) colors.surfaceHigh else colors.surface)
+            .border(BorderStroke(1.dp, colors.outline), shape)
             .then(if (onClick != null) Modifier.defaultMinSize(minHeight = 48.dp).clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         content = content
     )
 }
 
-/** Soft green wash from the top-right corner, sized to whatever it decorates. */
-fun Modifier.cornerGlow(color: Color, intensity: Float = 0.2f): Modifier = drawBehind {
-    val center = Offset(size.width, 0f)
-    val radius = size.maxDimension * 0.85f
-    drawCircle(
-        brush = Brush.radialGradient(listOf(color.copy(alpha = intensity), Color.Transparent), center = center, radius = radius),
-        radius = radius,
-        center = center
-    )
-}
+/** Kept as a no-op modifier so screens prefer solid surfaces over radial green washes. */
+@Suppress("UnusedReceiverParameter")
+fun Modifier.cornerGlow(color: Color, intensity: Float = 0f): Modifier = this
 
-/** Soft green radial glow behind hero areas. Keep it subtle: it is light, not paint. */
-fun Modifier.koachGlow(color: Color, intensity: Float = 0.22f): Modifier = drawBehind {
-    val center = Offset(size.width * 0.85f, 0f)
-    val radius = size.maxDimension * 0.75f
-    drawCircle(
-        brush = Brush.radialGradient(colors = listOf(color.copy(alpha = intensity), Color.Transparent), center = center, radius = radius),
-        radius = radius,
-        center = center
-    )
-}
+/** Kept as a no-op modifier so screens prefer solid surfaces over radial green washes. */
+@Suppress("UnusedReceiverParameter")
+fun Modifier.koachGlow(color: Color, intensity: Float = 0f): Modifier = this
 
 /**
- * Full-screen background: near-black with two blurred light pools in KOACH
- * green, a strong one top-right and a faint one lower-left, like light leaking
- * across a dark studio.
+ * Full-screen background: clean solid studio background in both dark and light modes.
  */
 @Composable
 fun KoachBackground(
     modifier: Modifier = Modifier,
-    glow: Boolean = true,
+    glow: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colors = KoachTheme.colors
     Box(
-        modifier = modifier
-            .background(colors.background)
-            .then(
-                if (glow) {
-                    Modifier.drawBehind {
-                        val top = Offset(size.width * 0.95f, size.height * 0.02f)
-                        val topRadius = size.width * 1.05f
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                listOf(colors.brand.copy(alpha = 0.28f), colors.brand.copy(alpha = 0.06f), Color.Transparent),
-                                center = top,
-                                radius = topRadius
-                            ),
-                            radius = topRadius,
-                            center = top
-                        )
-                        val low = Offset(-size.width * 0.1f, size.height * 0.62f)
-                        val lowRadius = size.width * 0.8f
-                        drawCircle(
-                            brush = Brush.radialGradient(listOf(colors.brand.copy(alpha = 0.09f), Color.Transparent), center = low, radius = lowRadius),
-                            radius = lowRadius,
-                            center = low
-                        )
-                    }
-                } else {
-                    Modifier
-                }
-            )
+        modifier = modifier.background(colors.background)
     ) {
         content()
     }

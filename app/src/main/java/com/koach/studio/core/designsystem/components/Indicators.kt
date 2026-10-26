@@ -1,5 +1,6 @@
 package com.koach.studio.core.designsystem.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -18,18 +19,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.koach.studio.core.designsystem.theme.KoachRadius
 import com.koach.studio.core.designsystem.theme.KoachTheme
 
 /** Semantic tone shared by pills, badges and icons so status colour stays consistent. */
@@ -48,7 +49,7 @@ fun Tone.color(): Color {
     }
 }
 
-/** Compact status label: tinted fill, coloured dot, uppercase text. */
+/** Compact status label: subtle tinted fill, coloured dot, uppercase text. */
 @Composable
 fun StatusPill(
     text: String,
@@ -60,16 +61,24 @@ fun StatusPill(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(KoachRadius.xs))
             .background(accent.copy(alpha = 0.12f))
-            .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(KoachRadius.xs))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         if (showDot) {
             Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
         }
-        Text(text.uppercase(), style = MaterialTheme.typography.labelSmall.copy(letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing * 0.6f), color = accent)
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing * 0.55f
+            ),
+            color = accent,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -108,7 +117,7 @@ fun KoachAvatar(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(colors.surfaceHigh, colors.surfaceRaised)))
+            .background(if (highlighted) colors.brandContainer else colors.surfaceRaised)
             .border(1.5.dp, if (highlighted) colors.brand else colors.outline, CircleShape)
     ) {
         Text(
@@ -120,7 +129,7 @@ fun KoachAvatar(
     }
 }
 
-/** Animated green progress track. [progress] is clamped to 0..1. */
+/** Animated solid brand-green progress track. [progress] is clamped to 0..1. */
 @Composable
 fun KoachProgressBar(
     progress: Float,
@@ -142,7 +151,7 @@ fun KoachProgressBar(
                 .fillMaxHeight()
                 .fillMaxWidth(animated)
                 .clip(RoundedCornerShape(50))
-                .background(Brush.horizontalGradient(listOf(colors.brandDeep, colors.brand, colors.brandBright)))
+                .background(colors.brand)
         )
     }
 }
@@ -160,7 +169,7 @@ fun IconTile(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(KoachRadius.sm))
             .background(accent.copy(alpha = 0.12f))
     ) {
         Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(size * 0.5f))
