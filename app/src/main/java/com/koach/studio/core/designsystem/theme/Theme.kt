@@ -38,6 +38,7 @@ object KoachRadius {
     val md = 14.dp
     val lg = 18.dp
     val xl = 22.dp
+    val pill = 50.dp
 }
 
 val KoachShapes = Shapes(

@@ -57,8 +57,8 @@ import com.koach.studio.core.designsystem.components.EmptyState
 import com.koach.studio.core.designsystem.components.ErrorState
 import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.KoachBackground
-import com.koach.studio.core.designsystem.components.KoachButton
 import com.koach.studio.core.designsystem.components.KoachFilterChips
+import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachSearchField
 import com.koach.studio.core.designsystem.theme.KoachRadius
 import com.koach.studio.core.designsystem.theme.KoachTheme
@@ -179,7 +179,7 @@ private fun WideProjectListLayout(
                 Spacer(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(c.borderSubtle)
+                        .background(c.outlineSubtle)
                 )
             }
 
@@ -271,10 +271,10 @@ private fun ProjectLazyList(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(filterButtonShape)
-                            .background(if (hasActiveFilters) c.brandSoft else c.surface)
+                            .background(if (hasActiveFilters) c.brandContainer else c.surface)
                             .border(
                                 width = 1.dp,
-                                color = if (hasActiveFilters) c.brand.copy(alpha = 0.45f) else c.borderSubtle,
+                                color = if (hasActiveFilters) c.brand.copy(alpha = 0.45f) else c.outlineSubtle,
                                 shape = filterButtonShape
                             )
                             .clickable(
@@ -474,7 +474,7 @@ private fun ProjectLazyList(
                     )
                 }
 
-                KoachButton(
+                KoachPrimaryButton(
                     text = "Show ${uiState.projects.size} project${if (uiState.projects.size == 1) "" else "s"}",
                     onClick = { showFilterSheet = false },
                     modifier = Modifier
@@ -496,7 +496,7 @@ private fun ActiveFilterTag(
     Row(
         modifier = Modifier
             .clip(shape)
-            .background(c.brandSoft)
+            .background(c.brandContainer)
             .border(1.dp, c.brand.copy(alpha = 0.35f), shape)
             .clickable(onClick = onRemove)
             .padding(start = 10.dp, end = 8.dp, top = 5.dp, bottom = 5.dp),

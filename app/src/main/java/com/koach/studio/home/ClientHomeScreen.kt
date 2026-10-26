@@ -239,7 +239,7 @@ private fun FeaturedProjectCard(
                 color = c.brand,
                 modifier = Modifier
                     .clip(pillShape)
-                    .background(c.brandSoft)
+                    .background(c.brandContainer)
                     .border(1.dp, c.brand.copy(alpha = 0.35f), pillShape)
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             )

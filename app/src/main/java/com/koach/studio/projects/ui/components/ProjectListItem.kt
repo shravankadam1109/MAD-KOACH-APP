@@ -46,7 +46,7 @@ fun ProjectListItem(
 
     KoachCard(
         onClick = onClick,
-        padding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(16.dp),
         modifier = modifier
             .fillMaxWidth()
             .testTag("project_item_${project.id}")

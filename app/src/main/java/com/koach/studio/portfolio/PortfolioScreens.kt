@@ -174,7 +174,7 @@ fun PortfolioCover(item: PortfolioItem, aspect: Float, iconSize: Dp, modifier: M
                 .fillMaxWidth()
                 .aspectRatio(aspect)
                 .clip(coverShape)
-                .border(1.dp, c.borderSubtle, coverShape)
+                .border(1.dp, c.outlineSubtle, coverShape)
         )
         return
     }
@@ -185,7 +185,7 @@ fun PortfolioCover(item: PortfolioItem, aspect: Float, iconSize: Dp, modifier: M
             .aspectRatio(aspect)
             .clip(coverShape)
             .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.25f), c.surfaceRaised, c.background)))
-            .border(1.dp, c.borderSubtle, coverShape)
+            .border(1.dp, c.outlineSubtle, coverShape)
             .drawBehind {
                 val step = size.width / 5f
                 for (i in 0..6) {
@@ -343,7 +343,7 @@ private fun GalleryImage(image: Int, title: String) {
             .fillMaxWidth()
             .aspectRatio(if (size.height > 0f) size.width / size.height else 1f)
             .clip(shape)
-            .border(1.dp, c.borderSubtle, shape)
+            .border(1.dp, c.outlineSubtle, shape)
     )
 }
 

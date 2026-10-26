@@ -250,7 +250,7 @@ fun AgencyHomeScreen(
                         state.teamWorkload.forEachIndexed { index, memberWorkload ->
                             TeamWorkloadRow(memberWorkload)
                             if (index < state.teamWorkload.lastIndex) {
-                                KoachDivider(padding = PaddingValues(vertical = 10.dp))
+                                KoachDivider(modifier = Modifier.padding(vertical = 10.dp))
                             }
                         }
                     }
@@ -342,7 +342,7 @@ private fun DeadlineRow(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(RoundedCornerShape(KoachRadius.sm))
-                    .background(if (item.isOverdue) c.dangerSoft else c.brandSoft),
+                    .background(if (item.isOverdue) c.danger.copy(alpha = 0.14f) else c.brandContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

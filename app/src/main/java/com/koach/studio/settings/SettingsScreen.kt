@@ -21,10 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.BrightnessAuto
 import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -248,7 +248,7 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .padding(vertical = 10.dp)
                     ) {
-                        IconTile(Icons.Outlined.HelpOutline, tone = Tone.Info, size = 36.dp)
+                        IconTile(Icons.AutoMirrored.Outlined.HelpOutline, tone = Tone.Info, size = 36.dp)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text("How reviews & approvals work", style = MaterialTheme.typography.titleSmall, color = c.textPrimary)

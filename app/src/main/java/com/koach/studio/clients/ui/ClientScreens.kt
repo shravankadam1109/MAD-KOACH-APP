@@ -217,7 +217,7 @@ private fun ClientCard(row: ClientRow, onClick: () -> Unit, modifier: Modifier =
             StatusPill(client.status.displayName, client.status.tone)
         }
 
-        KoachDivider(padding = PaddingValues(vertical = 10.dp))
+        KoachDivider(modifier = Modifier.padding(vertical = 10.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
