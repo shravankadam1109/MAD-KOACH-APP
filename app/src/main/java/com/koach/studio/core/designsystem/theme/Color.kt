@@ -13,20 +13,20 @@ object KoachPalette {
     val GreenContainer = Color(0xFF11210A)
     val GreenOutline = Color(0xFF234517)
 
-    /** Deep studio blacks and layered charcoal surfaces. */
-    val Ink = Color(0xFF07080A)
-    val Background = Color(0xFF0B0C0E)
-    val Surface = Color(0xFF131519)
-    val SurfaceRaised = Color(0xFF1A1D23)
-    val SurfaceHigh = Color(0xFF22262E)
-    val Outline = Color(0xFF2B303B)
-    val OutlineSubtle = Color(0xFF1E222A)
+    /** Deep studio blacks and layered charcoal surfaces, faintly tinted toward the brand green. */
+    val Ink = Color(0xFF030403)
+    val Background = Color(0xFF050605)
+    val Surface = Color(0xFF0D100D)
+    val SurfaceRaised = Color(0xFF141814)
+    val SurfaceHigh = Color(0xFF1C211C)
+    val Outline = Color(0xFF29302A)
+    val OutlineSubtle = Color(0xFF1A1F1B)
 
     /** Clean white and neutral grey typography tokens. */
     val White = Color(0xFFFFFFFF)
-    val Grey = Color(0xFFA5ABB8)
+    val Grey = Color(0xFFA9B0A9)
     /** Tertiary text; kept at 4.5:1 or better against Background. */
-    val GreyDim = Color(0xFF7D8494)
+    val GreyDim = Color(0xFF7E877F)
 
     /** Light mode neutral surfaces and ink tokens. */
     val LightBackground = Color(0xFFF7F8FA)
@@ -40,8 +40,9 @@ object KoachPalette {
 
     val Amber = Color(0xFFF5B83D)
     val Red = Color(0xFFF26B6B)
-    val Blue = Color(0xFF5AA9F2)
-    val Violet = Color(0xFFA48CF7)
+    /** Status accents kept inside the green family so they never compete with the brand. */
+    val Blue = Color(0xFF7CC9A8)
+    val Violet = Color(0xFFC8E86B)
 }
 
 /** Semantic colours that Material's ColorScheme has no slot for. */
@@ -66,5 +67,17 @@ data class KoachColors(
     val warning: Color = KoachPalette.Amber,
     val danger: Color = KoachPalette.Red,
     val info: Color = KoachPalette.Blue,
-    val review: Color = KoachPalette.Violet
+    val review: Color = KoachPalette.Violet,
+    /** Translucent fill for glass surfaces laid over the ambient background or imagery. */
+    val glass: Color = Color(0xB80F130F),
+    /** Brighter glass for raised or selected surfaces. */
+    val glassRaised: Color = Color(0xCC161B16),
+    /** Hairline edge for glass; reads as reflected light rather than a drawn border. */
+    val glassBorder: Color = Color.White.copy(alpha = 0.07f),
+    /** Top-edge sheen on glass surfaces. */
+    val glassHighlight: Color = Color.White.copy(alpha = 0.06f),
+    /** Darkening overlay that keeps text readable over photography. */
+    val scrim: Color = KoachPalette.Ink,
+    /** Ambient brand light used in backgrounds and blooms; always drawn at low alpha. */
+    val glow: Color = KoachPalette.Green
 )

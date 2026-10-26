@@ -1,5 +1,7 @@
 package com.koach.studio.messaging.ui
 
+import com.koach.studio.core.designsystem.theme.koachItem
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -141,7 +143,7 @@ fun ThreadListScreen(
                                 state = state,
                                 people = viewModel.people,
                                 onClick = { onOpenThread(summary.thread.id) },
-                                modifier = Modifier.padding(horizontal = gutter)
+                                modifier = koachItem().padding(horizontal = gutter)
                             )
                         }
                     }
@@ -233,7 +235,7 @@ fun ConversationScreen(viewModel: ConversationViewModel, onBack: () -> Unit, mod
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             val isDm = state.thread?.type == com.koach.studio.core.model.ThreadType.DM
             val other = state.participants.find { it.id != state.currentUserId } ?: state.participants.firstOrNull()
@@ -282,7 +284,9 @@ fun ConversationScreen(viewModel: ConversationViewModel, onBack: () -> Unit, mod
                     if (newDay) DaySeparator(message.sentAt.toLocalDate())
                     val mine = message.senderId == state.currentUserId
                     val showName = !mine && (newDay || previous?.senderId != message.senderId)
-                    MessageBubble(message, mine, if (showName) viewModel.senderName(message.senderId) else null)
+                    Box(koachItem()) {
+                        MessageBubble(message, mine, if (showName) viewModel.senderName(message.senderId) else null)
+                    }
                 }
             }
         }

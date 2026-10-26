@@ -1,5 +1,6 @@
 package com.koach.studio.profile
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,7 +65,7 @@ fun ProfileScreen(
     val organisation by organisationFlow.collectAsState(initial = null)
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Profile", onBack = onBack) },
         modifier = modifier
     ) { padding ->

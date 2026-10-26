@@ -1,5 +1,6 @@
 package com.koach.studio.bookings.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,7 +90,7 @@ fun NewBookingScreen(
     val gutter = KoachTheme.spacing.gutter
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = if (state.submitted == null) "Book a service" else "Request sent", onBack = onBack) },
         modifier = modifier
     ) { padding ->
@@ -281,7 +282,7 @@ fun BookingsScreen(
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             KoachTopBar(
                 title = if (state.canManage) "Booking inbox" else "My bookings",

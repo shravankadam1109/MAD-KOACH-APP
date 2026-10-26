@@ -104,8 +104,14 @@ private val KoachColorsLight = KoachColors(
     success = KoachPalette.GreenDeep,
     warning = Color(0xFFA87000),
     danger = Color(0xFFB82020),
-    info = Color(0xFF1C6EA8),
-    review = Color(0xFF6B46E0)
+    info = Color(0xFF2F7D62),
+    review = Color(0xFF5E7A12),
+    glass = Color(0xD9FFFFFF),
+    glassRaised = Color(0xF2FFFFFF),
+    glassBorder = Color.Black.copy(alpha = 0.07f),
+    glassHighlight = Color.White.copy(alpha = 0.6f),
+    scrim = KoachPalette.Ink,
+    glow = KoachPalette.Green
 )
 
 private val KoachLightColorScheme = lightColorScheme(
@@ -117,7 +123,7 @@ private val KoachLightColorScheme = lightColorScheme(
     onSecondary = KoachPalette.White,
     secondaryContainer = KoachPalette.LightSurfaceHigh,
     onSecondaryContainer = KoachPalette.Ink,
-    tertiary = Color(0xFF6B46E0),
+    tertiary = Color(0xFF5E7A12),
     background = KoachPalette.LightBackground,
     onBackground = KoachPalette.Ink,
     surface = KoachPalette.LightSurface,

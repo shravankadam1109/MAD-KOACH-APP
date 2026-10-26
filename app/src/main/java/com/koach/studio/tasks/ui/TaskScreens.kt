@@ -1,5 +1,7 @@
 package com.koach.studio.tasks.ui
 
+import com.koach.studio.core.designsystem.theme.koachItem
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -136,7 +138,7 @@ fun TaskListScreen(
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         floatingActionButton = {
             if (state.canManage) {
                 ExtendedFloatingActionButton(
@@ -234,7 +236,7 @@ fun TaskListScreen(
                     canManage = state.canManage,
                     onToggleDone = { viewModel.toggleDone(row.task) },
                     onClick = { onOpenTask(row.task.id) },
-                    modifier = Modifier.padding(horizontal = gutter)
+                    modifier = koachItem().padding(horizontal = gutter)
                 )
             }
         }
@@ -448,7 +450,7 @@ fun TaskDetailScreen(
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Task", onBack = onBack) },
         floatingActionButton = {
             if (state.canManage && state.task != null) {
@@ -616,7 +618,7 @@ fun TaskFormScreen(
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = if (state.isEditing) "Edit task" else "New task", onBack = onBack) },
         modifier = modifier
     ) { padding ->

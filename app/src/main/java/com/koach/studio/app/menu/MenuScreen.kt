@@ -1,5 +1,9 @@
 package com.koach.studio.app.menu
 
+import androidx.compose.ui.text.style.TextOverflow
+import com.koach.studio.core.designsystem.theme.entrance
+import com.koach.studio.core.designsystem.components.KoachDivider
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -138,7 +142,7 @@ fun MenuScreen(
                 KoachCard(
                     highlighted = true,
                     onClick = { onNavigate(Routes.PROFILE) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().entrance(0)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         KoachAvatar(user.initials, size = 52.dp, highlighted = true)
@@ -158,7 +162,7 @@ fun MenuScreen(
                 item {
                     KoachCard(
                         contentPadding = PaddingValues(14.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("menu_appearance_card")
+                        modifier = Modifier.fillMaxWidth().entrance(1).testTag("menu_appearance_card")
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -193,8 +197,15 @@ fun MenuScreen(
                 }
             }
 
-            items(menuEntriesFor(user), key = { it.route }) { entry ->
-                MenuRow(entry, onClick = { onNavigate(entry.route) })
+            // One grouped glass panel reads calmer than a stack of separate cards.
+            item {
+                val entries = menuEntriesFor(user)
+                KoachCard(contentPadding = PaddingValues(vertical = 4.dp), modifier = Modifier.fillMaxWidth().entrance(2)) {
+                    entries.forEachIndexed { index, entry ->
+                        MenuRow(entry, onClick = { onNavigate(entry.route) })
+                        if (index < entries.lastIndex) KoachDivider(Modifier.padding(start = 68.dp))
+                    }
+                }
             }
             item {
                 Spacer(Modifier.height(10.dp))
@@ -215,21 +226,20 @@ fun MenuScreen(
 @Composable
 private fun MenuRow(entry: MenuEntry, onClick: () -> Unit) {
     val c = KoachTheme.colors
-    KoachCard(
-        onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp)
             .testTag("menu_${entry.route}")
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconTile(entry.icon, size = 38.dp)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(entry.title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
-                Text(entry.subtitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-            }
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.textTertiary)
+        IconTile(entry.icon, size = 36.dp)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(entry.title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+            Text(entry.subtitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.textTertiary)
     }
 }

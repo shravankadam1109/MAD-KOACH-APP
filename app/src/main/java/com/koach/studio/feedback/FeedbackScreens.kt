@@ -1,5 +1,6 @@
 package com.koach.studio.feedback
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -181,7 +182,7 @@ fun FeedbackListScreen(viewModel: FeedbackListViewModel, onBack: () -> Unit, onN
     }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = if (state.canRespond) "Feedback inbox" else "Feedback & support", onBack = onBack) },
         floatingActionButton = {
             if (state.canSubmit) {
@@ -315,7 +316,7 @@ fun NewFeedbackScreen(viewModel: NewFeedbackViewModel, onBack: () -> Unit, modif
     LaunchedEffect(state.submitted) { if (state.submitted) onBack() }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = "Share feedback", onBack = onBack) },
         modifier = modifier
     ) { padding ->

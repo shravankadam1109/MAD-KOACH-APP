@@ -1,5 +1,6 @@
 package com.koach.studio.settings
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -101,7 +102,7 @@ fun SettingsScreen(
     val gutter = KoachTheme.spacing.gutter
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             KoachTopBar(
                 title = "Settings",

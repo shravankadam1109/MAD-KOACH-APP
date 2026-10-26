@@ -1,5 +1,6 @@
 package com.koach.studio.projects.ui.edit
 
+import androidx.compose.ui.graphics.Color
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -110,7 +111,7 @@ fun EditDeliverableScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = darkBackground,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -134,7 +135,7 @@ fun EditDeliverableScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = darkBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { innerPadding ->

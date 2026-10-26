@@ -1,5 +1,6 @@
 package com.koach.studio.bookings.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -133,7 +134,7 @@ fun BookingDetailScreen(viewModel: BookingDetailViewModel, onBack: () -> Unit, m
 
     val booking = state.booking
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = state.service?.name ?: "Booking", subtitle = booking?.id?.uppercase(), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         modifier = modifier

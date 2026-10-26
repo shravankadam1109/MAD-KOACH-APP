@@ -1,5 +1,6 @@
 package com.koach.studio.clients.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -104,7 +105,7 @@ fun ClientListScreen(
     val gutter = KoachTheme.spacing.gutter
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         floatingActionButton = {
             if (state.canCreate) {
                 ExtendedFloatingActionButton(
@@ -284,7 +285,7 @@ fun ClientDetailScreen(
 
     val client = state.client
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = {
             KoachTopBar(title = client?.name ?: "Client", onBack = onBack) {
                 if (client != null && state.canEdit) {
@@ -431,7 +432,7 @@ fun ClientFormScreen(
     LaunchedEffect(state.savedClientId) { state.savedClientId?.let(onSaved) }
 
     Scaffold(
-        containerColor = c.background,
+        containerColor = Color.Transparent,
         topBar = { KoachTopBar(title = if (state.isEditing) "Edit client" else "New client", onBack = onBack) },
         modifier = modifier
     ) { padding ->

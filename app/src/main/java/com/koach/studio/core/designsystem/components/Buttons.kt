@@ -1,5 +1,20 @@
 package com.koach.studio.core.designsystem.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import com.koach.studio.core.designsystem.theme.KoachMotion
+import com.koach.studio.core.designsystem.theme.pressScale
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,12 +43,15 @@ import androidx.compose.ui.unit.dp
 import com.koach.studio.core.designsystem.theme.KoachRadius
 import com.koach.studio.core.designsystem.theme.KoachTheme
 
-/** Standardised button geometry: sleek 48dp accessible height with refined rounded corners. */
-private val ButtonShape = RoundedCornerShape(KoachRadius.md)
-private val ButtonPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
-private val ButtonMinHeight = 48.dp
+/** Standardised button geometry: pill-shaped, 50dp tall — comfortable to hit without dominating. */
+private val ButtonShape = RoundedCornerShape(50)
+private val ButtonPadding = PaddingValues(horizontal = 22.dp, vertical = 13.dp)
+private val ButtonMinHeight = 50.dp
 
-/** Solid KOACH-green call to action without excessive drop-shadow glow. */
+/**
+ * The screen's main action: solid KOACH green with a soft pool of green light
+ * beneath it. It settles under the finger and cross-fades into its loading state.
+ */
 @Composable
 fun KoachPrimaryButton(
     text: String,
@@ -45,18 +63,38 @@ fun KoachPrimaryButton(
     trailingIcon: ImageVector? = null
 ) {
     val colors = KoachTheme.colors
+    val interaction = remember { MutableInteractionSource() }
+    val lit = enabled && !loading
+    val glow by animateFloatAsState(if (lit) 1f else 0f, KoachMotion.enter(KoachMotion.Medium), label = "glow")
     Button(
         onClick = onClick,
-        enabled = enabled && !loading,
+        enabled = lit,
         shape = ButtonShape,
         contentPadding = ButtonPadding,
+        interactionSource = interaction,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.brand,
             contentColor = colors.onBrand,
             disabledContainerColor = colors.surfaceHigh,
             disabledContentColor = colors.textTertiary
         ),
-        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = ButtonMinHeight)
+        modifier = modifier
+            .pressScale(interaction)
+            .drawBehind {
+                if (glow > 0f) {
+                    drawRoundRect(
+                        Brush.radialGradient(
+                            listOf(colors.glow.copy(alpha = 0.32f * glow), Color.Transparent),
+                            center = Offset(size.width / 2f, size.height * 0.9f),
+                            radius = size.width * 0.6f
+                        ),
+                        topLeft = Offset(-size.width * 0.1f, size.height * 0.2f),
+                        size = Size(size.width * 1.2f, size.height * 1.1f),
+                        cornerRadius = CornerRadius(size.height)
+                    )
+                }
+            }
+            .defaultMinSize(minWidth = 48.dp, minHeight = ButtonMinHeight)
     ) {
         ButtonContent(text, leadingIcon, loading, progressColor = colors.onBrand, trailingIcon = trailingIcon)
     }
@@ -76,21 +114,25 @@ fun KoachSecondaryButton(
 ) {
     val colors = KoachTheme.colors
     val accent = if (destructive) colors.danger else colors.textPrimary
+    val interaction = remember { MutableInteractionSource() }
     OutlinedButton(
         onClick = onClick,
         enabled = enabled && !loading,
         shape = ButtonShape,
         contentPadding = ButtonPadding,
+        interactionSource = interaction,
         border = BorderStroke(
             width = 1.dp,
-            color = if (destructive) colors.danger.copy(alpha = 0.4f) else colors.outline
+            color = if (destructive) colors.danger.copy(alpha = 0.4f) else colors.glassHighlight.copy(alpha = 0.14f)
         ),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (destructive) colors.danger.copy(alpha = 0.08f) else colors.surfaceRaised,
+            containerColor = if (destructive) colors.danger.copy(alpha = 0.08f) else colors.glassRaised,
             contentColor = accent,
             disabledContentColor = colors.textTertiary
         ),
-        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = ButtonMinHeight)
+        modifier = modifier
+            .pressScale(interaction)
+            .defaultMinSize(minWidth = 48.dp, minHeight = ButtonMinHeight)
     ) {
         ButtonContent(text, leadingIcon, loading, progressColor = accent, trailingIcon = trailingIcon)
     }
@@ -124,17 +166,19 @@ fun KoachCircleButton(
     enabled: Boolean = true
 ) {
     val colors = KoachTheme.colors
+    val interaction = remember { MutableInteractionSource() }
     FilledIconButton(
         onClick = onClick,
         enabled = enabled,
+        interactionSource = interaction,
         shape = RoundedCornerShape(50),
         colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = if (filled) colors.brand else colors.surfaceRaised,
+            containerColor = if (filled) colors.brand else colors.glassRaised,
             contentColor = if (filled) colors.onBrand else colors.textPrimary,
             disabledContainerColor = colors.surfaceHigh,
             disabledContentColor = colors.textTertiary
         ),
-        modifier = modifier.size(48.dp)
+        modifier = modifier.pressScale(interaction, 0.92f).size(48.dp)
     ) {
         Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp))
     }
@@ -148,8 +192,13 @@ private fun ButtonContent(
     progressColor: Color,
     trailingIcon: ImageVector? = null
 ) {
+    AnimatedContent(
+        targetState = loading,
+        transitionSpec = { fadeIn(KoachMotion.enter(KoachMotion.Medium)) togetherWith fadeOut(KoachMotion.exit()) },
+        label = "button-content"
+    ) { isLoading ->
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (loading) {
+        if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(16.dp),
                 strokeWidth = 2.dp,
@@ -166,9 +215,10 @@ private fun ButtonContent(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        if (trailingIcon != null && !loading) {
+        if (trailingIcon != null && !isLoading) {
             Spacer(Modifier.width(8.dp))
             Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(18.dp))
         }
+    }
     }
 }
