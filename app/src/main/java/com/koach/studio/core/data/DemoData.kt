@@ -1,5 +1,6 @@
 package com.koach.studio.core.data
 
+import com.koach.studio.R
 import com.koach.studio.core.model.AppNotification
 import com.koach.studio.core.model.Booking
 import com.koach.studio.core.model.BookingStatus
@@ -30,8 +31,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 /**
- * Seed data for the demo build. Every person, client and portfolio piece here is
- * fictional sample content, not a real KOACH Studio client. Dates are relative
+ * Seed data for the demo build. Every person and client here is fictional
+ * sample content, not a real KOACH Studio client; the portfolio is real work. Dates are relative
  * to [today] so the demo always looks current.
  *
  * Projects and deliverables live in FakeProjectDataSource (projects module) and
@@ -123,15 +124,63 @@ class DemoData(private val today: LocalDate) {
         )
     )
 
+    /**
+     * Real KOACH Studio social media work, taken from the studio's Figma file.
+     * Text is limited to what the artwork itself states; no metrics are claimed.
+     */
     val portfolio: List<PortfolioItem> = listOf(
-        PortfolioItem("pf-1", "Neon Monsoon", ServiceCategory.FILMING, 2026, "Night-time music video shot entirely in the rain.", "An indie artist wanted a moody, city-at-night film for a lead single.", "Practical neon, rain towers and a single-take chorus on a gimbal.", listOf(ServiceCategory.FILMING, ServiceCategory.VIDEO_EDITING), listOf("1 night" to "Shoot", "4K" to "Delivery", "3" to "Camera setups")),
-        PortfolioItem("pf-2", "Run The City", ServiceCategory.VIDEO_EDITING, 2026, "30-second sportswear spot cut to a custom beat.", "Launch a running shoe with energy, in under 30 seconds.", "Speed-ramped edit synced to a bespoke percussion track; 9:16 and 1:1 cutdowns.", listOf(ServiceCategory.VIDEO_EDITING, ServiceCategory.VFX), listOf("30s" to "Hero cut", "6" to "Cutdowns", "2" to "Revisions")),
-        PortfolioItem("pf-3", "Brew Stories", ServiceCategory.CONTENT_CREATION, 2025, "Monthly reels series for a neighbourhood café.", "Turn a café's regulars into the face of the brand.", "Batch-shot portraits and process clips, edited into weekly reels.", listOf(ServiceCategory.CONTENT_CREATION, ServiceCategory.SOCIAL_MEDIA), listOf("15" to "Reels / month", "1" to "Shoot day", "Weekly" to "Publishing")),
-        PortfolioItem("pf-4", "Circuit Identity", ServiceCategory.BRANDING, 2025, "Motion-first identity for a hardware startup.", "A logo that works as well animated as it does printed.", "A modular mark built from circuit traces, animated as a loading sequence.", listOf(ServiceCategory.BRANDING, ServiceCategory.MOTION_GRAPHICS), listOf("1" to "Logo system", "24" to "Templates", "6 wk" to "Timeline")),
-        PortfolioItem("pf-5", "Ledger, Explained", ServiceCategory.MOTION_GRAPHICS, 2026, "90-second explainer for a payments product.", "Explain a complex product in plain language.", "Flat 2D illustration with kinetic type and a calm voice-over.", listOf(ServiceCategory.MOTION_GRAPHICS), listOf("90s" to "Runtime", "12" to "Style frames", "2" to "Languages")),
-        PortfolioItem("pf-6", "Skyline Swap", ServiceCategory.VFX, 2025, "Set extension turning a rooftop into a future city.", "A sci-fi short needed a skyline it could not afford to build.", "Tracked plates with matte-painted towers and volumetric haze.", listOf(ServiceCategory.VFX, ServiceCategory.FILMING), listOf("8" to "Hero shots", "3 wk" to "Turnaround", "4K" to "Renders")),
-        PortfolioItem("pf-7", "Keynote Live", ServiceCategory.FILMING, 2026, "Four-camera live production for a tech keynote.", "Capture a 2-hour keynote and turn it into highlights the same week.", "Live switching on site, then a 3-minute highlights film within 48 hours.", listOf(ServiceCategory.FILMING, ServiceCategory.VIDEO_EDITING), listOf("4" to "Cameras", "48h" to "Highlights", "2h" to "Live")),
-        PortfolioItem("pf-8", "Feed Refresh", ServiceCategory.SOCIAL_MEDIA, 2026, "Social relaunch with a new grid system.", "Give a tired feed a consistent, recognisable look.", "Template system, three content pillars and a 6-week launch calendar.", listOf(ServiceCategory.SOCIAL_MEDIA, ServiceCategory.BRANDING), listOf("3" to "Platforms", "36" to "Posts", "6 wk" to "Launch"))
+        realWork(
+            "pf-peeyo", "Peeyo", null, "Social media feed for Peeyo.",
+            brief = "To elevate Peeyo's social media presence, we created vibrant visuals showcasing all six flavors that boosted engagement and strengthened brand connection.",
+            details = "Fonts used: Montserrat and Ragata.",
+            images = listOf(R.drawable.portfolio_peeyo_1, R.drawable.portfolio_peeyo_2)
+        ),
+        realWork(
+            "pf-gourmet-greens", "Gourmet Greens", null, "Instagram feed for Gourmet Greens.",
+            brief = "Create a visually appealing Instagram feed for the brand Gourmet Greens. The brand offers over 100 varieties of fruits and vegetables that are 100% organic and free from preservatives. Design a series of 6 posts based on the provided topics.",
+            details = "Fonts used: Peristiwa and Manrope.",
+            images = listOf(R.drawable.portfolio_gourmet_greens_1, R.drawable.portfolio_gourmet_greens_2)
+        ),
+        realWork(
+            "pf-endura", "Endura", 2024, "Social media feed for Endura: 22 posts and 7 reels.",
+            brief = "To showcase Endura's fitness app, we created a dynamic social media campaign featuring engaging visuals, inspiring content, and influencer partnerships. This boosted brand awareness and drove app downloads.",
+            details = "Fonts used: Peristiwa and Manrope.",
+            images = listOf(R.drawable.portfolio_endura_1, R.drawable.portfolio_endura_2)
+        ),
+        realWork(
+            "pf-hydrotech", "The Hydrotech Company", null, "Instagram posts and stories about hydroponic farming.",
+            details = "Topics included why to choose hydroponics, growing in any climate, winter crops and the different hydroponic systems.",
+            images = listOf(R.drawable.portfolio_hydrotech_1, R.drawable.portfolio_hydrotech_2)
+        ),
+        realWork(
+            "pf-pitaara", "Pitaara", null, "A coming-soon post and recipe posts for Pitaara premixes.",
+            details = "Recipe posts: Panini Paneer Makhani Sandwich, Mughlai Veg Grill Sandwich, Lasooni Methi Paneer Wrap and Veg Makhanwala Pizza.",
+            images = listOf(R.drawable.portfolio_pitaara_1)
+        ),
+        realWork(
+            "pf-batpro", "Batpro Nutrition", null, "Product posts for Batpro Nutrition supplements.",
+            details = "Products featured: Premium Organic Spirulina, Green Tea Drops and Alkapro Drops.",
+            images = listOf(R.drawable.portfolio_batpro_1)
+        ),
+        realWork(
+            "pf-picklx", "Picklx", null, "Social posts for Picklx pickleball paddles.",
+            details = "Posts featured the Vibe, Weapon and Triumph paddles, court do's and don'ts, and Paddle Care 101.",
+            images = listOf(R.drawable.portfolio_picklx_1)
+        ),
+        realWork(
+            "pf-boba-bob", "Boba Bob", null, "Product posts for Boba Bob's boba drinks in a can.",
+            details = "Posts highlighted no added sugar, no artificial preservatives, probiotics and 75 calories per 500 ml.",
+            images = listOf(R.drawable.portfolio_boba_bob_1)
+        )
+    )
+
+    private fun realWork(
+        id: String, title: String, year: Int?, summary: String,
+        brief: String = "", details: String = "", images: List<Int>
+    ) = PortfolioItem(
+        id, title, ServiceCategory.SOCIAL_MEDIA, year, summary, brief, details,
+        services = listOf(ServiceCategory.SOCIAL_MEDIA), metrics = emptyList(), isSample = false,
+        cover = images.first(), gallery = images.drop(1)
     )
 
     val bookings: List<Booking> = listOf(
