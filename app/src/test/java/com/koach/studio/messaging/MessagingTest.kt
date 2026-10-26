@@ -43,12 +43,32 @@ class MessagingTest {
     @Test
     fun clients_onlySeeTheirThreads_andAgencySeesAll() = runTest {
         auth.signInAsDemo("u-maya")
-        assertEquals(listOf("th-1"), messages.observeThreads().first().map { it.thread.id })
+        val mayaThreads = messages.observeThreads().first().map { it.thread.id }
+        assertTrue(mayaThreads.contains("th-1"))
+        assertTrue(mayaThreads.contains("th-dm-1"))
         assertTrue(messages.observeMessages("th-2").first().isEmpty())
         assertTrue(messages.sendMessage("th-2", "Hi").exceptionOrNull() is PermissionDeniedException)
 
+        // Agency user Rohan is not a participant in Maya's or Dev's DMs; he only sees the 3 studio project threads
         auth.signInAsDemo("u-rohan")
-        assertEquals(3, messages.observeThreads().first().size)
+        val rohanThreads = messages.observeThreads().first()
+        assertEquals(3, rohanThreads.size)
+        assertTrue(rohanThreads.all { it.thread.type == com.koach.studio.core.model.ThreadType.PROJECT })
+    }
+
+    @Test
+    fun threadListViewModel_filtersByDmAndProjectTabs() = runTest {
+        auth.signInAsDemo("u-maya")
+        val vm = com.koach.studio.messaging.ui.ThreadListViewModel(messages, data.users, clock, auth.currentUser.value)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val state = vm.uiState.first { !it.isLoading }
+        assertEquals(com.koach.studio.messaging.ui.MessageTab.DM, state.selectedTab)
+        assertTrue(state.filteredThreads.all { it.thread.type == com.koach.studio.core.model.ThreadType.DM })
+
+        vm.selectTab(com.koach.studio.messaging.ui.MessageTab.PROJECT)
+        val projState = vm.uiState.first { it.selectedTab == com.koach.studio.messaging.ui.MessageTab.PROJECT }
+        assertTrue(projState.filteredThreads.all { it.thread.type == com.koach.studio.core.model.ThreadType.PROJECT })
+        assertEquals(listOf("th-1"), projState.filteredThreads.map { it.thread.id })
     }
 
     @Test

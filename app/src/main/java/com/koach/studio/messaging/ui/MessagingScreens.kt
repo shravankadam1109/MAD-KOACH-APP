@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -54,18 +55,20 @@ import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.KoachAvatar
 import com.koach.studio.core.designsystem.components.KoachBackground
 import com.koach.studio.core.designsystem.components.KoachCard
+import com.koach.studio.core.designsystem.components.KoachSegmentedControl
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
 import com.koach.studio.core.designsystem.components.koachTextFieldColors
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import com.koach.studio.core.model.Message
+import com.koach.studio.core.model.User
 import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatRelative
 import com.koach.studio.core.ui.formatTime
 import com.koach.studio.messaging.data.ThreadSummary
 import java.time.LocalDate
 
-/** Conversation list. [onBack] is null when shown as a top-level tab. */
+/** Conversation list with DM and Team / Project tabs. [onBack] is null when shown as a top-level tab. */
 @Composable
 fun ThreadListScreen(
     viewModel: ThreadListViewModel,
@@ -83,31 +86,64 @@ fun ThreadListScreen(
             when {
                 state.isLoading -> LoadingState()
                 state.errorMessage != null -> ErrorState(state.errorMessage!!)
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.testTag("thread_list")
-                ) {
-                    if (onBack == null) {
-                        item {
-                            Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp, bottom = 8.dp)) {
-                                Eyebrow("Project conversations")
-                                Spacer(Modifier.height(6.dp))
-                                Text("Messages", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
+                else -> {
+                    val dmTabLabel = if (state.dmUnreadCount > 0) "DM (${state.dmUnreadCount})" else "DM"
+                    val projTabLabel = if (state.projectUnreadCount > 0) "Team / Project (${state.projectUnreadCount})" else "Team / Project"
+                    val displayedList = state.filteredThreads
+
+                    LazyColumn(
+                        contentPadding = PaddingValues(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.testTag("thread_list")
+                    ) {
+                        if (onBack == null) {
+                            item {
+                                Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp, bottom = 4.dp)) {
+                                    Eyebrow("Studio & Client Messages")
+                                    Spacer(Modifier.height(6.dp))
+                                    Text("Messages", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
+                                }
                             }
                         }
-                    }
-                    if (state.threads.isEmpty()) {
+
                         item {
-                            EmptyState(
-                                Icons.Outlined.ChatBubbleOutline,
-                                "No conversations yet",
-                                "Each project gets its own conversation with your crew."
+                            KoachSegmentedControl(
+                                options = listOf(dmTabLabel, projTabLabel),
+                                selectedIndex = if (state.selectedTab == MessageTab.DM) 0 else 1,
+                                onSelect = { idx -> viewModel.selectTab(if (idx == 0) MessageTab.DM else MessageTab.PROJECT) },
+                                modifier = Modifier
+                                    .padding(horizontal = gutter, vertical = 6.dp)
+                                    .fillMaxWidth()
+                                    .testTag("messages_segmented_tabs")
                             )
                         }
-                    }
-                    items(state.threads, key = { it.thread.id }) { summary ->
-                        ThreadCard(summary, state, onClick = { onOpenThread(summary.thread.id) }, modifier = Modifier.padding(horizontal = gutter))
+
+                        if (displayedList.isEmpty()) {
+                            item {
+                                if (state.selectedTab == MessageTab.DM) {
+                                    EmptyState(
+                                        Icons.Outlined.Person,
+                                        "No direct messages",
+                                        "Private 1-on-1 conversations between you and your studio lead appear here."
+                                    )
+                                } else {
+                                    EmptyState(
+                                        Icons.Outlined.ChatBubbleOutline,
+                                        "No project conversations",
+                                        "Project discussions and team milestone threads appear here."
+                                    )
+                                }
+                            }
+                        }
+                        items(displayedList, key = { it.thread.id }) { summary ->
+                            ThreadCard(
+                                summary = summary,
+                                state = state,
+                                people = viewModel.people,
+                                onClick = { onOpenThread(summary.thread.id) },
+                                modifier = Modifier.padding(horizontal = gutter)
+                            )
+                        }
                     }
                 }
             }
@@ -116,18 +152,34 @@ fun ThreadListScreen(
 }
 
 @Composable
-private fun ThreadCard(summary: ThreadSummary, state: ThreadListUiState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ThreadCard(
+    summary: ThreadSummary,
+    state: ThreadListUiState,
+    people: List<User>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val c = KoachTheme.colors
     val unread = summary.unreadCount > 0
-    val initials = summary.thread.title.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }
-    KoachCard(onClick = onClick, highlighted = unread, contentPadding = PaddingValues(16.dp), modifier = modifier.fillMaxWidth().testTag("thread_${summary.thread.id}")) {
+    val isDm = summary.thread.type == com.koach.studio.core.model.ThreadType.DM
+    val otherId = summary.thread.participantIds.firstOrNull { it != state.currentUserId } ?: summary.thread.participantIds.firstOrNull()
+    val otherUser: User? = if (isDm) people.find { it.id == otherId } else null
+    val displayTitle = if (isDm) (otherUser?.name ?: summary.thread.title) else summary.thread.title
+    val initials = if (isDm && otherUser != null) otherUser.initials else summary.thread.title.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }
+
+    KoachCard(
+        onClick = onClick,
+        highlighted = unread,
+        contentPadding = PaddingValues(16.dp),
+        modifier = modifier.fillMaxWidth().testTag("thread_${summary.thread.id}")
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KoachAvatar(initials, size = 46.dp, highlighted = unread)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        summary.thread.title,
+                        displayTitle,
                         style = MaterialTheme.typography.titleSmall,
                         color = c.textPrimary,
                         maxLines = 1,
@@ -135,13 +187,20 @@ private fun ThreadCard(summary: ThreadSummary, state: ThreadListUiState, onClick
                         modifier = Modifier.weight(1f)
                     )
                     summary.lastMessage?.let {
-                        Text(formatRelative(it.sentAt, state.now), style = MaterialTheme.typography.labelMedium, color = if (unread) c.brand else c.textTertiary)
+                        Text(
+                            formatRelative(it.sentAt, state.now),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (unread) c.brand else c.textTertiary
+                        )
                     }
                 }
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val previewText = summary.lastMessage?.let {
+                        if (isDm) it.body else "${state.senderNames[it.senderId] ?: "Someone"}: ${it.body}"
+                    } ?: "No messages yet"
                     Text(
-                        summary.lastMessage?.let { "${state.senderNames[it.senderId] ?: "Someone"}: ${it.body}" } ?: "No messages yet",
+                        previewText,
                         style = MaterialTheme.typography.bodySmall,
                         color = if (unread) c.textPrimary else c.textSecondary,
                         fontWeight = if (unread) FontWeight.Medium else FontWeight.Normal,
@@ -176,9 +235,13 @@ fun ConversationScreen(viewModel: ConversationViewModel, onBack: () -> Unit, mod
     Scaffold(
         containerColor = c.background,
         topBar = {
+            val isDm = state.thread?.type == com.koach.studio.core.model.ThreadType.DM
+            val other = state.participants.find { it.id != state.currentUserId } ?: state.participants.firstOrNull()
+            val convTitle = if (isDm) (other?.name ?: (state.thread?.title ?: "Direct Message")) else (state.thread?.title ?: "Conversation")
+            val convSub = if (isDm) other?.title?.ifBlank { "Creative Crew" } else state.participants.joinToString(", ") { it.firstName }.ifBlank { null }
             KoachTopBar(
-                title = state.thread?.title ?: "Conversation",
-                subtitle = state.participants.joinToString(", ") { it.firstName }.ifBlank { null },
+                title = convTitle,
+                subtitle = convSub,
                 onBack = onBack
             )
         },

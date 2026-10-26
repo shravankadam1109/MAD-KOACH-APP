@@ -3,12 +3,20 @@ package com.koach.studio.core.model
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+enum class ThreadType(val displayName: String) {
+    DM("Direct Messages"),
+    PROJECT("Team / Project")
+}
+
 data class MessageThread(
     val id: String,
     val projectId: String,
     val title: String,
-    val participantIds: List<String>
-)
+    val participantIds: List<String>,
+    val type: ThreadType = if (projectId.isBlank() || projectId.startsWith("dm-")) ThreadType.DM else ThreadType.PROJECT
+) {
+    val isDirectMessage: Boolean get() = type == ThreadType.DM
+}
 
 data class Message(
     val id: String,

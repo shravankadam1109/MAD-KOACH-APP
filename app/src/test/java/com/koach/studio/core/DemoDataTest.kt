@@ -52,9 +52,13 @@ class DemoDataTest {
             d.clientId?.let { assertTrue(it in clientIds) }
             assertTrue(d.uploadedBy in userIds)
         }
-        data.threads.forEach { th ->
-            assertTrue(th.projectId in projectIds)
-            th.participantIds.forEach { assertTrue(it in userIds) }
+        data.threads.forEach { th ->
+            if (th.type == com.koach.studio.core.model.ThreadType.PROJECT) {
+                assertTrue(th.projectId in projectIds)
+            } else {
+                assertTrue(th.projectId.isEmpty() || th.projectId in projectIds)
+            }
+            th.participantIds.forEach { assertTrue(it in userIds) }
         }
         val threadIds = data.threads.map { it.id }.toSet()
         data.messages.forEach { m ->
