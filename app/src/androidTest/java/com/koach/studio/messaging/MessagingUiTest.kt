@@ -1,5 +1,8 @@
 package com.koach.studio.messaging
 
+import com.koach.studio.awaitTag
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -26,6 +29,9 @@ class MessagingUiTest {
     fun client_opensProjectThread_andSendsMessage() {
         rule.signInAs("u-maya", shellTag = "tab_home")
         rule.onNodeWithTag("tab_messages").performClick()
+        // Messages opens on DMs; project threads are on the Team / Project tab.
+        rule.onNode(hasTestTag("segment_1") and hasAnyAncestor(hasTestTag("messages_segmented_tabs"))).performClick()
+        rule.awaitTag("thread_th-1")
         rule.onNodeWithTag("thread_th-1").performClick()
 
         rule.onNodeWithTag("message_input").performTextInput("Can we review the grade on Friday?")

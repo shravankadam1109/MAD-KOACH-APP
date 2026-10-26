@@ -1,5 +1,6 @@
 package com.koach.studio.bookings
 
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -29,8 +30,9 @@ class BookingInboxUiTest {
     @Test
     fun admin_declinesBookingWithReason_fromDetail() {
         rule.signInAs("u-arjun", shellTag = "tab_agency_home")
-        rule.onNodeWithTag("tab_more").performClick()
-        rule.onNodeWithTag("menu_bookings").performScrollTo().performClick()
+        rule.onNodeWithTag("tab_account").performClick()
+        rule.onNodeWithTag("menu_screen").performScrollToNode(hasTestTag("menu_bookings"))
+        rule.onNodeWithTag("menu_bookings").performClick()
         rule.awaitTag("booking_bk-1")
         rule.onNodeWithTag("booking_bk-1").performClick()
 
