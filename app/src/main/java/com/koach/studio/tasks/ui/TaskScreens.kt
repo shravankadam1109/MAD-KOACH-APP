@@ -172,10 +172,10 @@ fun TaskListScreen(
                             Eyebrow("${state.overdueCount} overdue", color = Tone.Danger.color())
                         }
                     }
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         "Tasks",
-                        style = MaterialTheme.typography.displaySmall,
+                        style = MaterialTheme.typography.headlineMedium,
                         color = c.textPrimary,
                         modifier = Modifier.semantics { heading() }
                     )
@@ -188,14 +188,17 @@ fun TaskListScreen(
                         modifier = Modifier.testTag("task_search")
                     )
                     Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         KoachSegmentedControl(
                             options = listOf("All tasks", "Assigned to me"),
                             selectedIndex = if (state.onlyMine) 1 else 0,
                             onSelect = { viewModel.setOnlyMine(it == 1) },
                             modifier = Modifier.weight(1f)
                         )
-                        Spacer(Modifier.width(8.dp))
                         SortMenu(state.sort, viewModel::setSort)
                     }
                     Spacer(Modifier.height(4.dp))
@@ -245,13 +248,25 @@ private fun SortMenu(sort: TaskSort, onSort: (TaskSort) -> Unit) {
     Box {
         TextButton(
             onClick = { open = true },
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
             modifier = Modifier
                 .semantics { contentDescription = "Sort tasks, current: ${sort.label}" }
                 .testTag("task_sort")
         ) {
-            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Sort,
+                contentDescription = null,
+                tint = c.textSecondary,
+                modifier = Modifier.size(16.dp)
+            )
             Spacer(Modifier.width(4.dp))
-            Text(sort.label, color = c.textSecondary, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = sort.label,
+                color = c.textSecondary,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = c.surfaceRaised) {
             TaskSort.entries.forEach { option ->
@@ -275,13 +290,13 @@ private fun TaskDoneToggle(
     taskTitle: String,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    circleSize: Dp = 26.dp
+    circleSize: Dp = 24.dp
 ) {
     val c = KoachTheme.colors
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .offset(y = (-10).dp)
+            .offset(x = (-6).dp, y = (-6).dp)
             .size(48.dp)
             .clip(CircleShape)
             .toggleable(value = done, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
@@ -295,7 +310,7 @@ private fun TaskDoneToggle(
                 .background(if (done) c.brand else c.surface)
                 .border(1.5.dp, if (done) c.brand else c.outline, CircleShape)
         ) {
-            if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(16.dp))
+            if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = c.onBrand, modifier = Modifier.size(15.dp))
         }
     }
 }
@@ -326,23 +341,33 @@ private fun TaskCard(
                 onToggle = onToggleDone,
                 modifier = Modifier.testTag("task_done_${task.id}")
             )
-            Spacer(Modifier.width(4.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    task.title,
+                    text = task.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = if (done) c.textTertiary else c.textPrimary,
                     textDecoration = if (done) TextDecoration.LineThrough else null,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    row.projectTitle ?: "Studio",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = row.projectTitle ?: "Studio",
+                    style = MaterialTheme.typography.labelMedium,
                     color = c.textSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (task.description.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = task.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textTertiary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -351,24 +376,46 @@ private fun TaskCard(
                 ) {
                     StatusPill(task.priority.displayName, task.priority.tone)
                     if (!done) StatusPill(task.status.displayName, task.status.tone, showDot = false)
-                    Spacer(Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        if (done) "Done" else formatDue(task.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
+                        text = if (done) "Done" else formatDue(task.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.labelMedium,
                         color = if (row.isOverdue) Tone.Danger.color() else c.textTertiary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.align(Alignment.CenterVertically).testTag("task_due_${task.id}")
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .testTag("task_due_${task.id}")
                     )
+                    row.assignee?.let { assignee ->
+                        Spacer(Modifier.width(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.semantics(mergeDescendants = true) {
+                                contentDescription = "Assigned to ${assignee.name}"
+                            }
+                        ) {
+                            KoachAvatar(
+                                initials = assignee.initials,
+                                size = 24.dp
+                            )
+                            Text(
+                                text = assignee.name.substringBefore(" "),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = c.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
-            }
-            row.assignee?.let {
-                Spacer(Modifier.width(10.dp))
-                KoachAvatar(
-                    it.initials,
-                    size = 30.dp,
-                    modifier = Modifier.semantics { contentDescription = "Assigned to ${it.name}" }
-                )
             }
         }
     }
