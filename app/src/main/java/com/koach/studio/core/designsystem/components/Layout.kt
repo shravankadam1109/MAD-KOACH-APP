@@ -1,7 +1,6 @@
 package com.koach.studio.core.designsystem.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -43,7 +42,6 @@ fun KoachTopBar(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
-    /** Lets a screen's own background (e.g. the brand glow) show through. */
     transparent: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
@@ -60,7 +58,13 @@ fun KoachTopBar(
                     modifier = Modifier.semantics { heading() }
                 )
                 if (subtitle != null) {
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         },
@@ -103,12 +107,14 @@ fun SectionHeader(
         Column(Modifier.weight(1f)) {
             if (eyebrow != null) {
                 Eyebrow(eyebrow)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
             }
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge,
                 color = KoachTheme.colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.semantics { heading() }
             )
         }
@@ -123,17 +129,34 @@ fun KoachDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(modifier = modifier, thickness = 1.dp, color = KoachTheme.colors.outlineSubtle)
 }
 
-/** Label/value pair used in detail screens. */
+/** Label/value pair used in detail screens, wrapping long values cleanly on narrow screens. */
 @Composable
 fun InfoRow(label: String, value: String, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     val c = KoachTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(10.dp))
         }
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, textAlign = TextAlign.End)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = c.textSecondary,
+            modifier = Modifier.weight(0.42f)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            value,
+            style = MaterialTheme.typography.titleSmall,
+            color = c.textPrimary,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(0.58f)
+        )
     }
 }
 
@@ -148,8 +171,8 @@ fun MetricTile(
 ) {
     KoachCard(modifier = modifier) {
         if (icon != null) {
-            IconTile(icon, tone = tone, size = 34.dp)
-            Spacer(Modifier.height(14.dp))
+            IconTile(icon, tone = tone, size = 32.dp)
+            Spacer(Modifier.height(10.dp))
         }
         Text(value, style = MaterialTheme.typography.headlineMedium, color = KoachTheme.colors.textPrimary)
         Spacer(Modifier.height(2.dp))
@@ -165,7 +188,7 @@ fun LoadingState(modifier: Modifier = Modifier, message: String = "Loading") {
         modifier = modifier.fillMaxSize()
     ) {
         CircularProgressIndicator(color = KoachTheme.colors.brand, strokeWidth = 3.dp)
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = KoachTheme.colors.textSecondary)
     }
 }
@@ -185,15 +208,15 @@ fun EmptyState(
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 48.dp)
+            .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
-        Box(Modifier.koachGlow(c.brand, 0.25f)) { IconTile(icon, size = 64.dp) }
-        Spacer(Modifier.height(18.dp))
+        IconTile(icon, size = 56.dp)
+        Spacer(Modifier.height(14.dp))
         Text(title, style = MaterialTheme.typography.titleLarge, color = c.textPrimary, textAlign = TextAlign.Center)
         Spacer(Modifier.height(6.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, textAlign = TextAlign.Center)
         if (actionLabel != null && onAction != null) {
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
             KoachPrimaryButton(text = actionLabel, onClick = onAction)
         }
     }
@@ -211,10 +234,10 @@ fun ErrorState(
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
-            .padding(32.dp)
+            .padding(24.dp)
     ) {
-        IconTile(Icons.Default.ErrorOutline, tone = Tone.Danger, size = 56.dp)
-        Spacer(Modifier.height(14.dp))
+        IconTile(Icons.Default.ErrorOutline, tone = Tone.Danger, size = 52.dp)
+        Spacer(Modifier.height(12.dp))
         Text("Something went wrong", style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
         Spacer(Modifier.height(4.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, textAlign = TextAlign.Center)

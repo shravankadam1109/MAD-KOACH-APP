@@ -1,5 +1,6 @@
 package com.koach.studio.projects.ui.components
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,6 +46,7 @@ fun ProjectListItem(
 
     KoachCard(
         onClick = onClick,
+        contentPadding = PaddingValues(16.dp),
         modifier = modifier
             .fillMaxWidth()
             .testTag("project_item_${project.id}")
@@ -53,45 +55,70 @@ fun ProjectListItem(
             }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Animated status pill: color + label cross-fade on status change with status icon
             AnimatedStatusPill(project.status.displayName, project.status.tone, icon = project.status.icon)
             Spacer(Modifier.weight(1f))
             Text(
-                project.serviceType.displayName.uppercase(),
+                text = project.serviceType.displayName.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = c.textTertiary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Spacer(Modifier.height(14.dp))
-        Text(project.title, style = MaterialTheme.typography.titleLarge, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = project.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = c.textPrimary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
         Spacer(Modifier.height(2.dp))
-        Text(project.clientName, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(16.dp))
-        KoachProgressBar(project.progress, height = 5.dp)
+        Text(
+            text = project.clientName,
+            style = MaterialTheme.typography.bodySmall,
+            color = c.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
         Spacer(Modifier.height(12.dp))
+        KoachProgressBar(project.progress, height = 4.dp)
+        Spacer(Modifier.height(10.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("${(project.progress * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = c.brand)
+            Text(
+                text = "${(project.progress * 100).toInt()}%",
+                style = MaterialTheme.typography.labelLarge,
+                color = c.brand
+            )
             Spacer(Modifier.width(10.dp))
-            Icon(Icons.Outlined.CalendarToday, contentDescription = "Due date", tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Icon(
+                imageVector = Icons.Outlined.CalendarToday,
+                contentDescription = "Due date",
+                tint = c.textTertiary,
+                modifier = Modifier.size(13.dp)
+            )
             Spacer(Modifier.width(4.dp))
             Text(
-                if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
+                text = if (project.status == ProjectStatus.COMPLETED) "Delivered" else formatDue(due, today),
                 style = MaterialTheme.typography.labelMedium,
                 color = if (overdue) Tone.Danger.color() else c.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Outlined.FolderOpen, contentDescription = "Deliverable files", tint = c.textTertiary, modifier = Modifier.size(14.dp))
+            Icon(
+                imageVector = Icons.Outlined.FolderOpen,
+                contentDescription = "Deliverable files",
+                tint = c.textTertiary,
+                modifier = Modifier.size(13.dp)
+            )
             Spacer(Modifier.width(4.dp))
             Text(
-                "${project.deliverables.size} files",
+                text = "${project.deliverables.size} files",
                 style = MaterialTheme.typography.labelMedium,
                 color = c.textSecondary,
                 maxLines = 1

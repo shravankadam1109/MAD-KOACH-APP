@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Movie
@@ -130,17 +132,21 @@ fun ClientListScreen(
         ) {
             item {
                 Column(Modifier.padding(start = gutter, end = gutter, top = 16.dp)) {
-                    Eyebrow("${state.totalCount} clients")
-                    Spacer(Modifier.height(6.dp))
-                    Text("Clients", style = MaterialTheme.typography.displaySmall, color = c.textPrimary)
-                    Spacer(Modifier.height(16.dp))
+                    Eyebrow("${state.totalCount} clients · ${state.activeCount} active")
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Clients",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = c.textPrimary
+                    )
+                    Spacer(Modifier.height(12.dp))
                     KoachSearchField(
                         query = state.query,
                         onQueryChange = viewModel::onQueryChange,
                         placeholder = "Search name, contact, industry or city",
                         modifier = Modifier.testTag("client_search")
                     )
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                 }
             }
             item {
@@ -163,7 +169,11 @@ fun ClientListScreen(
                 }
             }
             items(state.rows, key = { it.client.id }) { row ->
-                ClientCard(row, onClick = { onOpenClient(row.client.id) }, modifier = Modifier.padding(horizontal = gutter))
+                ClientCard(
+                    row = row,
+                    onClick = { onOpenClient(row.client.id) },
+                    modifier = Modifier.padding(horizontal = gutter)
+                )
             }
         }
     }
@@ -173,28 +183,79 @@ fun ClientListScreen(
 private fun ClientCard(row: ClientRow, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
     val client = row.client
-    KoachCard(onClick = onClick, contentPadding = PaddingValues(16.dp), modifier = modifier.fillMaxWidth().testTag("client_${client.id}")) {
+    KoachCard(
+        onClick = onClick,
+        contentPadding = PaddingValues(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("client_${client.id}")
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            KoachAvatar(client.initials, size = 46.dp, highlighted = client.status == ClientStatus.ACTIVE)
-            Spacer(Modifier.width(14.dp))
+            KoachAvatar(
+                initials = client.initials,
+                size = 42.dp,
+                highlighted = client.status == ClientStatus.ACTIVE
+            )
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(client.name, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${client.contactName} · ${client.city}", style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusPill(client.status.displayName, client.status.tone)
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        when (row.projectCount) {
-                            0 -> "No projects"
-                            1 -> "1 project"
-                            else -> "${row.projectCount} projects"
-                        } + if (row.activeProjectCount > 0) " · ${row.activeProjectCount} active" else "",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = c.textTertiary
-                    )
-                }
+                Text(
+                    text = client.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = c.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${client.industry} · ${client.city}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+            Spacer(Modifier.width(8.dp))
+            StatusPill(client.status.displayName, client.status.tone)
+        }
+
+        KoachDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = null,
+                tint = c.textTertiary,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text = client.contactName,
+                style = MaterialTheme.typography.labelMedium,
+                color = c.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Outlined.FolderOpen,
+                contentDescription = null,
+                tint = if (row.activeProjectCount > 0) c.brand else c.textTertiary,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = when (row.projectCount) {
+                    0 -> "No projects"
+                    1 -> "1 project"
+                    else -> "${row.projectCount} projects"
+                } + if (row.activeProjectCount > 0) " · ${row.activeProjectCount} active" else "",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (row.activeProjectCount > 0) c.brand else c.textTertiary,
+                maxLines = 1
+            )
         }
     }
 }
@@ -246,7 +307,7 @@ fun ClientDetailScreen(
                 item {
                     KoachCard(highlighted = true, modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            KoachAvatar(client.initials, size = 60.dp, highlighted = true)
+                            KoachAvatar(client.initials, size = 56.dp, highlighted = true)
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(client.name, style = MaterialTheme.typography.headlineSmall, color = c.textPrimary)
@@ -341,11 +402,18 @@ private fun LinkedProjectRow(project: Project, onClick: () -> Unit) {
     val c = KoachTheme.colors
     KoachCard(onClick = onClick, contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(project.title, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = project.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = c.textPrimary,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.width(8.dp))
             StatusPill(project.status.displayName, project.status.tone)
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         KoachProgressBar(project.progress, height = 4.dp)
     }
 }

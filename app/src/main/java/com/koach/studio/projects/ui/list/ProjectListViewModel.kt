@@ -21,7 +21,12 @@ data class ProjectListUiState(
     val selectedStatusFilter: ProjectStatus? = null,
     val sortOrder: ProjectSortOrder = ProjectSortOrder.NEWEST,
     val searchQuery: String = ""
-)
+) {
+    val activeFilterCount: Int
+        get() = (if (selectedServiceFilter != null) 1 else 0) +
+            (if (selectedStatusFilter != null) 1 else 0) +
+            (if (sortOrder != ProjectSortOrder.NEWEST) 1 else 0)
+}
 
 private data class FilterParams(
     val service: ServiceType?,
@@ -105,6 +110,7 @@ class ProjectListViewModel(
     fun clearFilters() {
         _selectedFilter.value = null
         _selectedStatusFilter.value = null
+        _sortOrder.value = ProjectSortOrder.NEWEST
         _searchQuery.value = ""
     }
 }

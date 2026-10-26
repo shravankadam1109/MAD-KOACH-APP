@@ -36,14 +36,16 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.koach.studio.clients.data.ClientRepository
 import com.koach.studio.core.designsystem.components.EmptyState
+import com.koach.studio.core.designsystem.components.Eyebrow
 import com.koach.studio.core.designsystem.components.IconTile
 import com.koach.studio.core.designsystem.components.InfoRow
 import com.koach.studio.core.designsystem.components.KoachCard
-import com.koach.studio.core.designsystem.components.KoachGlassPanel
-import com.koach.studio.core.designsystem.components.KoachHeroCard
 import com.koach.studio.core.designsystem.components.KoachDivider
 import com.koach.studio.core.designsystem.components.KoachFilterChips
+import com.koach.studio.core.designsystem.components.KoachGlassPanel
+import com.koach.studio.core.designsystem.components.KoachHeroCard
 import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachTopBar
 import com.koach.studio.core.designsystem.components.LoadingState
@@ -57,7 +59,6 @@ import com.koach.studio.core.model.Role
 import com.koach.studio.core.model.User
 import com.koach.studio.core.ui.formatDate
 import com.koach.studio.core.ui.formatInr
-import com.koach.studio.clients.data.ClientRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -162,12 +163,12 @@ fun PaymentsScreen(viewModel: PaymentsViewModel, onBack: () -> Unit, modifier: M
         ) {
             item {
                 KoachHeroCard(modifier = Modifier.padding(horizontal = gutter).fillMaxWidth().testTag("payments_summary")) {
-                    Text("OUTSTANDING", style = MaterialTheme.typography.labelSmall, color = c.onBrand.copy(alpha = 0.7f))
-                    Spacer(Modifier.height(8.dp))
-                    Text(formatInr(state.outstandingInr), style = MaterialTheme.typography.displayMedium, color = c.onBrand)
-                    Spacer(Modifier.height(14.dp))
+                    Eyebrow("OUTSTANDING BALANCE", color = c.brand)
+                    Spacer(Modifier.height(6.dp))
+                    Text(formatInr(state.outstandingInr), style = MaterialTheme.typography.displayMedium, color = c.textPrimary)
+                    Spacer(Modifier.height(12.dp))
                     KoachGlassPanel {
-                        Text("${formatInr(state.paidInr)} paid to date", style = MaterialTheme.typography.titleSmall, color = c.onBrand)
+                        Text("${formatInr(state.paidInr)} paid to date", style = MaterialTheme.typography.titleSmall, color = c.textSecondary)
                     }
                 }
             }
