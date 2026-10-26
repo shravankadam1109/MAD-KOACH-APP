@@ -1,13 +1,8 @@
 package com.koach.studio.home
 
-import com.koach.studio.core.designsystem.theme.entrance
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,61 +10,58 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
-import androidx.compose.material.icons.outlined.AddTask
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.TaskAlt
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.koach.studio.core.designsystem.components.BadgedIconButton
 import com.koach.studio.core.designsystem.components.DemoTag
+import com.koach.studio.core.designsystem.components.DividedList
 import com.koach.studio.core.designsystem.components.EmptyState
+import com.koach.studio.core.designsystem.components.ExpandableSection
 import com.koach.studio.core.designsystem.components.Eyebrow
+import com.koach.studio.core.designsystem.components.JourneyStep
+import com.koach.studio.core.designsystem.components.JourneyTracker
 import com.koach.studio.core.designsystem.components.KoachAvatar
 import com.koach.studio.core.designsystem.components.KoachBackground
-import com.koach.studio.core.designsystem.components.KoachCard
 import com.koach.studio.core.designsystem.components.KoachDivider
-import com.koach.studio.core.designsystem.components.KoachGlassPanel
-import com.koach.studio.core.designsystem.components.KoachHeroCard
+import com.koach.studio.core.designsystem.components.KoachPrimaryButton
 import com.koach.studio.core.designsystem.components.KoachProgressBar
 import com.koach.studio.core.designsystem.components.LoadingState
-import com.koach.studio.core.designsystem.components.QuickActionTile
-import com.koach.studio.core.designsystem.components.SectionHeader
-import com.koach.studio.core.designsystem.components.StatusPill
-import com.koach.studio.core.designsystem.components.Tone
-import com.koach.studio.core.designsystem.components.color
-import com.koach.studio.core.designsystem.theme.KoachRadius
+import com.koach.studio.core.designsystem.components.PriorityRow
+import com.koach.studio.core.designsystem.components.QuietHeader
+import com.koach.studio.core.designsystem.components.ShortcutButton
+import com.koach.studio.core.designsystem.components.StepState
 import com.koach.studio.core.designsystem.theme.KoachTheme
-import com.koach.studio.core.model.TaskItem
+import com.koach.studio.core.designsystem.theme.entrance
 import com.koach.studio.core.ui.formatDue
 import com.koach.studio.projects.model.Project
-import com.koach.studio.projects.ui.tone
-import com.koach.studio.tasks.ui.tone
+import com.koach.studio.projects.model.ProjectStatus
 
 data class AgencyHomeActions(
     val onNotifications: () -> Unit,
@@ -84,6 +76,27 @@ data class AgencyHomeActions(
     val onDocuments: () -> Unit = {}
 )
 
+/** One line of the studio's work queue: something that needs a person's attention now. */
+private data class QueueItem(
+    val key: String,
+    val title: String,
+    val meta: String,
+    val trailing: String,
+    val tone: QueueTone,
+    val progress: Float?,
+    val open: () -> Unit
+)
+
+private enum class QueueTone { Danger, Warning, Review }
+
+private const val QUEUE_PREVIEW = 4
+
+/**
+ * Studio dashboard, built for progressive disclosure: one overview that says
+ * how the studio is doing, the project pipeline at a glance, a compact set of
+ * actions, and a short prioritised queue. Deadlines and crew load sit below,
+ * and the crew detail opens on demand.
+ */
 @Composable
 fun AgencyHomeScreen(
     viewModel: AgencyHomeViewModel,
@@ -92,168 +105,85 @@ fun AgencyHomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val c = KoachTheme.colors
-    val gutter = KoachTheme.spacing.gutter
+    val gutter = KoachTheme.spacing.xl
 
     KoachBackground(modifier.fillMaxSize()) {
         if (state.isLoading) {
             LoadingState()
             return@KoachBackground
         }
+        val queue = remember(state) { workQueue(state, actions) }
+        val comingUp = remember(state) { state.upcomingDeadlines.filterNot { it.isOverdue } }
+
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
+            contentPadding = PaddingValues(start = gutter, end = gutter, bottom = 40.dp),
             modifier = Modifier
                 .statusBarsPadding()
                 .testTag("agency_home")
         ) {
+            item { StudioHeader(state, actions.onNotifications, Modifier.entrance(0)) }
+            item { StudioOverview(state, Modifier.entrance(1)) }
+            item { Pipeline(state, Modifier.entrance(2)) }
+            item { StudioActions(state, actions, Modifier.entrance(3)) }
+
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = gutter, end = gutter, top = 16.dp).entrance(0)
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Eyebrow("${state.greeting} · Studio")
-                            if (state.isDemo) {
-                                DemoTag(text = "Demo data")
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = state.firstName,
-                            style = MaterialTheme.typography.displaySmall,
-                            color = c.textPrimary
+                Spacer(Modifier.height(36.dp))
+                QuietHeader(
+                    "Needs you",
+                    actionLabel = if (queue.size > QUEUE_PREVIEW) "View all" else null,
+                    onAction = actions.onAllProjects
+                )
+                if (queue.isEmpty()) {
+                    EmptyState(Icons.Outlined.TaskAlt, "Nothing waiting", "No revisions, reviews or overdue tasks right now.")
+                } else {
+                    DividedList(queue.take(QUEUE_PREVIEW), Modifier.testTag("studio_work_queue")) { item ->
+                        PriorityRow(
+                            title = item.title,
+                            meta = item.meta,
+                            trailing = item.trailing,
+                            dot = when (item.tone) {
+                                QueueTone.Danger -> c.danger
+                                QueueTone.Warning -> c.warning
+                                QueueTone.Review -> c.review
+                            },
+                            trailingColor = if (item.tone == QueueTone.Danger) c.danger else c.textTertiary,
+                            progress = item.progress,
+                            onClick = item.open
                         )
                     }
-                    BadgedIconButton(
-                        icon = Icons.Outlined.Notifications,
-                        contentDescription = "Notifications",
-                        onClick = actions.onNotifications,
-                        count = state.unreadNotifications
-                    )
                 }
             }
 
-            item {
-                StudioSummary(state, actions, Modifier.padding(horizontal = gutter).entrance(1))
-            }
-
-            // Studio workflow shortcuts (2 rows of 3 compact tiles)
-            item {
-                Column(
-                    modifier = Modifier.padding(horizontal = gutter).entrance(2),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickActionTile(Icons.Outlined.AddTask, "New task", actions.onNewTask, Modifier.weight(1f))
-                        QuickActionTile(Icons.AutoMirrored.Outlined.EventNote, "Bookings", actions.onBookings, Modifier.weight(1f), Tone.Warning)
-                        QuickActionTile(Icons.Outlined.Checklist, "Tasks", actions.onAllTasks, Modifier.weight(1f), Tone.Info)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickActionTile(Icons.Outlined.Folder, "Projects", actions.onAllProjects, Modifier.weight(1f), Tone.Neutral)
-                        QuickActionTile(Icons.Outlined.Groups, "Clients", actions.onClients, Modifier.weight(1f), Tone.Neutral)
-                        QuickActionTile(Icons.Outlined.Description, "Documents", actions.onDocuments, Modifier.weight(1f), Tone.Neutral)
-                    }
-                }
-            }
-
-            if (state.needsAttention.isNotEmpty()) {
+            if (comingUp.isNotEmpty()) {
                 item {
-                    SectionHeader(
-                        title = "Needs attention",
-                        eyebrow = "Client feedback & reviews",
-                        actionLabel = "All projects",
-                        onAction = actions.onAllProjects
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Column(
-                        modifier = Modifier.padding(horizontal = gutter),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        state.needsAttention.forEach { project ->
-                            AttentionRow(project, onClick = { actions.onOpenProject(project.id) })
-                        }
-                    }
-                }
-            }
-
-            item {
-                SectionHeader(
-                    title = "My tasks",
-                    eyebrow = "Assigned to you",
-                    actionLabel = "All tasks",
-                    onAction = actions.onAllTasks
-                )
-                Spacer(Modifier.height(10.dp))
-                Column(
-                    modifier = Modifier.padding(horizontal = gutter),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    if (state.myTasks.isEmpty()) {
-                        KoachCard(Modifier.fillMaxWidth()) {
-                            EmptyState(Icons.Outlined.TaskAlt, "All clear", "Nothing assigned to you right now.")
-                        }
-                    }
-                    state.myTasks.forEach { task ->
-                        MyTaskRow(task, state, onClick = { actions.onOpenTask(task.id) })
-                    }
-                }
-            }
-
-            if (state.upcomingDeadlines.isNotEmpty()) {
-                item {
-                    SectionHeader(
-                        title = "Upcoming deadlines",
-                        eyebrow = "Next 14 days"
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = gutter)
-                            .testTag("studio_upcoming_deadlines"),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        state.upcomingDeadlines.forEach { deadline ->
-                            DeadlineRow(
-                                item = deadline,
-                                today = state.today,
-                                onClick = {
-                                    if (deadline.isProject) {
-                                        actions.onOpenProject(deadline.id)
-                                    } else {
-                                        actions.onOpenTask(deadline.id)
-                                    }
-                                }
-                            )
-                        }
+                    Spacer(Modifier.height(28.dp))
+                    QuietHeader("Coming up", actionLabel = "All tasks", onAction = actions.onAllTasks)
+                    DividedList(comingUp.take(3), Modifier.testTag("studio_upcoming_deadlines")) { deadline ->
+                        PriorityRow(
+                            title = deadline.title,
+                            meta = deadline.subtitle,
+                            trailing = formatDue(deadline.dueDate, state.today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
+                            dot = if (deadline.isProject) c.brand else c.textTertiary,
+                            onClick = { if (deadline.isProject) actions.onOpenProject(deadline.id) else actions.onOpenTask(deadline.id) }
+                        )
                     }
                 }
             }
 
             if (state.teamWorkload.isNotEmpty()) {
                 item {
-                    SectionHeader(
-                        title = "Team workload",
-                        eyebrow = "Task distribution",
-                        actionLabel = "Manage",
-                        onAction = actions.onAllTasks
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    KoachCard(
-                        contentPadding = PaddingValues(16.dp),
-                        modifier = Modifier
-                            .padding(horizontal = gutter)
-                            .fillMaxWidth()
-                            .testTag("studio_team_workload")
+                    Spacer(Modifier.height(20.dp))
+                    KoachDivider()
+                    Spacer(Modifier.height(8.dp))
+                    val busiest = state.teamWorkload.first()
+                    ExpandableSection(
+                        title = "Crew",
+                        summary = "${state.teamWorkload.size} people · ${busiest.user.firstName} has the most open tasks (${busiest.openTasks})",
+                        modifier = Modifier.testTag("studio_team_workload")
                     ) {
-                        state.teamWorkload.forEachIndexed { index, memberWorkload ->
-                            TeamWorkloadRow(memberWorkload)
-                            if (index < state.teamWorkload.lastIndex) {
-                                KoachDivider(modifier = Modifier.padding(vertical = 10.dp))
-                            }
+                        state.teamWorkload.forEachIndexed { index, member ->
+                            CrewRow(member)
+                            if (index < state.teamWorkload.lastIndex) KoachDivider(Modifier.padding(start = 50.dp))
                         }
                     }
                 }
@@ -262,300 +192,181 @@ fun AgencyHomeScreen(
     }
 }
 
-@Composable
-private fun MyTaskRow(task: TaskItem, state: AgencyHomeUiState, onClick: () -> Unit) {
-    val c = KoachTheme.colors
-    val overdue = task.isOverdue(state.today)
-    KoachCard(onClick = onClick, contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = c.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = task.projectId?.let { state.projectTitles[it] } ?: "Studio",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(Modifier.width(10.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                StatusPill(task.priority.displayName, task.priority.tone)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = formatDue(task.dueDate, state.today),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (overdue) Tone.Danger.color() else c.textTertiary
-                )
-            }
-        }
+/** Revisions first, then overdue tasks, then work waiting on a client's review. */
+private fun workQueue(state: AgencyHomeUiState, actions: AgencyHomeActions): List<QueueItem> {
+    val revisions = state.needsAttention
+        .filter { it.status == ProjectStatus.REVISION_REQUESTED }
+        .map { it.toQueueItem(state, QueueTone.Warning, "Revision requested", actions) }
+    val overdue = state.upcomingDeadlines.filter { it.isOverdue && !it.isProject }.map {
+        QueueItem("task-${it.id}", it.title, it.subtitle, formatDue(it.dueDate, state.today), QueueTone.Danger, null) { actions.onOpenTask(it.id) }
     }
+    val reviews = state.needsAttention
+        .filter { it.status == ProjectStatus.IN_REVIEW }
+        .map { it.toQueueItem(state, QueueTone.Review, "With the client for review", actions) }
+    return revisions + overdue + reviews
 }
 
-@Composable
-private fun AttentionRow(project: Project, onClick: () -> Unit) {
-    val c = KoachTheme.colors
-    KoachCard(onClick = onClick, contentPadding = PaddingValues(16.dp), modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = project.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = c.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = project.clientName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            StatusPill(project.status.displayName, project.status.tone)
-        }
-        Spacer(Modifier.height(10.dp))
-        KoachProgressBar(project.progress, height = 4.dp)
-    }
-}
+private fun Project.toQueueItem(state: AgencyHomeUiState, tone: QueueTone, why: String, actions: AgencyHomeActions) = QueueItem(
+    key = "project-$id",
+    title = title,
+    meta = "$clientName · $why",
+    trailing = formatDue(dueDate, state.today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
+    tone = tone,
+    progress = progress,
+    open = { actions.onOpenProject(id) }
+)
 
 @Composable
-private fun DeadlineRow(
-    item: StudioDeadlineItem,
-    today: java.time.LocalDate,
-    onClick: () -> Unit
-) {
+private fun StudioHeader(state: AgencyHomeUiState, onNotifications: () -> Unit, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
-    KoachCard(
-        onClick = onClick,
-        contentPadding = PaddingValues(14.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(KoachRadius.sm))
-                    .background(if (item.isOverdue) c.danger.copy(alpha = 0.14f) else c.brandContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.CalendarToday,
-                    contentDescription = null,
-                    tint = if (item.isOverdue) c.danger else c.brand,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = c.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                StatusPill(
-                    text = if (item.isProject) "Project" else "Task",
-                    tone = if (item.isProject) Tone.Brand else Tone.Info,
-                    showDot = false
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = formatDue(item.dueDate, today).removePrefix("Due ").replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (item.isOverdue) c.danger else c.textTertiary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TeamWorkloadRow(workload: TeamMemberWorkload) {
-    val c = KoachTheme.colors
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        KoachAvatar(
-            initials = workload.user.initials,
-            size = 38.dp,
-            highlighted = workload.inProgressTasks > 0
-        )
-        Spacer(Modifier.width(12.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth().padding(top = 16.dp)) {
         Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Eyebrow("Studio")
+                if (state.isDemo) DemoTag(text = "Demo data")
+            }
+            Spacer(Modifier.height(6.dp))
             Text(
-                text = workload.user.name,
-                style = MaterialTheme.typography.titleSmall,
+                "${state.greeting}, ${state.firstName}",
+                style = MaterialTheme.typography.headlineLarge,
                 color = c.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = workload.user.title,
-                style = MaterialTheme.typography.bodySmall,
-                color = c.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
-        Spacer(Modifier.width(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (workload.overdueTasks > 0) {
-                StatusPill("${workload.overdueTasks} overdue", Tone.Danger, showDot = false)
-            }
-            StatusPill(
-                text = "${workload.openTasks} open",
-                tone = if (workload.openTasks > 0) Tone.Brand else Tone.Neutral,
-                showDot = false
-            )
-        }
+        BadgedIconButton(
+            icon = Icons.Outlined.Notifications,
+            contentDescription = "Notifications",
+            onClick = onNotifications,
+            count = state.unreadNotifications,
+            modifier = Modifier.testTag("studio_notifications")
+        )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The single focal point: active projects as one large figure, average
+ * progress as a hairline, and the one other fact most worth acting on.
+ */
 @Composable
-private fun StudioSummary(
-    state: AgencyHomeUiState,
-    actions: AgencyHomeActions,
-    modifier: Modifier = Modifier
-) {
+private fun StudioOverview(state: AgencyHomeUiState, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
-    KoachHeroCard(modifier = modifier.fillMaxWidth().testTag("studio_summary")) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Eyebrow("STUDIO RIGHT NOW", color = c.brand)
-            Text(
-                text = "${state.averageProgressPercent}% avg completion",
-                style = MaterialTheme.typography.labelMedium,
-                color = c.textSecondary
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = state.activeProjects.toString(),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = c.textPrimary
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = "active\nprojects",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.textSecondary,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
+    val shown by animateIntAsState(state.activeProjects, label = "active-count")
+    Column(
+        modifier
+            .fillMaxWidth()
+            .padding(top = 28.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${state.activeProjects} active projects, ${state.averageProgressPercent} percent average progress"
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${state.completedProjects} delivered",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = c.textTertiary
-                )
-                Text(
-                    text = "${state.completedTasks} tasks done",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = c.textTertiary
-                )
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        KoachProgressBar(progress = state.averageProgressPercent / 100f, height = 5.dp)
-
-        Spacer(Modifier.height(14.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            StatusPill("${state.inProgressProjects} In Progress", Tone.Info)
-            StatusPill("${state.inReviewProjects} In Review", Tone.Review)
-            if (state.revisionRequestedProjects > 0) {
-                StatusPill("${state.revisionRequestedProjects} Revisions", Tone.Warning)
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SummaryPanel(
-                value = state.pendingBookings.toString(),
-                label = "Booking\nrequests",
-                onClick = actions.onBookings,
-                modifier = Modifier.weight(1f).testTag("summary_bookings")
-            )
-            SummaryPanel(
-                value = state.openTasks.toString(),
-                label = "Open\ntasks",
-                onClick = actions.onAllTasks,
-                modifier = Modifier.weight(1f).testTag("summary_tasks")
-            )
-            SummaryPanel(
-                value = state.overdueTasks.toString(),
-                label = "Overdue\ntasks",
-                onClick = actions.onAllTasks,
-                highlightDanger = state.overdueTasks > 0,
-                modifier = Modifier.weight(1f).testTag("summary_overdue")
-            )
-        }
-    }
-}
-
-@Composable
-private fun SummaryPanel(
-    value: String,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    highlightDanger: Boolean = false
-) {
-    val c = KoachTheme.colors
-    KoachGlassPanel(
-        onClick = onClick,
-        modifier = modifier.semantics(mergeDescendants = true) {
-            contentDescription = "$value ${label.replace("\n", " ")}"
-        }
     ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            color = if (highlightDanger) c.danger else c.brand,
-            fontWeight = FontWeight.Bold
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                shown.toString(),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 84.sp, lineHeight = 84.sp, letterSpacing = (-3).sp),
+                color = c.textPrimary
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.padding(bottom = 12.dp)) {
+                Text("active", style = MaterialTheme.typography.titleLarge, color = c.textPrimary)
+                Text("projects", style = MaterialTheme.typography.titleLarge, color = c.textSecondary)
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        KoachProgressBar(state.averageProgressPercent / 100f, height = 3.dp)
+        Spacer(Modifier.height(10.dp))
+        Row {
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = c.brand)) { append("${state.averageProgressPercent}%") }
+                    append(" average progress")
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = c.textSecondary,
+                modifier = Modifier.weight(1f)
+            )
+            val (fact, factColor) = when {
+                state.overdueTasks > 0 -> "${state.overdueTasks} overdue ${if (state.overdueTasks == 1) "task" else "tasks"}" to c.danger
+                state.pendingBookings > 0 -> "${state.pendingBookings} new ${if (state.pendingBookings == 1) "booking" else "bookings"}" to c.warning
+                else -> "${state.openTasks} open tasks" to c.textSecondary
+            }
+            Text(fact, style = MaterialTheme.typography.bodyMedium, color = factColor)
+        }
+    }
+}
+
+/** Where the studio's projects stand right now, as connected stages (counts, not a timeline). */
+@Composable
+private fun Pipeline(state: AgencyHomeUiState, modifier: Modifier = Modifier) {
+    val stages = listOf(
+        "In progress" to state.inProgressProjects,
+        "In review" to state.inReviewProjects,
+        "Revisions" to state.revisionRequestedProjects,
+        "Delivered" to state.completedProjects
+    )
+    Column(modifier.fillMaxWidth().padding(top = 32.dp)) {
+        Text("Pipeline", style = MaterialTheme.typography.labelLarge, color = KoachTheme.colors.textTertiary)
+        Spacer(Modifier.height(14.dp))
+        JourneyTracker(
+            steps = stages.mapIndexed { index, (label, count) ->
+                JourneyStep(
+                    label = label,
+                    value = count.toString(),
+                    state = when {
+                        count == 0 -> StepState.Upcoming
+                        index == stages.lastIndex -> StepState.Complete
+                        else -> StepState.Active
+                    }
+                )
+            },
+            // Counts per stage, not a sequence: the line stays a neutral track.
+            fill = 0f,
+            description = stages.joinToString(prefix = "Project pipeline: ") { (label, count) -> "$count $label" },
+            modifier = Modifier.testTag("studio_pipeline")
         )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = c.textSecondary
+    }
+}
+
+/** One clear primary action, then compact shortcuts for everything else. */
+@Composable
+private fun StudioActions(state: AgencyHomeUiState, actions: AgencyHomeActions, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth().padding(top = 32.dp)) {
+        KoachPrimaryButton(
+            text = "New task",
+            onClick = actions.onNewTask,
+            leadingIcon = Icons.Outlined.Add,
+            modifier = Modifier.fillMaxWidth().testTag("studio_new_task")
         )
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth()) {
+            ShortcutButton(Icons.AutoMirrored.Outlined.EventNote, "Bookings", actions.onBookings, Modifier.weight(1f), badge = state.pendingBookings)
+            ShortcutButton(Icons.Outlined.Checklist, "Tasks", actions.onAllTasks, Modifier.weight(1f))
+            ShortcutButton(Icons.Outlined.Folder, "Projects", actions.onAllProjects, Modifier.weight(1f))
+            ShortcutButton(Icons.Outlined.Groups, "Clients", actions.onClients, Modifier.weight(1f))
+            ShortcutButton(Icons.Outlined.Description, "Docs", actions.onDocuments, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun CrewRow(workload: TeamMemberWorkload) {
+    val c = KoachTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        KoachAvatar(initials = workload.user.initials, size = 36.dp, highlighted = workload.inProgressTasks > 0)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(workload.user.name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(workload.user.title, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                "${workload.openTasks} open",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (workload.openTasks > 0) c.textPrimary else c.textTertiary
+            )
+            if (workload.overdueTasks > 0) {
+                Text("${workload.overdueTasks} overdue", style = MaterialTheme.typography.labelMedium, color = c.danger)
+            }
+        }
     }
 }

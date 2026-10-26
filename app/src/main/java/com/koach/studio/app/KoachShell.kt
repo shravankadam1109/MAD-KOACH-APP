@@ -1,5 +1,10 @@
 package com.koach.studio.app
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.core.animateDpAsState
 import com.koach.studio.core.designsystem.components.KoachBackground
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -178,9 +183,10 @@ fun KoachShell(user: User, navController: NavHostController = rememberNavControl
 }
 
 /**
- * Floating pill navigation. Unselected tabs are icon-only; the selected tab
- * expands into a green capsule with its label. Every tab keeps its label for
- * accessibility services.
+ * Light docked navigation: content fades into the bar, a hairline marks its
+ * edge, and every tab shows an icon and a small label. The active tab is
+ * picked out in green, with a short indicator that slides between tabs.
+ * Every tab keeps its label for accessibility services.
  */
 @Composable
 private fun KoachBottomBar(
@@ -190,70 +196,50 @@ private fun KoachBottomBar(
     onSelect: (TopLevelDestination) -> Unit
 ) {
     val c = KoachTheme.colors
-    val barShape = RoundedCornerShape(KoachRadius.xl)
+    val selectedIndex = tabs.indexOfFirst(isSelected).coerceAtLeast(0)
     Box(
         Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .background(Brush.verticalGradient(listOf(Color.Transparent, c.background.copy(alpha = 0.94f), c.background), endY = 90f))
     ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(20.dp, barShape, ambientColor = Color.Black.copy(alpha = 0.6f), spotColor = Color.Black.copy(alpha = 0.6f))
-                .clip(barShape)
-                .background(Brush.verticalGradient(listOf(c.glassRaised, c.glass)))
-                .background(c.surface.copy(alpha = 0.55f))
-                .border(1.dp, Brush.verticalGradient(listOf(c.glassHighlight.copy(alpha = 0.16f), c.glassBorder)), barShape)
-                .padding(horizontal = 4.dp, vertical = 4.dp)
-                .selectableGroup()
-        ) {
-            tabs.forEach { tab ->
-                val selected = isSelected(tab)
-                val count = badges[tab] ?: 0
-                val pill by animateColorAsState(if (selected) c.brand else Color.Transparent, KoachMotion.enter(KoachMotion.Medium), label = "tab-pill")
-                val tint by animateColorAsState(if (selected) c.onBrand else c.textSecondary, KoachMotion.enter(KoachMotion.Medium), label = "tab-tint")
-                val tabInteraction = remember { MutableInteractionSource() }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .height(46.dp)
-                        .pressScale(tabInteraction, 0.94f)
-                        .clip(RoundedCornerShape(50))
-                        .background(pill)
-                        .selectable(selected = selected, interactionSource = tabInteraction, indication = androidx.compose.material3.ripple(), role = Role.Tab, onClick = { onSelect(tab) })
-                        .semantics(mergeDescendants = true) {
-                            contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
+        Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(1.dp).background(c.glassBorder))
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                val tabWidth = maxWidth / tabs.size
+                val indicatorX by animateDpAsState(tabWidth * selectedIndex + (tabWidth - 22.dp) / 2, KoachMotion.press(), label = "tab-indicator")
+                Box(
+                    Modifier
+                        .offset(x = indicatorX)
+                        .size(width = 22.dp, height = 3.dp)
+                        .clip(RoundedCornerShape(bottomStart = 3.dp, bottomEnd = 3.dp))
+                        .background(c.brand)
+                )
+                Row(Modifier.fillMaxWidth().selectableGroup()) {
+                    tabs.forEach { tab ->
+                        val selected = isSelected(tab)
+                        val count = badges[tab] ?: 0
+                        val tint by animateColorAsState(if (selected) c.brandBright else c.textTertiary, KoachMotion.enter(KoachMotion.Medium), label = "tab-tint")
+                        val labelTint by animateColorAsState(if (selected) c.textPrimary else c.textTertiary, KoachMotion.enter(KoachMotion.Medium), label = "tab-label")
+                        val tabInteraction = remember { MutableInteractionSource() }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(60.dp)
+                                .pressScale(tabInteraction, 0.92f)
+                                .selectable(selected = selected, interactionSource = tabInteraction, indication = null, role = Role.Tab, onClick = { onSelect(tab) })
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = if (count > 0) "${tab.label}, $count unread" else tab.label
+                                }
+                                .testTag("tab_${tab.route}")
+                        ) {
+                            BadgedBox(badge = { if (count > 0) CountBadge(count) }) {
+                                Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(tab.label, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.2.sp), color = labelTint, maxLines = 1)
                         }
-                        .padding(horizontal = if (selected) 14.dp else 10.dp)
-                        .animateContentSize(KoachMotion.press())
-                        .testTag("tab_${tab.route}")
-                ) {
-                    BadgedBox(badge = { if (count > 0 && !selected) CountBadge(count) }) {
-                        Icon(
-                            if (selected) tab.selectedIcon else tab.icon,
-                            contentDescription = null,
-                            tint = tint,
-                            modifier = Modifier.size(21.dp)
-                        )
-                    }
-                    AnimatedVisibility(
-                        visible = selected,
-                        enter = fadeIn(KoachMotion.enter(KoachMotion.Medium, delayMillis = 60)) + expandHorizontally(KoachMotion.press()),
-                        exit = fadeOut(KoachMotion.exit()) + shrinkHorizontally(KoachMotion.press())
-                    ) {
-                        Text(
-                            tab.label,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = tint,
-                            modifier = Modifier.padding(start = 7.dp),
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
                     }
                 }
             }

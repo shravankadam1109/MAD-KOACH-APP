@@ -14,6 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
@@ -89,13 +92,16 @@ fun Modifier.pressScale(interactionSource: InteractionSource, pressedScale: Floa
  */
 fun Modifier.entrance(index: Int = 0): Modifier = composed {
     val reduced = rememberReducedMotion()
-    val progress = remember { Animatable(if (reduced) 1f else 0f) }
+    // Saved with the screen, so returning to it (or scrolling back) doesn't replay the intro.
+    var played by rememberSaveable { mutableStateOf(false) }
+    val progress = remember { Animatable(if (reduced || played) 1f else 0f) }
     val rise = with(LocalDensity.current) { 18.dp.toPx() }
     LaunchedEffect(Unit) {
         if (progress.value < 1f) {
             delay((index.coerceAtMost(KoachMotion.MaxStaggerItems) * KoachMotion.StaggerStep).toLong())
             progress.animateTo(1f, KoachMotion.enter(KoachMotion.Long))
         }
+        played = true
     }
     graphicsLayer {
         alpha = progress.value
