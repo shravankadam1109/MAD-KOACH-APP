@@ -1,5 +1,6 @@
 package com.koach.studio.portfolio
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -86,14 +89,15 @@ fun LazyListScope.portfolioGrid(
             Icon(Icons.Outlined.Info, contentDescription = null, tint = KoachTheme.colors.textTertiary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(6.dp))
             Text(
-                "Sample projects that show our range. Not real client work.",
+                if (state.items.any { it.isSample }) "Sample projects that show our range. Not real client work."
+                else "Selected social media work by KOACH Studio.",
                 style = MaterialTheme.typography.bodySmall,
                 color = KoachTheme.colors.textTertiary
             )
         }
     }
     if (state.items.isEmpty()) {
-        item { EmptyState(Icons.Outlined.Info, "Nothing here yet", "No sample work in this category.") }
+        item { EmptyState(Icons.Outlined.Info, "Nothing here yet", "No work in this category yet.") }
     }
     items(state.items.chunked(2), key = { row -> row.first().id }) { row ->
         Row(
@@ -114,24 +118,40 @@ private fun PortfolioTile(item: PortfolioItem, onClick: () -> Unit, modifier: Mo
     Column(
         modifier
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClickLabel = "View ${item.title} sample project", onClick = onClick)
+            .clickable(onClickLabel = if (item.isSample) "View ${item.title} sample project" else "View ${item.title} project", onClick = onClick)
             .testTag("portfolio_${item.id}")
     ) {
         PortfolioCover(item, aspect = 0.8f, iconSize = 56.dp)
         Spacer(Modifier.height(10.dp))
         Text(item.title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("${item.category.displayName} · ${item.year}", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        Text(item.categoryAndYear, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
         Spacer(Modifier.height(6.dp))
     }
 }
 
+private val PortfolioItem.categoryAndYear: String
+    get() = listOfNotNull(category.displayName, year?.toString()).joinToString(" · ")
+
 /**
- * Generated cover art: a tinted gradient, light streaks and the category glyph.
- * Stands in for real stills, which the demo build doesn't ship.
+ * The piece's artwork when it has some; otherwise generated cover art (a tinted
+ * gradient, light streaks and the category glyph) standing in for real stills.
  */
 @Composable
 fun PortfolioCover(item: PortfolioItem, aspect: Float, iconSize: Dp, modifier: Modifier = Modifier) {
     val c = KoachTheme.colors
+    if (item.cover != null) {
+        Image(
+            painter = painterResource(item.cover),
+            contentDescription = "${item.title} artwork",
+            contentScale = ContentScale.Crop,
+            modifier = modifier
+                .fillMaxWidth()
+                .aspectRatio(aspect)
+                .clip(RoundedCornerShape(20.dp))
+                .border(1.dp, c.outlineSubtle, RoundedCornerShape(20.dp))
+        )
+        return
+    }
     val accent = item.category.tone.color()
     Box(
         modifier = modifier
@@ -168,12 +188,14 @@ fun PortfolioCover(item: PortfolioItem, aspect: Float, iconSize: Dp, modifier: M
                 .size(iconSize)
         )
         DemoTag(text = "Sample", modifier = Modifier.align(Alignment.TopStart).padding(12.dp))
-        Text(
-            item.year.toString(),
-            style = MaterialTheme.typography.labelSmall,
-            color = c.textSecondary,
-            modifier = Modifier.align(Alignment.TopEnd).padding(14.dp).offset(y = 2.dp)
-        )
+        if (item.year != null) {
+            Text(
+                item.year.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = c.textSecondary,
+                modifier = Modifier.align(Alignment.TopEnd).padding(14.dp).offset(y = 2.dp)
+            )
+        }
     }
 }
 
@@ -193,7 +215,7 @@ fun PortfolioDetailScreen(
 
     Scaffold(
         containerColor = c.background,
-        topBar = { KoachTopBar(title = item?.title.orEmpty(), subtitle = "Sample project", onBack = onBack) },
+        topBar = { KoachTopBar(title = item?.title.orEmpty(), subtitle = if (item?.isSample == false) "Client work" else "Sample project", onBack = onBack) },
         bottomBar = {
             val serviceId = state.relatedServiceId
             if (serviceId != null) {
@@ -230,13 +252,13 @@ fun PortfolioDetailScreen(
                 contentPadding = PaddingValues(start = gutter, end = gutter, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                item { PortfolioCover(item, aspect = 1.5f, iconSize = 84.dp) }
+                item { PortfolioCover(item, aspect = if (item.cover != null) 0.8f else 1.5f, iconSize = 84.dp) }
                 item {
-                    Eyebrow("${item.category.displayName} · ${item.year}")
+                    Eyebrow(item.categoryAndYear)
                     Spacer(Modifier.height(8.dp))
                     Text(item.summary, style = MaterialTheme.typography.headlineMedium, color = c.textPrimary)
                 }
-                item {
+                if (item.isSample) item {
                     KoachCard(modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.Top) {
                             IconTile(Icons.Outlined.Info, tone = Tone.Info, size = 32.dp)
@@ -249,7 +271,7 @@ fun PortfolioDetailScreen(
                         }
                     }
                 }
-                item {
+                if (item.metrics.isNotEmpty()) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         item.metrics.forEach { (value, label) ->
                             KoachCard(modifier = Modifier.weight(1f)) {
@@ -259,8 +281,9 @@ fun PortfolioDetailScreen(
                         }
                     }
                 }
-                item { DetailSection("The brief", item.brief) }
-                item { DetailSection("Our approach", item.approach) }
+                if (item.brief.isNotBlank()) item { DetailSection("The brief", item.brief) }
+                if (item.approach.isNotBlank()) item { DetailSection(if (item.isSample) "Our approach" else "Details", item.approach) }
+                items(item.gallery) { image -> GalleryImage(image, item.title) }
                 item {
                     Eyebrow("Services used", color = c.textTertiary)
                     Spacer(Modifier.height(10.dp))
@@ -271,6 +294,22 @@ fun PortfolioDetailScreen(
             }
         }
     }
+}
+
+/** Full-width artwork at its own aspect ratio. */
+@Composable
+private fun GalleryImage(image: Int, title: String) {
+    val painter = painterResource(image)
+    val size = painter.intrinsicSize
+    Image(
+        painter = painter,
+        contentDescription = "More $title artwork",
+        contentScale = ContentScale.FillWidth,
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(if (size.height > 0f) size.width / size.height else 1f)
+            .clip(RoundedCornerShape(20.dp))
+    )
 }
 
 @Composable

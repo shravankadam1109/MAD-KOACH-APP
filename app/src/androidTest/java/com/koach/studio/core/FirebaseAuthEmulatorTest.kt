@@ -1,16 +1,19 @@
 package com.koach.studio.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.koach.studio.core.FirebaseEmulator.PASSWORD
+import com.koach.studio.core.FirebaseEmulator.auth
+import com.koach.studio.core.FirebaseEmulator.createAccount
+import com.koach.studio.core.FirebaseEmulator.email
+import com.koach.studio.core.FirebaseEmulator.enabled
+import com.koach.studio.core.FirebaseEmulator.firestore
+import com.koach.studio.core.FirebaseEmulator.writeProfile
 import com.koach.studio.core.auth.InvalidCredentialsException
 import com.koach.studio.core.firebase.AccountNotProvisionedException
 import com.koach.studio.core.firebase.FirebaseAuthRepository
 import com.koach.studio.core.model.Role
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
-import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -19,8 +22,6 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Real Firebase Authentication + Firestore rules, against the LOCAL emulators
@@ -91,62 +92,8 @@ class FirebaseAuthEmulatorTest {
     }
 
     companion object {
-        private const val HOST = "10.0.2.2"
-        private const val PROJECT = "koach-studio"
-        private const val PASSWORD = "test-only-password"
-
-        private val enabled: Boolean
-            get() = InstrumentationRegistry.getArguments().getString("firebaseEmulator") == "true"
-
-        private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
-        private val firestore: FirebaseFirestore get() = FirebaseFirestore.getInstance()
-
         @BeforeClass
         @JvmStatic
-        fun connectToEmulators() {
-            if (!enabled) return
-            // Must run before the instances are first used.
-            auth.useEmulator(HOST, 9099)
-            firestore.useEmulator(HOST, 8080)
-        }
-
-        /** Unique per call so tests never share accounts; emulator data is discarded when the run ends. */
-        private fun email(name: String) = "$name-${java.util.UUID.randomUUID().toString().take(8)}@test.koach"
-
-        private fun createAccount(email: String, password: String): String {
-            val body = JSONObject().put("email", email).put("password", password).put("returnSecureToken", true)
-            val response = http("POST", "http://$HOST:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator", body.toString())
-            return JSONObject(response).getString("localId")
-        }
-
-        /** Seeds a profile as the emulator "owner", bypassing rules, like an admin console write. */
-        private fun writeProfile(uid: String, role: String, clientId: String? = null) {
-            val fields = JSONObject()
-                .put("role", JSONObject().put("stringValue", role))
-                .put("name", JSONObject().put("stringValue", "Test $role"))
-                .put("email", JSONObject().put("stringValue", "$uid@test.koach"))
-            if (clientId != null) fields.put("clientId", JSONObject().put("stringValue", clientId))
-            http(
-                "POST",
-                "http://$HOST:8080/v1/projects/$PROJECT/databases/(default)/documents/users?documentId=$uid",
-                JSONObject().put("fields", fields).toString(),
-                owner = true
-            )
-        }
-
-        private fun http(method: String, url: String, body: String? = null, owner: Boolean = false): String {
-            val connection = URL(url).openConnection() as HttpURLConnection
-            connection.requestMethod = method
-            if (owner) connection.setRequestProperty("Authorization", "Bearer owner")
-            if (body != null) {
-                connection.doOutput = true
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.outputStream.use { it.write(body.toByteArray()) }
-            }
-            val code = connection.responseCode
-            val text = (if (code in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
-            check(code in 200..299) { "$method $url failed: $code $text" }
-            return text
-        }
+        fun connectToEmulators() = FirebaseEmulator.connect()
     }
 }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -25,41 +26,42 @@ class PortfolioViewModelTest {
     private val catalog = InMemoryCatalogRepository(data.services, data.portfolio)
 
     @Test
-    fun allItems_areSamples_newestFirst() = runTest {
+    fun allItems_areRealWorkWithArtwork_datedFirst() = runTest {
         val vm = PortfolioViewModel(catalog)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
         val items = vm.uiState.first { !it.isLoading }.items
         assertEquals(data.portfolio.size, items.size)
-        assertTrue(items.all { it.isSample })
-        assertEquals(items.sortedByDescending { it.year }.map { it.year }, items.map { it.year })
+        assertTrue(items.none { it.isSample })
+        assertTrue(items.all { it.cover != null && it.metrics.isEmpty() })
+        assertEquals("pf-endura", items.first().id) // the only dated piece
     }
 
     @Test
-    fun filter_matchesLeadCategoryOrServicesUsed() = runTest {
+    fun filter_offersOnlyCategoriesThatHaveWork() = runTest {
         val vm = PortfolioViewModel(catalog)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
-        vm.uiState.first { !it.isLoading }
+        assertEquals(listOf(ServiceCategory.SOCIAL_MEDIA), vm.uiState.first { !it.isLoading }.categories)
         vm.selectCategory(ServiceCategory.VFX)
-        val ids = vm.uiState.value.items.map { it.id }.toSet()
-        assertEquals(setOf("pf-2", "pf-6"), ids)
+        assertTrue(vm.uiState.value.items.isEmpty())
+        vm.selectCategory(ServiceCategory.SOCIAL_MEDIA)
+        assertEquals(data.portfolio.size, vm.uiState.value.items.size)
     }
 
     @Test
     fun detail_linksToServiceForItsCategory() = runTest {
-        val vm = PortfolioDetailViewModel("pf-5", catalog)
+        val vm = PortfolioDetailViewModel("pf-peeyo", catalog)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
-        assertEquals("svc-motion", vm.uiState.first { !it.isLoading }.relatedServiceId)
+        val state = vm.uiState.first { !it.isLoading }
+        assertEquals("Peeyo", state.item?.title)
+        assertEquals("svc-social", state.relatedServiceId)
     }
 
     @Test
-    fun detail_resolvesRelatedServiceForAllSamplePieces() = runTest {
-        val filmingVm = PortfolioDetailViewModel("pf-1", catalog)
-        val brandingVm = PortfolioDetailViewModel("pf-4", catalog)
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            filmingVm.uiState.collect {}
-            brandingVm.uiState.collect {}
-        }
-        assertEquals("svc-film", filmingVm.uiState.first { !it.isLoading }.relatedServiceId)
-        assertEquals("svc-brand", brandingVm.uiState.first { !it.isLoading }.relatedServiceId)
+    fun detail_forUnknownPiece_hasNoItem() = runTest {
+        val vm = PortfolioDetailViewModel("pf-missing", catalog)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect {} }
+        val state = vm.uiState.first { !it.isLoading }
+        assertNull(state.item)
+        assertNull(state.relatedServiceId)
     }
 }

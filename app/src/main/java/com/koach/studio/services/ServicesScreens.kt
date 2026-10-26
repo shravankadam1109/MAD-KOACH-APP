@@ -274,7 +274,7 @@ private fun RadioDot(selected: Boolean) {
     }
 }
 
-/** Explore tab for clients: the services catalogue and the sample portfolio. */
+/** Explore tab for clients: the services catalogue and the portfolio. */
 @Composable
 fun ExploreScreen(
     servicesViewModel: ServicesViewModel,

@@ -35,20 +35,24 @@ data class CreativeService(
 }
 
 /**
- * A showcase piece. Every item bundled with the app is sample content
- * ([isSample] = true) and must be labelled as such in the UI.
+ * A showcase piece. Sample content ([isSample] = true) must be labelled as
+ * such in the UI; real KOACH work carries its artwork in [cover] and [gallery].
  */
 data class PortfolioItem(
     val id: String,
     val title: String,
     val category: ServiceCategory,
-    val year: Int,
+    /** Null when the source material doesn't date the work. */
+    val year: Int?,
     val summary: String,
     val brief: String,
     val approach: String,
     val services: List<ServiceCategory>,
     val metrics: List<Pair<String, String>>,
-    val isSample: Boolean = true
+    val isSample: Boolean = true,
+    /** Drawable resource ids for the artwork, bundled with the app. */
+    val cover: Int? = null,
+    val gallery: List<Int> = emptyList()
 )
 
 enum class BookingStatus(val displayName: String) {

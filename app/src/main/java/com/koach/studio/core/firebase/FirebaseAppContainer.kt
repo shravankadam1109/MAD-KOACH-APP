@@ -3,14 +3,34 @@ package com.koach.studio.core.firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.koach.studio.bookings.data.BookingRepository
+import com.koach.studio.bookings.data.FirestoreBookingRepository
+import com.koach.studio.clients.data.ClientRepository
+import com.koach.studio.clients.data.FirestoreClientRepository
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.di.DemoAppContainer
+import com.koach.studio.documents.data.DocumentRepository
+import com.koach.studio.documents.data.FirestoreDocumentRepository
+import com.koach.studio.feedback.FeedbackRepository
+import com.koach.studio.feedback.FirestoreFeedbackRepository
+import com.koach.studio.messaging.data.FirestoreMessageRepository
+import com.koach.studio.messaging.data.MessageRepository
+import com.koach.studio.notifications.data.FirestoreNotificationRepository
+import com.koach.studio.notifications.data.NotificationRepository
+import com.koach.studio.payments.FirestorePaymentRepository
+import com.koach.studio.payments.PaymentRepository
+import com.koach.studio.projects.data.FirestoreProjectRepository
+import com.koach.studio.projects.data.ProjectRepository
+import com.koach.studio.projects.data.SecuredProjectRepository
+import com.koach.studio.tasks.data.FirestoreTaskRepository
+import com.koach.studio.tasks.data.TaskRepository
 import java.time.Clock
 
 /**
- * Firebase wiring. Authentication and user profiles are real; the remaining
- * repositories are still the in-memory demo ones until they are migrated to
- * Firestore, and the app says so on screen via [dataNotice].
+ * Firebase wiring: authentication, profiles and every record live in
+ * Firestore, guarded by the security rules in `firebase/`. The service
+ * catalogue and portfolio are still bundled with the app, and file transfers
+ * and payments are still simulated, which the app says via [dataNotice].
  */
 class FirebaseAppContainer(
     clock: Clock = Clock.systemDefaultZone(),
@@ -31,6 +51,44 @@ class FirebaseAppContainer(
 
     override val authRepository: AuthRepository by lazy { FirebaseAuthRepository(auth, firestore) }
 
+    private val signedInUser get() = authRepository.currentUser
+
+    override val projectRepository: ProjectRepository by lazy {
+        SecuredProjectRepository(FirestoreProjectRepository(firestore, signedInUser, clock), signedInUser, accessControl)
+    }
+
+    override val notificationRepository: NotificationRepository by lazy {
+        FirestoreNotificationRepository(firestore, signedInUser)
+    }
+
+    override val bookingRepository: BookingRepository by lazy {
+        FirestoreBookingRepository(firestore, signedInUser, accessControl, notificationRepository, clock)
+    }
+
+    override val clientRepository: ClientRepository by lazy {
+        FirestoreClientRepository(firestore, signedInUser, accessControl, clock)
+    }
+
+    override val taskRepository: TaskRepository by lazy {
+        FirestoreTaskRepository(firestore, signedInUser, accessControl, clock)
+    }
+
+    override val documentRepository: DocumentRepository by lazy {
+        FirestoreDocumentRepository(firestore, signedInUser, accessControl, clock)
+    }
+
+    override val messageRepository: MessageRepository by lazy {
+        FirestoreMessageRepository(firestore, signedInUser, accessControl, notificationRepository, clock)
+    }
+
+    override val paymentRepository: PaymentRepository by lazy {
+        FirestorePaymentRepository(firestore, signedInUser, accessControl)
+    }
+
+    override val feedbackRepository: FeedbackRepository by lazy {
+        FirestoreFeedbackRepository(firestore, signedInUser, accessControl, notificationRepository, clock)
+    }
+
     override val dataNotice: String =
-        "Signed in with Firebase. Projects, bookings and other records are still sample data until they move to Firestore."
+        "Live Firebase data. Services and portfolio are bundled with the app; file transfers and payments are still simulated."
 }

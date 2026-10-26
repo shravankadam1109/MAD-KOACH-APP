@@ -69,7 +69,8 @@ class DemoDataTest {
     @Test
     fun catalogue_coversEveryServiceCategory_andDemoRolesExist() {
         assertEquals(ServiceCategory.entries.toSet(), data.services.map { it.category }.toSet())
-        assertTrue(data.portfolio.all { it.isSample })
+        assertTrue(data.portfolio.none { it.isSample })
+        assertTrue(data.portfolio.all { it.cover != null })
         Role.entries.forEach { role -> assertTrue(data.users.any { it.role == role }) }
     }
 
