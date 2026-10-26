@@ -1,5 +1,6 @@
 package com.koach.studio.tasks.ui
 
+import com.koach.studio.core.designsystem.theme.koachItem
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -235,7 +236,7 @@ fun TaskListScreen(
                     canManage = state.canManage,
                     onToggleDone = { viewModel.toggleDone(row.task) },
                     onClick = { onOpenTask(row.task.id) },
-                    modifier = Modifier.padding(horizontal = gutter)
+                    modifier = koachItem().padding(horizontal = gutter)
                 )
             }
         }

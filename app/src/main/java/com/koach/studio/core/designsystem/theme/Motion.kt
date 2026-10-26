@@ -9,6 +9,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +49,16 @@ object KoachMotion {
 
     fun <T> press() = spring<T>(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
 }
+
+/**
+ * Lazy-list rows that fade in when added, glide when reordered or filtered and
+ * fade out when removed, on the shared curves.
+ */
+fun LazyItemScope.koachItem(): Modifier = Modifier.animateItem(
+    fadeInSpec = KoachMotion.enter(KoachMotion.Medium),
+    placementSpec = KoachMotion.press(),
+    fadeOutSpec = KoachMotion.exit()
+)
 
 /** True when the user has turned animations off in system settings; motion then snaps. */
 @Composable

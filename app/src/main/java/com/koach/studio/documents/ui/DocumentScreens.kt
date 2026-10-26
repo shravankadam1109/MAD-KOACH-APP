@@ -1,5 +1,6 @@
 package com.koach.studio.documents.ui
 
+import com.koach.studio.core.designsystem.theme.koachItem
 import androidx.compose.ui.graphics.Color
 import android.content.Context
 import android.net.Uri
@@ -194,7 +195,7 @@ fun DocumentsScreen(
                 }
             }
             items(state.rows, key = { it.document.id }) { row ->
-                DocumentCard(row, showVisibility = state.isAgency, onClick = { selectedId = row.document.id }, modifier = Modifier.padding(horizontal = gutter))
+                DocumentCard(row, showVisibility = state.isAgency, onClick = { selectedId = row.document.id }, modifier = koachItem().padding(horizontal = gutter))
             }
         }
     }
