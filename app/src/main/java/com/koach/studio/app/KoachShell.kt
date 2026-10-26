@@ -347,7 +347,16 @@ private fun KoachNavHost(
         composable(Routes.AGENCY_HOME) {
             AgencyHomeScreen(
                 viewModel = koachViewModel {
-                    AgencyHomeViewModel(user, it.projectRepository, it.taskRepository, it.bookingRepository, it.notificationRepository, it.clock)
+                    AgencyHomeViewModel(
+                        user = user,
+                        projects = it.projectRepository,
+                        tasks = it.taskRepository,
+                        bookings = it.bookingRepository,
+                        notifications = it.notificationRepository,
+                        clock = it.clock,
+                        people = it.people,
+                        isDemo = it.authRepository.isDemo
+                    )
                 },
                 actions = AgencyHomeActions(
                     onNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
@@ -356,7 +365,10 @@ private fun KoachNavHost(
                     onAllTasks = { navController.navigateToTopLevel(Routes.TASKS) },
                     onNewTask = { navController.navigate(Routes.taskForm()) },
                     onBookings = { navController.navigate(Routes.BOOKINGS) },
-                    onMessages = { navController.navigate(Routes.MESSAGES) }
+                    onMessages = { navController.navigate(Routes.MESSAGES) },
+                    onAllProjects = { navController.navigateToTopLevel(ProjectsDestinations.PROJECT_LIST) },
+                    onClients = { navController.navigateToTopLevel(Routes.CLIENTS) },
+                    onDocuments = { navController.navigate(Routes.documents()) }
                 )
             )
         }
