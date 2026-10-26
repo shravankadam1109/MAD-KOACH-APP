@@ -2,9 +2,9 @@
 
 A premium Android app for **KOACH Studio**, a creative agency offering filming, video editing, content creation, social media, branding, motion graphics and VFX. Clients book services, follow their projects, review deliverables and talk to their crew. The agency team runs clients, projects, tasks, documents and bookings from the same app.
 
-Built with Kotlin, Jetpack Compose and Material 3. Dark UI with KOACH neon green (`#41BA00`).
+Built with Kotlin, Jetpack Compose and Material 3. Dark-first UI with KOACH signature lime-green (`#41BA00`), plus user-selectable **Dark**, **Light**, and **System default** themes persisted across app restarts.
 
-> **Demo build.** Sign-in, data, downloads, uploads and payments are simulated in memory. Nothing is sent to a server and all data resets when the app closes. See [Backend status](#backend-status-and-limitations).
+> **Dual-mode architecture.** The app supports both **Firebase** (`FirebaseAppContainer` with Firebase Authentication and Cloud Firestore repositories when `google-services.json` is configured) and an instant **Demo workspace** (`DemoAppContainer` with seeded in-memory repositories). See [Backend status](#backend-status-and-limitations).
 
 ---
 
@@ -14,28 +14,29 @@ Built with Kotlin, Jetpack Compose and Material 3. Dark UI with KOACH neon green
 
 | Area | What you can do |
 |---|---|
-| Home | Greeting, featured project with progress and next milestone, quick actions, deliverables awaiting review, upcoming milestones |
-| Projects | Your projects only, with search, service filters, progress and due dates |
+| Home | Greeting, featured project hero card with progress and next milestone, quick actions, deliverables awaiting review, upcoming milestones |
+| Projects | Your projects only, with compact search + filter sheet (service, status, sort order), active filter chips, progress and due dates |
 | Project detail | Milestones, crew, description, deliverables, revision history, project documents |
 | Deliverables | Simulated download, **Approve**, or **Request changes** (a reason is required and kept in history) |
-| Explore | Services catalogue (7 categories, packages in INR) and a portfolio of clearly labelled **sample** work |
+| Explore | Services catalogue (7 categories, packages in INR) and KOACH Studio's curated social media & creative portfolio artwork |
 | Booking | Service and package picker, date picker (2+ days' notice), budget, brief, validation, confirmation, booking history |
 | Messages | One conversation per project, unread badges, live updates |
 | Contact | Studio address (Bandra West), operating hours, direct phone dialer, urgent production hotline, direct email, map location, and quick booking |
-| Account | Notifications, bookings, documents, invoices (simulated payments), feedback and complaints, profile, sign-out |
+| Account & Settings | Appearance (Dark / Light / System default), notification & privacy preferences, bookings, documents, invoices (simulated payments), feedback, profile, about & version info, sign-out |
 
 ### For the agency team
 
 | Area | What you can do |
 |---|---|
-| Studio dashboard | Active projects, booking requests, open and overdue tasks, my tasks, projects needing attention |
-| Clients | Search, status filters, project counts, create/edit with validation; admins can delete clients that have no projects |
-| Projects | Every project; change status, tick off milestones, edit deliverables, share new versions for review |
-| Tasks | Create/edit/delete, assignee, priority, status, due date, overdue flags, "assigned to me", sort by due date, priority or newest |
+| Studio dashboard | Active project count & average completion, status breakdown (In Progress, In Review, Revisions, Delivered), booking requests, open & overdue tasks, workflow shortcuts, projects needing attention, my tasks, upcoming 14-day deadlines, and team workload distribution |
+| Clients | Compact search, status filters, active/lead summary counts, project counts, create/edit with validation; admins can delete clients that have no projects |
+| Projects | Every project with compact filter & sort bottom sheet; change status, tick off milestones, edit deliverables, share new versions for review |
+| Tasks | Create/edit/delete, assignee, priority, status, due date, overdue flags, "assigned to me", sort by due date, priority or newest, responsive card layout |
 | Documents | Categories, project links, shared vs internal visibility, file metadata via the system picker |
 | Bookings inbox | Confirm or decline requests; the client is notified |
 | Feedback inbox | Reply to feedback and complaints and set their status |
 | Payments | Studio admins see all invoices |
+| More & Settings | Central studio tools hub + Appearance (Dark / Light / System default), notifications, privacy, account/session controls, and app version details |
 
 ### Roles and permissions
 
@@ -73,7 +74,7 @@ Pick one on the sign-in screen. All people and companies are fictional.
 1. Clone the repo and open the folder in Android Studio (a recent stable release with Android Gradle Plugin 9.3 support).
 2. Let Gradle sync. Android Studio's bundled JDK is fine.
 3. Pick an emulator or device on **Android 8.0 (API 26) or newer** and press **Run ▶**.
-4. On the sign-in screen, choose a client or agency demo account.
+4. On the sign-in screen, choose a client or agency demo account (or sign in with Firebase when `google-services.json` is configured).
 
 ### Command line
 
@@ -91,8 +92,6 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew installDebug
 ```
 
-> On `main` before PR #5 merges, `gradlew` is not executable; use `sh ./gradlew …`.
-
 ---
 
 ## Testing
@@ -109,18 +108,9 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew lintDebug
 ```
 
-Last verified on 22 Oct 2026 on an API 37 emulator:
+Unit tests cover every repository's permission rules, Firestore mappers, validators, theme preferences, and ViewModels. UI tests cover the client project journey (download → revision), role-based tabs and sign-out, adding a client, sending a message, and the simulated payment flow.
 
-| Check | Result |
-|---|---|
-| Unit tests | 96 tests, 0 failures |
-| Instrumented UI tests | 6 tests, 0 failures in each of 5 consecutive from-scratch runs |
-| Lint | 0 errors; 13 warnings, all dependency/SDK version advisories |
-| `assembleDebug`, `assembleRelease` | Successful |
-
-Unit tests cover every repository's permission rules, validators and ViewModels. UI tests cover the client project journey (download → revision), role-based tabs and sign-out, adding a client, sending a message, and the simulated payment flow.
-
-Instrumented tests disable system animations (`testOptions.animationsDisabled`) and reset demo data before each test with the `FreshDemoData` rule. On the API 37 emulator, the first tap after launch was occasionally lost (about 1 in 25 test executions before the fix), so the `signInAs` helper retries the demo sign-in tap until the app shell appears. If a UI test fails with "No compose hierarchies found", re-run it and report it if it persists.
+Instrumented tests disable system animations (`testOptions.animationsDisabled`) and reset demo data before each test with the `FreshDemoData` rule.
 
 ---
 
@@ -130,16 +120,18 @@ Single-module MVVM app with feature packages:
 
 ```
 com.koach.studio
-├── app/            Shell: root, role-aware bottom bar, NavHost, menu
-├── auth/           Demo sign-in screen
+├── app/            Shell: root, role-aware bottom bar, NavHost, More & Account menu
+├── auth/           Welcome, Login, SignUp, and Demo sign-in screens
 ├── core/
 │   ├── auth/       AuthRepository, roles → permissions, AccessControl
-│   ├── data/       DemoData seed
-│   ├── designsystem/  KoachTheme, colours, type, shapes, components
-│   ├── di/         AppContainer, koachViewModel {}
+│   ├── data/       DemoData seed & real KOACH portfolio items
+│   ├── designsystem/  KoachTheme (Dark/Light/System), colours, type, shapes, components
+│   ├── di/         AppContainer, DemoAppContainer, koachViewModel {}
+│   ├── firebase/   FirebaseAppContainer, FirebaseAuthRepository, Firestore repositories
 │   ├── model/      Shared domain models
+│   ├── settings/   ThemePreferencesStore (SharedPreferences-backed & in-memory)
 │   └── ui/         Formatting (₹, dates, sizes)
-├── projects/       Projects, milestones, deliverables, revisions (from PR #4)
+├── projects/       Projects, compact filter sheet, milestones, deliverables, revisions
 ├── clients/        Client management
 ├── tasks/          Task management
 ├── documents/      Document management
@@ -148,18 +140,19 @@ com.koach.studio
 ├── feedback/       Feedback and complaints
 ├── contact/        Studio location, hotlines, direct email, map & actions
 ├── bookings/       Booking form, history, inbox
-├── catalog/ services/ portfolio/   Explore tab
-├── home/           Client home and Studio dashboard
+├── catalog/ services/ portfolio/   Explore tab & real KOACH portfolio artwork
+├── home/           Client home and Studio dashboard (workload, deadlines, breakdown)
 ├── payments/       Simulated invoices
-└── profile/
+├── profile/        Account profile
+└── settings/       Central Settings screen (Appearance, notifications, privacy, about)
 ```
 
-**Data flow:** Screen → ViewModel (`StateFlow<UiState>`) → repository interface (`Flow` reads, `suspend … Result` writes) → in-memory implementation.
+**Data flow:** Screen → ViewModel (`StateFlow<UiState>`) → repository interface (`Flow` reads, `suspend … Result` writes) → Firestore or in-memory implementation.
 
-- `AppContainer` creates every dependency. `KoachApplication` owns it and `koachViewModel { }` builds ViewModels from it. Tests construct ViewModels directly with in-memory repositories.
-- Repositories read the signed-in user through `AccessControl` and enforce permissions on every read filter and write, as Firestore security rules would.
-- `SecuredProjectRepository` wraps PR #4's `InMemoryProjectRepository`, so the original store stays rule-free and replaceable.
-- All colours, type and spacing come from `KoachTheme`; screens contain no hard-coded colours.
+- `AppContainer` creates every dependency. `KoachApplication` selects `FirebaseAppContainer` when Firebase is configured, or falls back to `DemoAppContainer`.
+- `ThemePreferencesStore` persists user theme (`DARK`, `LIGHT`, `SYSTEM`) and notification/privacy toggles via `SharedPreferences`.
+- Repositories read the signed-in user through `AccessControl` and enforce permissions on every read filter and write, mirrored in `firestore.rules`.
+- All colours, type and spacing come from `KoachTheme`; screens adapt seamlessly between Dark and Light modes.
 
 ---
 
@@ -167,26 +160,13 @@ com.koach.studio
 
 | Feature | Status in this build |
 |---|---|
-| Sign-in | **Simulated.** Demo account picker. `signInWithEmail` returns an error explaining Firebase isn't connected. |
-| Data | **In memory.** Seeded from `DemoData` / `FakeProjectDataSource`, lost when the app closes. |
+| Sign-in | **Firebase Auth + Demo fallback.** Supports email/password when Firebase is configured, plus instant demo account switching. |
+| Data | **Firestore + In-memory fallback.** Full Firestore repositories (`projects`, `clients`, `tasks`, `documents`, `bookings`, `messages`, `notifications`, `payments`, `feedback`, `catalog`) with offline demo fallback. |
 | Deliverable downloads | **Simulated** progress; no file is downloaded. |
-| Documents | **Metadata only.** The picker reads name/type/size; nothing is uploaded (`DemoDocumentStorage.isAvailable = false`). |
+| Documents | **Metadata only.** The picker reads name/type/size; binary upload to Firebase Storage is not yet wired (`DemoDocumentStorage.isAvailable = false`). |
 | Payments | **Simulated.** "Pay now" only flips the invoice status; no payment provider, no money moves. |
-| Notifications | In-app only; no push notifications. |
-| Portfolio | Sample projects, labelled as such; not real client work. |
-
-No Firebase configuration, `google-services.json`, API keys or credentials are included.
-
-### Moving to Firebase
-
-Each repository is an interface, so the path is:
-
-1. Add Firebase to the project (requires the team's own Firebase project and `google-services.json`, kept out of Git).
-2. Implement `AuthRepository` with Firebase Authentication, mapping users to a Firestore profile with a `role` and `clientId`.
-3. Implement the repositories with Firestore snapshot listeners; the `Flow` APIs map directly.
-4. Implement `DocumentStorage` with Firebase Storage and fill `StudioDocument.storagePath`.
-5. Mirror the `AccessPolicy` rules in Firestore and Storage security rules.
-6. Provide a `FirebaseAppContainer` instead of `DemoAppContainer` in `KoachApplication`.
+| Notifications | In-app only; no push notifications (FCM). |
+| Portfolio | Curated real KOACH Studio social media & creative artwork (`res/drawable-nodpi/portfolio_*.jpg`). |
 
 ---
 
@@ -194,20 +174,9 @@ Each repository is an interface, so the path is:
 
 | Member | Responsibility |
 |---|---|
-| **Shravan Kadam** | Integration lead: architecture, design system, navigation shell, shared models and repositories, Git workflow, QA |
+| **Shravan Kadam** | Integration lead: architecture, design system, Firebase integration, navigation shell, shared models and repositories, Git workflow, QA |
 | **Aditya Menon** | Client management, plus the original projects and deliverables flow (PR #4) |
-| **Kushagra Khare** | Tasks and documents |
+| **Kushagra Khare** | Tasks, documents, design-system refinement, Studio dashboard workload, compact project filters, and persistent Settings & theming |
 | **Suhani Jain** | Client-facing UI & UX quality, studio contact workflows, service & portfolio booking integration, accessibility, and documentation |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for module ownership, the branch workflow and review rules.
-
----
-
-## Known gaps and future work
-
-- Real backend (Firebase Auth, Firestore, Storage) and push notifications.
-- Profile editing and email sign-in once real accounts exist.
-- Dependency upgrades flagged by lint (AGP 9.4, Compose BOM 2026.09, Kotlin 2.4, compileSdk 37) and a targetSdk bump, best done in a dedicated PR with a full regression run.
-- Project creation from a confirmed booking (projects are seeded today).
-- Real portfolio media in place of generated covers.
-- Light theme is intentionally not provided; the brand is dark-only.

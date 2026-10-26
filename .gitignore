@@ -68,3 +68,6 @@ firestore-debug.log
 storage-debug.log
 ui-debug.log
 .firebase/
+
+# Kotlin compiler cache
+.kotlin/
