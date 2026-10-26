@@ -1,5 +1,8 @@
 package com.koach.studio.clients
 
+import com.koach.studio.awaitTag
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -29,7 +32,11 @@ class ClientManagementUiTest {
     @Test
     fun agency_addsClient_withValidation_thenSeesDetail() {
         rule.signInAs("u-zoya", shellTag = "tab_agency_home")
-        rule.onNodeWithTag("tab_clients").performClick()
+        // Clients moved from the bottom bar into the Account menu.
+        rule.onNodeWithTag("tab_account").performClick()
+        rule.onNodeWithTag("menu_screen").performScrollToNode(hasTestTag("menu_clients"))
+        rule.onNodeWithTag("menu_clients").performClick()
+        rule.awaitTag("add_client")
         rule.onNodeWithTag("add_client").performClick()
 
         // Saving an empty form shows validation instead of saving.

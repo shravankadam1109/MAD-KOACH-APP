@@ -33,17 +33,25 @@ class RoleNavigationTest {
         rule.onNodeWithTag("tab_clients").assertDoesNotExist()
 
         rule.onNodeWithTag("tab_account").performClick()
-        rule.onNodeWithTag("sign_out_button").performScrollTo().performClick()
+        // The account menu is a lazy list; sign-out sits below the fold, so scroll the list to it.
+        rule.onNodeWithTag("menu_screen").performScrollToNode(hasTestTag("sign_out_button"))
+        rule.onNodeWithTag("sign_out_button").performClick()
         rule.awaitTag("welcome_screen")
     }
 
     @Test
     fun agency_seesStudioTabs() {
         rule.signInAs("u-zoya", shellTag = "tab_agency_home")
+        // Agency bottom bar: Studio, Messages and Account; clients and tasks live in the Account menu.
         rule.onNodeWithTag("tab_agency_home").assertIsDisplayed()
-        rule.onNodeWithTag("tab_clients").assertIsDisplayed()
-        rule.onNodeWithTag("tab_tasks").assertIsDisplayed()
+        rule.onNodeWithTag("tab_messages").assertIsDisplayed()
+        rule.onNodeWithTag("tab_account").assertIsDisplayed()
         rule.onNodeWithTag("tab_explore").assertDoesNotExist()
+        rule.onNodeWithTag("tab_home").assertDoesNotExist()
+
+        rule.onNodeWithTag("tab_account").performClick()
+        rule.onNodeWithTag("menu_screen").performScrollToNode(hasTestTag("menu_clients"))
+        rule.onNodeWithTag("menu_clients").assertIsDisplayed()
     }
 
     @Test
