@@ -21,7 +21,10 @@ object UserProfileMapper {
             else -> return null
         }
         val name = (data["name"] as? String)?.takeIf { it.isNotBlank() } ?: return null
-        val email = (data["email"] as? String)?.takeIf { it.isNotBlank() } ?: return null
+        val phone = (data["phone"] as? String).orEmpty()
+        // Phone sign-ups may have no email; every account needs one way to reach it.
+        val email = (data["email"] as? String).orEmpty()
+        if (email.isBlank() && phone.isBlank()) return null
         val clientId = (data["clientId"] as? String)?.takeIf { it.isNotBlank() }
         // A client account must belong to a client organisation.
         if (role == Role.CLIENT && clientId == null) return null
@@ -32,7 +35,7 @@ object UserProfileMapper {
             role = role,
             title = (data["title"] as? String).orEmpty(),
             clientId = if (role == Role.CLIENT) clientId else null,
-            phone = (data["phone"] as? String).orEmpty()
+            phone = phone
         )
     }
 

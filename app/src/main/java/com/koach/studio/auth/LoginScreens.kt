@@ -1,5 +1,7 @@
 package com.koach.studio.auth
 
+import androidx.compose.ui.platform.LocalContext
+import com.koach.studio.core.firebase.GoogleIdToken
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -405,6 +407,7 @@ private fun LoginScreen(
     val c = KoachTheme.colors
     val focus = LocalFocusManager.current
     var showRequestAccess by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
 
     KoachBackground(modifier.fillMaxSize()) {
         AuthBackdrop()
@@ -528,7 +531,7 @@ private fun LoginScreen(
                     // Google Sign-In button
                     KoachSecondaryButton(
                         text = "Continue with Google",
-                        onClick = { viewModel.signInWithGoogle() },
+                        onClick = { viewModel.signInWithGoogle { GoogleIdToken.request(context) } },
                         enabled = !state.isLoading,
                         modifier = Modifier.fillMaxWidth().testTag("login_google_btn")
                     )

@@ -41,7 +41,8 @@ class FirebaseAppContainer(
     storage: FirebaseStorage = FirebaseStorage.getInstance(),
     /** Debug only: connect to the local Firebase emulators on this host (10.0.2.2 from an Android emulator). */
     emulatorHost: String? = null,
-    themePreferencesStore: ThemePreferencesStore = InMemoryThemePreferencesStore()
+    themePreferencesStore: ThemePreferencesStore = InMemoryThemePreferencesStore(),
+    private val pendingSignUps: PendingSignUpStore = InMemoryPendingSignUpStore()
 ) : DemoAppContainer(clock = clock, themePreferencesStore = themePreferencesStore) {
 
     init {
@@ -52,7 +53,7 @@ class FirebaseAppContainer(
         }
     }
 
-    override val authRepository: AuthRepository by lazy { FirebaseAuthRepository(auth, firestore) }
+    override val authRepository: AuthRepository by lazy { FirebaseAuthRepository(auth, firestore, pendingSignUps) }
 
     private val signedInUser get() = authRepository.currentUser
 

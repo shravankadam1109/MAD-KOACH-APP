@@ -26,17 +26,36 @@ service cloud.firestore {
     // ---- People -----------------------------------------------------------
 
     // Profiles: readable by any profiled user (names and titles appear in crews
-    // and chats); only admins create or change them, so roles stay trusted.
+    // and chats). Admins manage profiles. A new account may create exactly one
+    // profile for itself, and only as a client of its own new organisation
+    // ("cl-<uid>"), so nobody can sign up into the agency or someone else's client.
+    function selfClientProfile(uid) {
+      let p = request.resource.data;
+      return signedIn() && request.auth.uid == uid
+        && p.keys().hasOnly(['name', 'email', 'role', 'title', 'clientId', 'phone'])
+        && p.role == 'client'
+        && p.clientId == 'cl-' + uid
+        && p.name is string && p.name.size() > 0 && p.name.size() <= 120
+        && p.email is string && p.email.size() <= 254;
+    }
+
     match /users/{uid} {
       // Everyone can read their own profile (even a missing one, so the app can
       // tell "not set up yet" apart from a permission error).
       allow read: if hasProfile() || (signedIn() && request.auth.uid == uid);
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin() || selfClientProfile(uid);
+      // Roles and organisations never change from a client device.
+      allow update, delete: if isAdmin();
     }
 
     match /clients/{clientId} {
       allow read: if isAgency() || ownsClient(clientId);
-      allow create, update: if isAgency();
+      // A newly signed-up client creates its own organisation record once.
+      allow create: if isAgency()
+        || (ownsClient(clientId) && clientId == 'cl-' + request.auth.uid
+            && request.resource.data.keys().hasOnly(['name', 'contactName', 'email', 'phone', 'industry', 'city', 'status', 'since', 'notes'])
+            && request.resource.data.status == 'ACTIVE');
+      allow update: if isAgency();
       allow delete: if isAdmin();
     }
 
@@ -134,26 +153,37 @@ service cloud.firestore {
 
     // ---- Messaging --------------------------------------------------------
 
+    // Threads written before DMs existed have no type; they are project threads.
+
     function thread(threadId) { return get(/databases/$(database)/documents/threads/$(threadId)).data; }
     function inThread(threadId) {
       return signedIn() && (
-        (thread(threadId).type == 'DM' && request.auth.uid in thread(threadId).participantIds) ||
-        (thread(threadId).type != 'DM' && (isAgency() || request.auth.uid in thread(threadId).participantIds))
+        (thread(threadId).get('type', 'PROJECT') == 'DM' && request.auth.uid in thread(threadId).participantIds) ||
+        (thread(threadId).get('type', 'PROJECT') != 'DM' && (isAgency() || request.auth.uid in thread(threadId).participantIds))
       );
     }
 
     match /threads/{threadId} {
-      allow read: if signedIn() && (
-        (resource.data.type == 'DM' && request.auth.uid in resource.data.participantIds) ||
-        (resource.data.type != 'DM' && (isAgency() || request.auth.uid in resource.data.participantIds))
+      // Opening one thread: DMs only for their participants; project threads for
+      // the agency and the project's participants.
+      allow get: if signedIn() && (
+        (resource.data.get('type', 'PROJECT') == 'DM' && request.auth.uid in resource.data.participantIds) ||
+        (resource.data.get('type', 'PROJECT') != 'DM' && (isAgency() || request.auth.uid in resource.data.participantIds))
+      );
+      // Listing must be provably safe from the query itself: your own threads
+      // (participantIds array-contains you), or, for the agency, project threads
+      // (type == 'PROJECT'). An unfiltered list could include other people's DMs.
+      allow list: if signedIn() && (
+        request.auth.uid in resource.data.participantIds ||
+        (isAgency() && resource.data.type == 'PROJECT')
       );
       allow create: if signedIn() && (
-        (request.resource.data.type == 'DM' && request.auth.uid in request.resource.data.participantIds && request.resource.data.participantIds.size() == 2) ||
-        (request.resource.data.type != 'DM' && isAgency())
+        (request.resource.data.get('type', 'PROJECT') == 'DM' && request.auth.uid in request.resource.data.participantIds && request.resource.data.participantIds.size() == 2) ||
+        (request.resource.data.get('type', 'PROJECT') != 'DM' && isAgency())
       );
       allow update: if signedIn() && (
-        (resource.data.type == 'DM' && request.auth.uid in resource.data.participantIds) ||
-        (resource.data.type != 'DM' && isAgency() && changedOnly(['participantIds']))
+        (resource.data.get('type', 'PROJECT') == 'DM' && request.auth.uid in resource.data.participantIds) ||
+        (resource.data.get('type', 'PROJECT') != 'DM' && isAgency() && changedOnly(['participantIds']))
       );
 
       match /messages/{messageId} {

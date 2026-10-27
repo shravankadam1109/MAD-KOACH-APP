@@ -44,4 +44,11 @@ class UserProfileMapperTest {
         val user = UserProfileMapper.fromMap("uid-1", client)!!
         assertEquals(user, UserProfileMapper.fromMap("uid-1", UserProfileMapper.toMap(user)))
     }
+
+    @Test
+    fun phoneOnlyClient_isAccepted_butAnAccountNeedsEmailOrPhone() {
+        val phoneOnly = mapOf("role" to "client", "name" to "Ria", "email" to "", "phone" to "+919820012345", "clientId" to "cl-x")
+        assertEquals("+919820012345", UserProfileMapper.fromMap("u", phoneOnly)?.phone)
+        assertNull(UserProfileMapper.fromMap("u", phoneOnly + ("phone" to "")))
+    }
 }

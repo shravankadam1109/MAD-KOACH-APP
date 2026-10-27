@@ -12,6 +12,9 @@ import java.util.UUID
  * a Firebase Authentication implementation provides email, Google, and Phone OTP
  * sign-in behind the same interface and maps users to a [User] profile.
  */
+/** Returned by [AuthRepository.requestPhoneOtp] when the device verified the number itself; no code needs typing. */
+const val PHONE_AUTO_VERIFIED = "auto-verified"
+
 interface AuthRepository {
     val currentUser: StateFlow<User?>
 

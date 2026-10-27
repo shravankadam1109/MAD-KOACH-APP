@@ -1,5 +1,6 @@
 package com.koach.studio.auth
 
+import com.koach.studio.core.auth.PHONE_AUTO_VERIFIED
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koach.studio.core.auth.AuthRepository
@@ -56,6 +57,12 @@ class OtpViewModel(
             val result = auth.requestPhoneOtp(state.phone)
             result.fold(
                 onSuccess = { verId ->
+                    if (verId == PHONE_AUTO_VERIFIED) {
+                        // Android read the SMS itself; no code to type.
+                        _uiState.update { it.copy(isLoading = false, verificationId = verId, infoMessage = "Number verified automatically") }
+                        completeVerification(verId, "")
+                        return@fold
+                    }
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -83,9 +90,14 @@ class OtpViewModel(
             return
         }
         val verId = state.verificationId ?: return
+        completeVerification(verId, state.otpCode)
+    }
+
+    private fun completeVerification(verId: String, code: String) {
+        val state = _uiState.value
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = auth.verifyPhoneOtp(verId, state.otpCode, state.name, "", state.phone)
+            val result = auth.verifyPhoneOtp(verId, code, state.name, "", state.phone)
             result.fold(
                 onSuccess = {
                     _uiState.update { it.copy(isLoading = false, signedIn = true) }

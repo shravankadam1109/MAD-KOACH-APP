@@ -1,5 +1,7 @@
 package com.koach.studio
 
+import com.koach.studio.core.firebase.SharedPreferencesPendingSignUpStore
+import com.koach.studio.core.firebase.CurrentActivity
 import android.app.Application
 import com.google.firebase.FirebaseApp
 import com.koach.studio.core.auth.SharedPreferencesSessionStore
@@ -18,13 +20,15 @@ class KoachApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(CurrentActivity)
         if (!::container.isInitialized) {
             val firebaseConfigured = FirebaseApp.getApps(this).isNotEmpty()
             val themeStore = SharedPreferencesThemePreferencesStore(this)
             container = if (BuildConfig.FIREBASE_BACKEND && firebaseConfigured) {
                 FirebaseAppContainer(
                     emulatorHost = if (BuildConfig.FIREBASE_EMULATOR) "10.0.2.2" else null,
-                    themePreferencesStore = themeStore
+                    themePreferencesStore = themeStore,
+                    pendingSignUps = SharedPreferencesPendingSignUpStore(this)
                 )
             } else {
                 DemoAppContainer(
