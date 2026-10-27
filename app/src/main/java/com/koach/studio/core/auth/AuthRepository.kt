@@ -42,7 +42,19 @@ interface AuthRepository {
     suspend fun verifyPhoneOtp(verificationId: String, otpCode: String, name: String = "", email: String = "", phone: String = ""): Result<User>
 
     suspend fun signOut()
+
+    /**
+     * Creates a sign-in for new studio staff without any profile, so it grants no
+     * access until an admin activates it. Returns the account ID to pass on to an admin.
+     */
+    suspend fun requestStudioAccess(name: String, email: String, password: String): Result<String>
+
+    /** Admin only: gives a requested sign-in ([accountId]) a team or admin profile. */
+    suspend fun grantStudioAccess(accountId: String, name: String, email: String, title: String, role: Role): Result<Unit>
 }
+
+/** Studio accounts exist only in Firebase; the demo has fixed sample staff instead. */
+private const val LIVE_BACKEND_ONLY = "Studio access needs the live Firebase backend. In the demo, use the sample agency accounts."
 
 class InvalidCredentialsException : SecurityException("Email or password is incorrect")
 
@@ -105,6 +117,12 @@ class DemoAuthRepository(
                 "Password reset emails need Firebase Authentication, which isn't connected in this demo. Demo accounts all use the demo password shown below."
             )
         )
+
+    override suspend fun requestStudioAccess(name: String, email: String, password: String): Result<String> =
+        Result.failure(UnsupportedOperationException(LIVE_BACKEND_ONLY))
+
+    override suspend fun grantStudioAccess(accountId: String, name: String, email: String, title: String, role: Role): Result<Unit> =
+        Result.failure(UnsupportedOperationException(LIVE_BACKEND_ONLY))
 
     override suspend fun signUpClient(name: String, email: String, phone: String, password: String, company: String): Result<User> {
         val cleanEmail = email.trim().lowercase()

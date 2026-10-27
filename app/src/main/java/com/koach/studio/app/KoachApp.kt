@@ -1,5 +1,9 @@
 package com.koach.studio.app
 
+import com.koach.studio.auth.StudioAccessRequestViewModel
+import com.koach.studio.auth.StudioAccessRequestScreen
+import com.koach.studio.auth.ForgotPasswordViewModel
+import com.koach.studio.auth.ForgotPasswordScreen
 import com.koach.studio.core.designsystem.theme.KoachTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
@@ -44,6 +48,8 @@ private object AuthRoutes {
     const val CLIENT_SIGN_UP = "signup/client"
     const val CLIENT_OTP = "login/otp"
     const val TEAM_LOGIN = "login/team"
+    const val FORGOT_PASSWORD = "login/forgot"
+    const val STUDIO_ACCESS_REQUEST = "login/team/request"
 }
 
 /** Root of the UI: the signed-out entry flow until a user is signed in, then their shell. */
@@ -94,7 +100,8 @@ private fun SignedOutFlow(isDemo: Boolean) {
                 viewModel = koachViewModel(key = "login-client") { LoginViewModel(AuthPortal.CLIENT, it.authRepository) },
                 onBack = { nav.popBackStack() },
                 onNavigateToSignUp = { nav.navigate(AuthRoutes.CLIENT_SIGN_UP) },
-                onNavigateToOtp = { nav.navigate(AuthRoutes.CLIENT_OTP) }
+                onNavigateToOtp = { nav.navigate(AuthRoutes.CLIENT_OTP) },
+                onForgotPassword = { nav.navigate(AuthRoutes.FORGOT_PASSWORD) }
             )
         }
         composable(AuthRoutes.CLIENT_SIGN_UP) {
@@ -117,7 +124,21 @@ private fun SignedOutFlow(isDemo: Boolean) {
         composable(AuthRoutes.TEAM_LOGIN) {
             TeamLoginScreen(
                 viewModel = koachViewModel(key = "login-team") { LoginViewModel(AuthPortal.AGENCY, it.authRepository) },
-                onBack = { nav.popBackStack() }
+                onBack = { nav.popBackStack() },
+                onForgotPassword = { nav.navigate(AuthRoutes.FORGOT_PASSWORD) },
+                onRequestAccess = { nav.navigate(AuthRoutes.STUDIO_ACCESS_REQUEST) }
+            )
+        }
+        composable(AuthRoutes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                viewModel = koachViewModel(key = "forgot-password") { ForgotPasswordViewModel() },
+                onBackToSignIn = { nav.popBackStack() }
+            )
+        }
+        composable(AuthRoutes.STUDIO_ACCESS_REQUEST) {
+            StudioAccessRequestScreen(
+                viewModel = koachViewModel(key = "studio-access-request") { StudioAccessRequestViewModel(it.authRepository) },
+                onBackToSignIn = { nav.popBackStack() }
             )
         }
     }

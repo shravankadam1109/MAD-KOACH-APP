@@ -50,21 +50,6 @@ class LoginViewModel(
     fun errorShown() = _uiState.update { it.copy(errorMessage = null) }
     fun infoShown() = _uiState.update { it.copy(infoMessage = null) }
 
-    /** Asks the backend to email a reset link for the email in the form. */
-    fun requestPasswordReset() {
-        val email = _uiState.value.email
-        LoginValidator.validate(email, "x".repeat(LoginValidator.PASSWORD_MIN))[Field.EMAIL]?.let { error ->
-            _uiState.update { it.copy(errors = it.errors + (Field.EMAIL to error), infoMessage = null) }
-            return
-        }
-        viewModelScope.launch {
-            val result = auth.sendPasswordReset(email)
-            _uiState.update {
-                it.copy(infoMessage = result.fold({ "If $email has an account, a reset link is on its way." }, { e -> e.message }))
-            }
-        }
-    }
-
     fun signIn() {
         val state = _uiState.value
         if (state.isLoading) return

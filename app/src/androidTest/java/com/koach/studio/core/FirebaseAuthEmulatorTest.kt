@@ -143,6 +143,49 @@ class FirebaseAuthEmulatorTest {
     }
 
     @Test
+    fun studioAccessRequest_grantsNothing_untilAnAdminActivatesIt() = runBlocking {
+        val staffEmail = email("staff")
+        val accountId = repository.requestStudioAccess("Riya Sen", staffEmail, PASSWORD).getOrThrow()
+        assertNull("the request leaves nobody signed in", auth.currentUser)
+        // No profile was written, so signing in is refused as "not set up yet".
+        val refused = repository.signInWithEmail(staffEmail, PASSWORD).exceptionOrNull()
+        assertTrue("got $refused", refused is AccountNotProvisionedException)
+
+        // An admin activates it; the staff member then signs in as team.
+        val adminEmail = email("admin")
+        writeProfile(createAccount(adminEmail, PASSWORD), role = "admin")
+        repository.signInWithEmail(adminEmail, PASSWORD).getOrThrow()
+        repository.grantStudioAccess(accountId, "Riya Sen", staffEmail, "Editor", Role.TEAM).getOrThrow()
+        repository.signOut()
+
+        val staff = repository.signInWithEmail(staffEmail, PASSWORD).getOrThrow()
+        assertEquals(Role.TEAM, staff.role)
+        assertNull(staff.clientId)
+    }
+
+    @Test
+    fun onlyAdminsActivate_andClientsCanNeverBecomeStaff() = runBlocking {
+        val requested = repository.requestStudioAccess("Kabir", email("pending"), PASSWORD).getOrThrow()
+
+        // A team member can't activate anyone.
+        val teamEmail = email("team")
+        writeProfile(createAccount(teamEmail, PASSWORD), role = "team")
+        repository.signInWithEmail(teamEmail, PASSWORD).getOrThrow()
+        assertTrue(repository.grantStudioAccess(requested, "Kabir", "k@test.koach", "", Role.TEAM).isFailure)
+        repository.signOut()
+
+        // An admin can't turn an existing client account into staff.
+        val clientUid = createAccount(email("client"), PASSWORD)
+        writeProfile(clientUid, role = "client", clientId = "cl-x")
+        val adminEmail = email("admin")
+        writeProfile(createAccount(adminEmail, PASSWORD), role = "admin")
+        repository.signInWithEmail(adminEmail, PASSWORD).getOrThrow()
+        val converted = repository.grantStudioAccess(clientUid, "Client", "c@test.koach", "", Role.ADMIN).exceptionOrNull()
+        assertTrue("got $converted", converted?.message.orEmpty().contains("client"))
+        assertEquals("client", firestore.collection("users").document(clientUid).get().await().getString("role"))
+    }
+
+    @Test
     fun accountWithoutProfile_isRefusedAndSignedOut() = runBlocking {
         val noprofileEmail = email("noprofile")
         createAccount(noprofileEmail, PASSWORD)

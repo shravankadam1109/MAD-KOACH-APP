@@ -1,5 +1,6 @@
 package com.koach.studio.app.menu
 
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.ui.text.style.TextOverflow
 import com.koach.studio.core.designsystem.theme.entrance
 import com.koach.studio.core.designsystem.components.KoachDivider
@@ -97,6 +98,9 @@ fun menuEntriesFor(user: User): List<MenuEntry> = buildList {
                 Icons.Outlined.Phone
             )
         )
+    }
+    if (user.can(Permission.MANAGE_TEAM_ACCESS)) {
+        add(MenuEntry(Routes.TEAM_ACCESS, "Studio team access", "Activate requested studio sign-ins", Icons.Outlined.AdminPanelSettings))
     }
     add(
         MenuEntry(

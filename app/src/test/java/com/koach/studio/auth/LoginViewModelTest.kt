@@ -106,14 +106,33 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun forgotPassword_needsValidEmail_thenExplainsDemoLimit() = runTest {
-        val vm = LoginViewModel(AuthPortal.CLIENT, auth)
-        vm.requestPasswordReset()
-        assertTrue(LoginValidator.Field.EMAIL in vm.uiState.value.errors)
+    fun forgotPassword_isAPrototype_validatesThenConfirms() {
+        // UI prototype: no repository is involved, so nothing can be sent.
+        val vm = ForgotPasswordViewModel()
+        vm.continueWithEmail()
+        assertEquals("Enter your email", vm.uiState.value.emailError)
+        vm.onEmailChange("not-an-email")
+        vm.continueWithEmail()
+        assertTrue(vm.uiState.value.emailError != null && !vm.uiState.value.sent)
         vm.onEmailChange("maya@aetheria.example")
-        vm.requestPasswordReset()
-        assertTrue(vm.uiState.value.infoMessage.orEmpty().contains("Firebase"))
-        assertEquals(DemoAuthRepository.DEMO_PASSWORD, vm.uiState.value.demoPassword)
+        vm.continueWithEmail()
+        assertTrue(vm.uiState.value.sent)
+        vm.useDifferentEmail()
+        assertTrue(!vm.uiState.value.sent)
+    }
+
+    @Test
+    fun studioAccessRequest_validatesForm_andDemoExplainsItNeedsFirebase() = runTest {
+        val vm = StudioAccessRequestViewModel(auth)
+        vm.submit()
+        val errors = vm.uiState.value.errors
+        assertTrue(LoginValidator.Field.NAME in errors && LoginValidator.Field.EMAIL in errors && LoginValidator.Field.PASSWORD in errors)
+        vm.onNameChange("Riya Sen")
+        vm.onEmailChange("riya@koach.example")
+        vm.onPasswordChange("long-enough")
+        vm.submit()
+        assertEquals(null, vm.uiState.value.accountId)
+        assertTrue(vm.uiState.value.errorMessage.orEmpty().contains("Firebase"))
     }
 
     @Test

@@ -23,7 +23,9 @@ enum class Permission {
     SEND_MESSAGES,
     VIEW_ALL_PAYMENTS,
     SUBMIT_FEEDBACK,
-    RESPOND_FEEDBACK
+    RESPOND_FEEDBACK,
+    /** Turning a requested studio sign-in into a team or admin account. */
+    MANAGE_TEAM_ACCESS
 }
 
 /** Role → permission table. The single source of truth for what each role may do. */
@@ -50,7 +52,7 @@ object AccessPolicy {
         Permission.SEND_MESSAGES,
         Permission.RESPOND_FEEDBACK
     )
-    private val admin = team + setOf(Permission.DELETE_CLIENTS, Permission.VIEW_ALL_PAYMENTS)
+    private val admin = team + setOf(Permission.DELETE_CLIENTS, Permission.VIEW_ALL_PAYMENTS, Permission.MANAGE_TEAM_ACCESS)
 
     fun permissionsFor(role: Role): Set<Permission> = when (role) {
         Role.CLIENT -> client

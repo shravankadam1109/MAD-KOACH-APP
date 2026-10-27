@@ -99,10 +99,12 @@ fun ClientLoginScreen(
     onBack: () -> Unit,
     onNavigateToSignUp: () -> Unit = {},
     onNavigateToOtp: () -> Unit = {},
+    onForgotPassword: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LoginScreen(
         viewModel = viewModel,
+        onForgotPassword = onForgotPassword,
         onBack = onBack,
         onNavigateToSignUp = onNavigateToSignUp,
         onNavigateToOtp = onNavigateToOtp,
@@ -365,19 +367,27 @@ fun ClientOtpScreen(
 
 /** Agency team sign-in. */
 @Composable
-fun TeamLoginScreen(viewModel: LoginViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun TeamLoginScreen(
+    viewModel: LoginViewModel,
+    onBack: () -> Unit,
+    onForgotPassword: () -> Unit = {},
+    onRequestAccess: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     LoginScreen(
         viewModel = viewModel,
         onBack = onBack,
         onNavigateToSignUp = {},
         onNavigateToOtp = {},
+        onForgotPassword = onForgotPassword,
+        onRequestAccess = onRequestAccess,
         copy = LoginCopy(
             eyebrow = "Agency team",
             headline = "Studio sign-in.",
             body = "For KOACH crew and admins. Client accounts can't sign in here.",
             icon = Icons.Outlined.Groups,
             tone = Tone.Info,
-            createAccountLabel = null,
+            createAccountLabel = "New to the studio? Request access",
             screenTag = "team_login_screen"
         ),
         modifier = modifier
@@ -398,6 +408,8 @@ private data class LoginCopy(
 private fun LoginScreen(
     viewModel: LoginViewModel,
     onBack: () -> Unit,
+    onForgotPassword: () -> Unit,
+    onRequestAccess: (() -> Unit)? = null,
     onNavigateToSignUp: () -> Unit,
     onNavigateToOtp: () -> Unit,
     copy: LoginCopy,
@@ -468,7 +480,7 @@ private fun LoginScreen(
                 ) {
                     KoachTextButton(
                         text = "Forgot password?",
-                        onClick = viewModel::requestPasswordReset,
+                        onClick = onForgotPassword,
                         modifier = Modifier.testTag("login_forgot")
                     )
                 }
@@ -569,7 +581,7 @@ private fun LoginScreen(
                     ) {
                         KoachTextButton(
                             text = copy.createAccountLabel,
-                            onClick = { showRequestAccess = true },
+                            onClick = { onRequestAccess?.invoke() ?: run { showRequestAccess = true } },
                             modifier = Modifier.testTag("login_request_access")
                         )
                     }
@@ -696,13 +708,13 @@ private fun RequestAccessDialog(onDismiss: () -> Unit) {
 
 /** Short band of KOACH artwork across the top of every auth screen, fading into the page. */
 @Composable
-private fun AuthBackdrop() {
+internal fun AuthBackdrop() {
     PortfolioMosaic(Modifier.fillMaxWidth().height(300.dp), dim = 0.6f)
 }
 
 /** Shared auth heading: brand, eyebrow, headline and supporting line, arriving in sequence. */
 @Composable
-private fun AuthHeader(eyebrow: String, headline: String, body: String) {
+internal fun AuthHeader(eyebrow: String, headline: String, body: String) {
     val c = KoachTheme.colors
     Column(Modifier.fillMaxWidth()) {
         Wordmark(Modifier.entrance(0))

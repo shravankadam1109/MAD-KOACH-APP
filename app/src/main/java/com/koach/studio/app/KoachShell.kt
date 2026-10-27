@@ -1,5 +1,10 @@
 package com.koach.studio.app
 
+import androidx.compose.runtime.LaunchedEffect
+import com.koach.studio.core.auth.can
+import com.koach.studio.core.auth.Permission
+import com.koach.studio.auth.GrantStudioAccessViewModel
+import com.koach.studio.auth.GrantStudioAccessScreen
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
@@ -532,6 +537,17 @@ private fun KoachNavHost(
                 onSignOut = { scope.launch { auth.signOut() } },
                 themePreferencesStore = container.themePreferencesStore
             )
+        }
+        composable(Routes.TEAM_ACCESS) {
+            // Admins only; the screen's writes are also enforced by the security rules.
+            if (user.can(Permission.MANAGE_TEAM_ACCESS)) {
+                GrantStudioAccessScreen(
+                    viewModel = koachViewModel { GrantStudioAccessViewModel(it.authRepository) },
+                    onBack = back
+                )
+            } else {
+                LaunchedEffect(Unit) { back() }
+            }
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(

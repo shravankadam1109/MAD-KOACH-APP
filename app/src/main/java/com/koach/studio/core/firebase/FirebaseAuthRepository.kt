@@ -14,6 +14,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.Source
 import com.koach.studio.core.auth.AuthRepository
 import com.koach.studio.core.auth.InvalidCredentialsException
 import com.koach.studio.core.auth.PHONE_AUTO_VERIFIED
+import com.koach.studio.core.auth.PermissionDeniedException
 import com.koach.studio.core.model.Role
 import com.koach.studio.core.model.User
 import java.time.LocalDate
@@ -374,10 +376,58 @@ class FirebaseAuthRepository(
         _currentUser.value = null
     }
 
+    override suspend fun requestStudioAccess(name: String, email: String, password: String): Result<String> = runCatching {
+        val result = try {
+            auth.createUserWithEmailAndPassword(email.trim(), password).await()
+        } catch (e: FirebaseAuthUserCollisionException) {
+            throw IllegalArgumentException("An account with this email already exists. Sign in instead, or ask an admin.")
+        } catch (e: FirebaseNetworkException) {
+            throw IllegalStateException("No connection. Check your internet and try again.")
+        }
+        val firebaseUser = result.user ?: throw IllegalStateException("Could not create your sign-in. Please try again.")
+        // Only the Firebase sign-in is created: no profile and no pending client record,
+        // so it grants nothing until an admin activates it.
+        runCatching { firebaseUser.updateProfile(userProfileChangeRequest { displayName = name.trim() }).await() }
+        val accountId = firebaseUser.uid
+        signOut()
+        accountId
+    }
+
+    override suspend fun grantStudioAccess(accountId: String, name: String, email: String, title: String, role: Role): Result<Unit> = runCatching {
+        // Checked here for a clear message; the security rules enforce it on the server.
+        if (_currentUser.value?.role != Role.ADMIN) throw PermissionDeniedException("Only studio admins can activate team accounts.")
+        require(role.isAgency) { "Studio access is for team or admin roles only." }
+        val id = accountId.trim()
+        require(ACCOUNT_ID.matches(id)) { "That doesn't look like an account ID. Copy it exactly from the request screen." }
+        require(name.isNotBlank()) { "Enter the person's name." }
+        require(email.isNotBlank()) { "Enter the person's email." }
+        val profileRef = firestore.collection(USERS).document(id)
+        val existing = profileRef.get(Source.SERVER).await()
+        if (existing.exists()) {
+            // Never convert an existing account: a client can't be turned into staff.
+            throw IllegalStateException(
+                if (existing.getString("role") == "client") "This account belongs to a client and can't be given studio access."
+                else "This account already has studio access."
+            )
+        }
+        val member = User(id = id, name = name.trim(), email = email.trim().lowercase(), role = role, title = title.trim(), clientId = null, phone = "")
+        try {
+            profileRef.set(UserProfileMapper.toMap(member)).await()
+        } catch (e: FirebaseFirestoreException) {
+            throw IllegalStateException(
+                if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) "Only studio admins can activate team accounts."
+                else "Couldn't activate this account. Check your connection and try again."
+            )
+        }
+        Unit
+    }
+
     companion object {
         const val USERS = "users"
         const val CLIENTS = "clients"
         private const val TAG = "KoachAuth"
+        /** Firebase Authentication user IDs are opaque letters and digits. */
+        private val ACCOUNT_ID = Regex("^[A-Za-z0-9]{20,40}$")
         /** Long enough for a slow first Firestore start, short enough that nobody waits on a frozen screen. */
         const val PROVISIONING_TIMEOUT_MILLIS = 20_000L
     }

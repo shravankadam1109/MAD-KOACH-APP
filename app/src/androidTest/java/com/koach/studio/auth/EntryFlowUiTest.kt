@@ -1,5 +1,6 @@
 package com.koach.studio.auth
 
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -59,5 +60,35 @@ class EntryFlowUiTest {
         rule.onNodeWithTag("login_password").performTextInput(DemoAuthRepository.DEMO_PASSWORD)
         rule.onNodeWithTag("login_submit").performClick()
         rule.awaitTag("tab_agency_home")
+    }
+
+    @Test
+    fun forgotPassword_validatesEmail_confirms_andReturnsToSignIn() {
+        rule.awaitTag("welcome_screen")
+        rule.onNodeWithTag("enter_client").performClick()
+        rule.awaitTag("client_login_screen")
+        rule.onNodeWithText("Forgot password?").performClick()
+        rule.awaitTag("forgot_password_screen")
+
+        rule.onNodeWithTag("forgot_continue").performClick()
+        rule.onNodeWithText("Enter your email").assertIsDisplayed()
+
+        rule.onNodeWithTag("forgot_email").performTextInput("maya@aetheria.example")
+        rule.onNodeWithTag("forgot_continue").performClick()
+        rule.awaitTag("forgot_sent")
+        rule.onNodeWithText("Recovery link sent").assertIsDisplayed()
+        rule.onNodeWithText("If an account exists for this email, recovery instructions would appear here.").assertIsDisplayed()
+
+        rule.onNodeWithTag("forgot_back_to_sign_in").performClick()
+        rule.awaitTag("client_login_screen")
+    }
+
+    @Test
+    fun studioSignIn_offersAccessRequest() {
+        rule.awaitTag("welcome_screen")
+        rule.onNodeWithTag("enter_team").performClick()
+        rule.awaitTag("team_login_screen")
+        rule.onNodeWithTag("login_request_access").performScrollTo().performClick()
+        rule.awaitTag("studio_access_request_screen")
     }
 }
