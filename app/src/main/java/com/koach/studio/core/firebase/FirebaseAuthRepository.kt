@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
@@ -96,6 +97,8 @@ class FirebaseAuthRepository(
             // rules can see the profile, and those listeners stop on the refusal.
             // (Cached profiles from earlier sessions still count, so offline launch works.)
             if (error == null && snapshot?.metadata?.hasPendingWrites() == true) return@addSnapshotListener
+            // A late update for an account that has since signed out must not bring it back.
+            if (auth.currentUser?.uid != uid) return@addSnapshotListener
             _currentUser.value = if (error != null) null else UserProfileMapper.fromMap(uid, snapshot?.data)
             // A sign-up on this device that never saved its profile: finish it now.
             if (error == null && snapshot != null && !snapshot.exists()) {
@@ -156,13 +159,17 @@ class FirebaseAuthRepository(
 
     override suspend fun signInWithGoogle(idToken: String): Result<User> = runCatching {
         if (idToken.isBlank()) throw IllegalStateException("Google sign-in didn't return an account. Please try again.")
+        completeEvenIfCallerLeaves { googleSignIn(idToken) }
+    }
+
+    private suspend fun googleSignIn(idToken: String): User {
         val result = try {
             auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
         } catch (e: FirebaseNetworkException) {
             throw IllegalStateException("No connection. Check your internet and try again.")
         }
         val firebaseUser = result.user ?: throw IllegalStateException("Google sign-in did not return a user")
-        existingProfile(firebaseUser.uid)
+        return existingProfile(firebaseUser.uid)
             ?: setUpClient(
                 PendingSignUp(firebaseUser.uid, firebaseUser.displayName.orEmpty(), firebaseUser.email.orEmpty(), firebaseUser.phoneNumber.orEmpty(), ""),
                 firebaseUser,
@@ -209,6 +216,10 @@ class FirebaseAuthRepository(
     }
 
     override suspend fun verifyPhoneOtp(verificationId: String, otpCode: String, name: String, email: String, phone: String): Result<User> = runCatching {
+        completeEvenIfCallerLeaves { phoneSignIn(verificationId, otpCode, name, email, phone) }
+    }
+
+    private suspend fun phoneSignIn(verificationId: String, otpCode: String, name: String, email: String, phone: String): User {
         val credential = if (verificationId == PHONE_AUTO_VERIFIED) {
             autoCredential ?: throw IllegalStateException("Verification expired. Request a new code.")
         } else {
@@ -221,13 +232,21 @@ class FirebaseAuthRepository(
         }
         autoCredential = null
         val firebaseUser = result.user ?: throw IllegalStateException("Phone sign-in failed. Please try again.")
-        existingProfile(firebaseUser.uid)
+        return existingProfile(firebaseUser.uid)
             ?: setUpClient(
                 PendingSignUp(firebaseUser.uid, name, email, firebaseUser.phoneNumber ?: phone, ""),
                 firebaseUser,
                 isNewAccount = result.additionalUserInfo?.isNewUser == true
             ).await()
     }
+
+    /**
+     * Google and phone sign-in finish here rather than in the calling screen's
+     * scope: Firebase completes the sign-in even if the screen is closed, and the
+     * profile step after it must not be cancelled half-way, or the account is left
+     * signed in to Firebase with no profile.
+     */
+    private suspend fun <T> completeEvenIfCallerLeaves(block: suspend () -> T): T = setupScope.async { block() }.await()
 
     private suspend fun existingProfile(uid: String): User? =
         UserProfileMapper.fromMap(uid, firestore.collection(USERS).document(uid).get().await().data)
@@ -330,6 +349,10 @@ class FirebaseAuthRepository(
             else "That code isn't right. Check the SMS and try again."
         is FirebaseTooManyRequestsException -> "Too many attempts. Wait a while and try again."
         is FirebaseNetworkException -> "No connection. Check your internet and try again."
+        // Firebase reports a blocked SMS region as "operation not allowed", which reads
+        // as if phone sign-in were switched off.
+        is FirebaseAuthException if e.errorCode == "ERROR_OPERATION_NOT_ALLOWED" ->
+            "Phone codes can't be sent to this number's region yet. Use email or Google instead."
         else -> e.message ?: "Phone verification failed. Please try again."
     }
 
@@ -345,6 +368,8 @@ class FirebaseAuthRepository(
     }
 
     override suspend fun signOut() {
+        profileListener?.remove()
+        profileListener = null
         auth.signOut()
         _currentUser.value = null
     }
